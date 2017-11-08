@@ -1,3 +1,14 @@
+[TOC]
+<!-- MarkdownTOC depth=3 -->
+
+- Extreme Multi-label Text Classification
+	- Preliminary overview
+	- Preliminary attention-based model for XMTC
+		- DeepWalk
+		- KATE
+	- Analysis of raw data
+
+<!-- /MarkdownTOC -->
 # Extreme Multi-label Text Classification
 
 ## Preliminary overview
@@ -39,5 +50,13 @@ model.wv.save_word2vec_format(args.output)
 
 4. In case 'WARNING: consider setting a smaller 'batch_words' for smoother alpha decay', add 'batch_words=2000' in deepwalk/__main__.py, line 75:
 model = Word2Vec(walks, size=args.representation_size, window=args.window_size, min_count=0, workers=args.workers, batch_words=2000)
+
+### KATE
+
+KATE code: [github](https://github.com/hugochan/KATE)
+
+Run the code on dataset: 20-newsgroups
+
+1. encoding style
 
 ## Analysis of raw data
