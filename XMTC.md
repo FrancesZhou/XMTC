@@ -6,6 +6,7 @@
 	- Preliminary attention-based model for XMTC
 		- DeepWalk
 		- KATE
+		- Implementation
 	- Analysis of raw data
 
 <!-- /MarkdownTOC -->
@@ -57,6 +58,38 @@ KATE code: [github](https://github.com/hugochan/KATE)
 
 Run the code on dataset: 20-newsgroups
 
-1. encoding style
+1. UTF-8 encoding and tokenize
+
+See function tiny_tokenize() in preprocessing.py. [ignore error symbol when encoding UTF-8, remove word punctuation, stemming, stopwords]
+
+2. corpus [train.corpus, test.corpus]
+
+**vocab: **
+most frequent top n words. # vocab: {'word_token': word_id, ...}
+**word_freq: **
+word frequency in vocab. # word_freq: {word_id: freq, ...}
+**docs: **
+docs with word_id and freqency. # docs: {'doc_name': {word_id: freq, ...}, ...} where the doc_name contains the classification info.
+
+3. labels [train.labels, test.labels]
+
+**doc_labels: **
+lables for docs. # doc_labels: {'doc_name': 'label_name', ...}
+
+### Implementation
+
+1. corpus
+
+**.corpus: **
+docs with sequential word symbols. # docs: [[s1, s2,...], [s1, s2,...], ...]
+
+2. labels
+
+**.labels: **
+related labels for each doc. # labels: [[l1, l2,...], [l1, l2,...], ...]
+
+3. label embedding
+
+For each dataset, we can get the co-currence info from train.txt
 
 ## Analysis of raw data
