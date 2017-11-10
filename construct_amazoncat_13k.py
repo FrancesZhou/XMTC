@@ -8,7 +8,9 @@ from __future__ import absolute_import
 
 import os
 import argparse
+import numpy as np
 from biLSTM.preprocessing.preprocessing import construct_train_test_corpus, generate_labels_from_file, generate_label_pair_from_file
+from biLSTM.utils.io_utils import load_pickle, write_file
 
 def main():
     parse = argparse.ArgumentParser()
@@ -33,6 +35,22 @@ def main():
     # ----------- generate label pairs (used by deepwalk) ----------
     if args.if_label_pair:
         label_pairs = generate_label_pair_from_file(os.path.join(args.out_dir, 'train.labels'), os.path.join(args.out_dir, 'labels.pair'))
+        # ------------ analysis of labels ------------
+        # label_pairs = load_pickle(os.path.join(args.out_dir, 'labels.pair'))
+        # l = label_pairs.flatten()
+        # l = np.unique(l)
+        # print len(l)
+        # print max(l)
+        # print min(l)
+        # # find those separate labels
+        # all_labels = load_pickle(os.path.join(args.out_dir, 'train.labels'))
+        # all_labels = np.hstack(all_labels)
+        # all_labels = np.unique(all_labels)
+        # print len(all_labels)
+        # print max(all_labels)
+        # print min(all_labels)
+        # print(set(all_labels)-set(l))
+        # print 'done.'
 
 
 

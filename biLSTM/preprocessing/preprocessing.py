@@ -63,12 +63,11 @@ def generate_label_pair_from_file(file_name, output):
         if len(labels_doc) == 1:
             continue
         labels_doc = sorted(labels_doc)
-        #label_pair = []
         label_pair_start = labels_doc[0]
         for label in labels_doc[1:]:
             label_pairs.append([label_pair_start, label])
     # delete duplica
-    label_pairs = np.array(label_pairs)
+    label_pairs = np.array(label_pairs, dtype=np.int64)
     label_pairs = np.unique(label_pairs, axis=0)
     dump_pickle(label_pairs, output)
     return label_pairs

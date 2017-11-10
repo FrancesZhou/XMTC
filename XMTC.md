@@ -80,16 +80,20 @@ lables for docs. # doc_labels: {'doc_name': 'label_name', ...}
 
 1. corpus
 
-**.corpus: **
-docs with sequential word symbols. # docs: [[s1, s2,...], [s1, s2,...], ...]
+**.corpus: ** docs with sequential word symbols. # docs: [[s1, s2,...], [s1, s2,...], ...]
 
 2. labels
 
-**.labels: **
-related labels for each doc. # labels: [[l1, l2,...], [l1, l2,...], ...]
+**.labels: ** related labels for each doc. # labels: [[l1, l2,...], [l1, l2,...], ...]
 
 3. label embedding
 
 For each dataset, we can get the co-currence info from train.txt
+
+labels.pair is the pickle file that contains label pairs. \
+labels.edgelist is the file used for deepwalk. (notice the format is edgelist) \
+labels.embeddings is the embedding file for each label.
+
+For AmazonCat-13K, the label dimensionality is 13330, but the number of labels which appear in labels.pair is 13326. Thus, there are 4 labels that occur separately: [5960, 390, 342, 5071] where indices are from 0 on.
 
 ## Analysis of raw data

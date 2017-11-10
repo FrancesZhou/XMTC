@@ -39,3 +39,11 @@ def load_pickle(file):
     except Exception as e:
         raise e
     return data
+
+def write_file(data, file):
+    try:
+        with open(file, 'w') as datafile:
+            for line in data:
+                datafile.write(str(line[0]) + '\t' + str(line[1]) + '\n')
+    except Exception as e:
+        raise e
