@@ -47,3 +47,11 @@ def write_file(data, file):
                 datafile.write(str(line[0]) + '\t' + str(line[1]) + '\n')
     except Exception as e:
         raise e
+
+def load_txt(file):
+    try:
+        with open(file, 'r') as df:
+            data = df.readlines()
+    except Exception as e:
+        raise e
+    return data

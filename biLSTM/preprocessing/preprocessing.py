@@ -72,4 +72,58 @@ def generate_label_pair_from_file(file_name, output):
     dump_pickle(label_pairs, output)
     return label_pairs
 
+def get_max_seq_len(data):
+    num = len(data)
+    all_seq_len = np.zeros(num)
+    for i in range(num):
+        all_seq_len[i] = len(data[i])
+    max_seq_len = max(all_seq_len)
+    return max_seq_len
+
+def batch_data(data, labels, max_seq_len, num_label, vocab, word_embeddings, batch_size=32):
+    num = len(data)
+    #max_seq_len = get_max_seq_len(data)
+    x = []
+    y = []
+    length = []
+    i = 0
+    while i < num:
+        batch_x = []
+        batch_y = []
+        batch_l = []
+        # --- x
+        for s in range(i, max(i+batch_size, num)):
+            seq_len, emb = generate_embedding(data[s], max_seq_len, vocab, word_embeddings)
+            l_v = generate_label_vector(labels[s], num_label)
+            batch_x.append(emb)
+            batch_y.append(l_v)
+            batch_l.append(seq_len)
+        x.append(batch_x)
+        y.append(batch_y)
+        length.append(batch_l)
+        i = i + batch_size
+    return x, y, length
+
+def generate_embedding(sequence, max_seq_len, vocab, word_embeddings):
+    embeddings = []
+    seq_len = min(len(sequence), max_seq_len)
+    for i in range(seq_len):
+        index = vocab.index(sequence[i])
+        emb_str = word_embeddings[index]
+        embeddings.append(gen_word_emb_from_str(emb_str))
+    zero_len = max_seq_len - seq_len
+    embeddings = np.array(embeddings)
+    if zero_len>0:
+        zero_emb = np.zeros([zero_len, embeddings.shape[-1]])
+        embeddings = np.concatenate((embeddings, zero_emb), axis=0)
+    return seq_len, embeddings
+
+def gen_word_emb_from_str(str):
+    _, v_str = str.split(' ', 1)
+    v = [float(e) for e in v_str.split()]
+    return v
+
+def generate_label_vector(labels, num_label):
+    return np.sum(np.eye(num_label)[labels], axis=0)
+
 
