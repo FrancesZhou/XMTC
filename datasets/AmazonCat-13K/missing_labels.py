@@ -40,9 +40,11 @@ with open('labels.embeddings', 'r') as df:
     label_embeddings = df.readlines()
 with open('vocab', 'r') as df:
     vocab = pickle.load(df)
+print 'begin to read word_embeddings in glove'
 with open('glove.840B.300d', 'r') as df:
     word_embeddings = df.readlines()
 
+print 'loaded word_embeddings'
 label_embs = []
 for missing_label in missing_label_tokens:
     emb = []
@@ -53,9 +55,11 @@ for missing_label in missing_label_tokens:
     label_embs.append(emb)
 
 txtfile = open('missinglabels.embeddings', 'w')
-for i in missing_index:
-    txtfile.write(str(i)+' ')
-    for
+for i in range(len(missing_index)):
+    txtfile.write(str(missing_index[i])+' ')
+    for f in label_embs[i]:
+        txtfile.write(str(f)+' ')
+    txtfile.write('\n')
     #all_label_embeddings = np.insert(label_embeddings, missing_index[i], )
 
 
