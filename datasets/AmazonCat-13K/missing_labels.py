@@ -36,8 +36,8 @@ def gen_word_emb_from_str(str):
 missing_index = [342, 391, 5071, 5960]
 missing_label_tokens = [['all', 'electronics'], ['amazon', 'instant', 'video'], ['furniture', '&', 'decor'], ['home', 'improvement']]
 
-with open('labels.embeddings', 'r') as df:
-    label_embeddings = df.readlines()
+# with open('labels.embeddings', 'r') as df:
+#     label_embeddings = df.readlines()
 with open('vocab', 'r') as df:
     vocab = pickle.load(df)
 print 'begin to read word_embeddings in glove'
