@@ -69,7 +69,7 @@ class biLSTM(object):
             b_classify = tf.get_variable('b_classify', [2], initializer=self.const_initializer)
             wz_b_plus = tf.matmul(z_label_plus, w_classify) + b_classify
             # wz_b_plus: [num_label, 2]
-            return tf.nn.relu(wz_b_plus)
+            return tf.softmax(tf.nn.relu(wz_b_plus), -1)
 
 
     def build_model(self):
@@ -79,7 +79,7 @@ class biLSTM(object):
         y = self.y
         # transform y to [batch_size, self.num_label, 2]
         y = tf.expand_dim(y,-1)
-        y = tf.concatenate([y, 1-y], axis=1)
+        y = tf.concatenate([1-y, y], axis=1)
 
         batch_size = tf.shape(x)[0]
 
@@ -101,17 +101,21 @@ class biLSTM(object):
         # print('after indexing, outputs_shape : ', outputs.get_shape().as_list())
         # ------------ attention and classification --------------
         num_label_embedding = self.label_embeddings.get_shape().as_list()[-1]
-        y_pre = []
+        y_ = []
         for i in batch_size:
             #hidden_states = outputs[i, 0:self.seqlen[i], :]
-            y_pre.append(
+            y_.append(
                 self.classification(outputs[i, 0:self.seqlen[i], :], self.label_embeddings, self.num_hidden, num_label_embedding))
-        y_pre = tf.stack(y_pre)
+        y_ = tf.stack(y_)
+        # predict labels
+        y_labels = tf.argmax(y_, axis=-1)
+        y_labels_prob = y_[:,:,-1]
+        print y_labels_prob.get_shape().to_list()
         # calculate loss
         y_tar = tf.reshape(y, [-1, 2])
-        y_pre = tf.reshape(y_pre, [-1, 2])
+        y_pre = tf.reshape(y_, [-1, 2])
         loss = tf.losses.sigmoid_cross_entropy(y_tar, y_pre)
-        return y_pre, loss
+        return y_labels_prob, loss
 
 
 
