@@ -41,7 +41,7 @@ with open('labels.embeddings', 'r') as df:
 with open('vocab', 'r') as df:
     vocab = pickle.load(df)
 print 'begin to read word_embeddings in glove'
-with open('glove.840B.300d', 'r') as df:
+with open('glove.840B.300d.txt', 'r') as df:
     word_embeddings = df.readlines()
 
 print 'loaded word_embeddings'
