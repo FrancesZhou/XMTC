@@ -25,6 +25,7 @@ def construct_corpus_from_file(corpus_path):
             all_tokens = re.split('([A-Za-z]+)|([0-9]+)', text)
             #print all_tokens
             all_tokens = filter(not_empty, all_tokens)
+            all_tokens = [e.strip() for e in all_tokens]
             corpus.append(all_tokens)
 
         fp.close()
