@@ -97,7 +97,11 @@ def batch_data(data, labels, max_seq_len, num_label, vocab, word_embeddings, bat
         batch_l = []
         # --- x
         for s in range(i, max(i+batch_size, num)):
-            seq_len, emb = generate_embedding(data[s], max_seq_len, vocab, word_embeddings)
+	    try:
+		seq_len, emb = generate_embedding(data[s], max_seq_len, vocab, word_embeddings)
+	    except Exception as e:
+		print s
+		raise e
             l_v = generate_label_vector(labels[s], num_label)
             batch_x.append(emb)
             batch_y.append(l_v)
@@ -119,10 +123,12 @@ def generate_embedding(sequence, max_seq_len, vocab, word_embeddings):
         except Exception:
             continue
     seq_len = len(embeddings)
-    zero_len = max_seq_len - seq_len
+    zero_len = int(max_seq_len - seq_len)
     embeddings = np.array(embeddings)
+    #print embeddings.shape
     if zero_len > 0:
         zero_emb = np.zeros([zero_len, embeddings.shape[-1]])
+	#print zero_emb.shape
         embeddings = np.concatenate((embeddings, zero_emb), axis=0)
     return seq_len, embeddings
 
