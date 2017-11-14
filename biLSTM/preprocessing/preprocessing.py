@@ -22,7 +22,7 @@ def construct_corpus_from_file(corpus_path):
         for line in open(corpus_path):
             line = fp.readline()
             text = line.split('->', 1)[1]
-            all_tokens = re.split('([A-Za-z]+)|([0-9]+)', text)
+            all_tokens = re.split('([A-Za-z]+)|([0-9]+)|(\W)', text)
             #print all_tokens
             all_tokens = filter(not_empty, all_tokens)
             all_tokens = [e.strip() for e in all_tokens]
@@ -112,12 +112,16 @@ def generate_embedding(sequence, max_seq_len, vocab, word_embeddings):
     embeddings = []
     seq_len = min(len(sequence), max_seq_len)
     for i in range(seq_len):
-        index = vocab.index(sequence[i])
-        emb_str = word_embeddings[index]
-        embeddings.append(gen_word_emb_from_str(emb_str))
+        try:
+            index = vocab.index(sequence[i])
+            emb_str = word_embeddings[index]
+            embeddings.append(gen_word_emb_from_str(emb_str))
+        except Exception:
+            continue
+    seq_len = len(embeddings)
     zero_len = max_seq_len - seq_len
     embeddings = np.array(embeddings)
-    if zero_len>0:
+    if zero_len > 0:
         zero_emb = np.zeros([zero_len, embeddings.shape[-1]])
         embeddings = np.concatenate((embeddings, zero_emb), axis=0)
     return seq_len, embeddings
