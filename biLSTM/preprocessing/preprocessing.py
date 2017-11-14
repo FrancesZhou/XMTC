@@ -12,6 +12,7 @@ import numpy as np
 from ..utils.io_utils import dump_json, load_json, dump_pickle, load_pickle
 
 def not_empty(s):
+    #return s.strip()
     return s and s.strip()
 
 def construct_corpus_from_file(corpus_path):
@@ -88,6 +89,8 @@ def batch_data(data, labels, max_seq_len, num_label, vocab, word_embeddings, bat
     length = []
     i = 0
     while i < num:
+        if i % 10000 == 0:
+            print i
         batch_x = []
         batch_y = []
         batch_l = []

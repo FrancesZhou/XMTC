@@ -28,7 +28,7 @@ def main():
     # test_labels: 'datasets/AmazonCat-13K/amazonCat_test.txt'
     # out_dir: 'datasets/AmazonCat-13K/output/'
     ## ----------- get train/test corpus -----------
-    # train_corpus, test_corpus = construct_train_test_corpus(args.train_corpus_path, args.test_corpus_path, args.out_dir)
+    train_corpus, test_corpus = construct_train_test_corpus(args.train_corpus_path, args.test_corpus_path, args.out_dir)
     ## ----------- get train/test labels -----------
     # train_labels = generate_labels_from_file(args.train_labels_path, os.path.join(args.out_dir, 'train.labels'))
     # test_labels = generate_labels_from_file(args.test_labels_path, os.path.join(args.out_dir, 'test.labels'))
