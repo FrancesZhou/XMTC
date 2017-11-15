@@ -15,7 +15,7 @@ class biLSTM(object):
         self.input_dim = input_dim
         self.num_label = num_label
         self.num_classify_hidden = num_classify_hidden
-        self.label_embeddings = label_embeddings
+        self.label_embeddings = tf.cast(label_embeddings, tf.float32)
         self.batch_size = batch_size
 
         self.weight_initializer = tf.contrib.layers.xavier_initializer()
@@ -42,9 +42,9 @@ class biLSTM(object):
             # label_embeddings: [num_label, num_label_embedding]
             s = tf.matmul(tf.matmul(hidden_states, w), tf.transpose(label_embeddings))
             # s: [seq_len, num_label]
-            s = tf.softmax(s, 0)
+            s = tf.nn.softmax(s, 0)
             # s_expand: [num_label, seq_len, 1]
-            s_expand = tf.expand_dim(tf.transpose(s), axis=-1)
+            s_expand = tf.expand_dims(tf.transpose(s), axis=-1)
             # s_hidden: [num_label, seq_len, num_hidden]
             s_hidden = tf.multiply(s_expand, hidden_states)
             return tf.reduce_sum(s_hidden, axis=1)
@@ -70,7 +70,7 @@ class biLSTM(object):
             b_classify = tf.get_variable('b_classify', [2], initializer=self.const_initializer)
             wz_b_plus = tf.matmul(z_label_plus, w_classify) + b_classify
             # wz_b_plus: [num_label, 2]
-            return tf.softmax(tf.nn.relu(wz_b_plus), -1)
+            return tf.nn.softmax(tf.nn.relu(wz_b_plus), -1)
 
 
     def build_model(self):
@@ -103,10 +103,12 @@ class biLSTM(object):
         # ------------ attention and classification --------------
         num_label_embedding = self.label_embeddings.shape[-1]
         y_ = []
+	print 'clssify:'
         for i in range(self.batch_size):
             #hidden_states = outputs[i, 0:self.seqlen[i], :]
+	    print i
             y_.append(
-                self.classification(outputs[i, 0:self.seqlen[i], :], self.label_embeddings, self.num_hidden, num_label_embedding))
+                self.classification(outputs[i, 0:self.seqlen[i], :], self.label_embeddings, 2*self.num_hidden, num_label_embedding))
         y_ = tf.stack(y_)
         # predict labels
         y_labels = tf.argmax(y_, axis=-1)
