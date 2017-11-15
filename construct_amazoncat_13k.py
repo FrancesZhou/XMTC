@@ -9,32 +9,47 @@ from __future__ import absolute_import
 import os
 import argparse
 import numpy as np
-from biLSTM.preprocessing.preprocessing import construct_train_test_corpus, generate_labels_from_file, generate_label_pair_from_file
+from biLSTM.preprocessing.preprocessing import construct_train_test_corpus, generate_labels_from_file_and_error, generate_label_pair_from_file
 from biLSTM.utils.io_utils import load_pickle, write_file
 
 def main():
     parse = argparse.ArgumentParser()
-    parse.add_argument('-train_corpus', '--train_corpus_path', type=str, required=True, help='path to the training corpus')
-    parse.add_argument('-test_corpus', '--test_corpus_path', type=str, required=True, help='path to the testing corpus')
-    parse.add_argument('-train_labels', '--train_labels_path', type=str, required=True, help='path to the training labels')
-    parse.add_argument('-test_labels', '--test_labels_path', type=str, required=True, help='path to the testing labels')
-    parse.add_argument('-o', '--out_dir', type=str, required=True, help='path to the output dir')
-    parse.add_argument('-if_label_pair', '--if_label_pair', type=bool, required=True, help='whether to generate label pairs')
+    parse.add_argument('-train_corpus', '--train_corpus_path', type=str,
+                       default='datasets/AmazonCat-13K/rawdata/AmazonCat-13K_train_map.txt',
+                       help='path to the training corpus')
+    parse.add_argument('-test_corpus', '--test_corpus_path', type=str,
+                       default='datasets/AmazonCat-13K/rawdata/AmazonCat-13K_test_map.txt',
+                       help='path to the testing corpus')
+    parse.add_argument('-train_labels', '--train_labels_path', type=str,
+                       default='datasets/AmazonCat-13K/rawdata/amazonCat_train.txt',
+                       help='path to the training labels')
+    parse.add_argument('-test_labels', '--test_labels_path', type=str,
+                       default='datasets/AmazonCat-13K/rawdata/amazonCat_test.txt',
+                       help='path to the testing labels')
+    parse.add_argument('-o', '--out_dir', type=str,
+                       default='datasets/AmazonCat-13K/output/',
+                       help='path to the output dir')
+    parse.add_argument('-if_label_pair', '--if_label_pair', type=bool, default=True, help='whether to generate label pairs')
+
+    parse.add_argument('-vocab', '--vocab_path', type=str,
+                       default='datasets/vocab',
+                       help='path to the testing labels')
     args = parse.parse_args()
 
-    # train_corpus: 'datasets/AmazonCat-13K/AmazonCat-13K_train_map.txt'
-    # test_corpus: 'datasets/AmazonCat-13K/AmazonCat-13K_test_map.txt'
-    # train_labels: 'datasets/AmazonCat-13K/amazonCat_train.txt'
-    # test_labels: 'datasets/AmazonCat-13K/amazonCat_test.txt'
+    # train_corpus: 'datasets/AmazonCat-13K/rawdata/AmazonCat-13K_train_map.txt'
+    # test_corpus: 'datasets/AmazonCat-13K/rawdata/AmazonCat-13K_test_map.txt'
+    # train_labels: 'datasets/AmazonCat-13K/rawdata/amazonCat_train.txt'
+    # test_labels: 'datasets/AmazonCat-13K/rawdata/amazonCat_test.txt'
     # out_dir: 'datasets/AmazonCat-13K/output/'
     ## ----------- get train/test corpus -----------
-    train_corpus, test_corpus = construct_train_test_corpus(args.train_corpus_path, args.test_corpus_path, args.out_dir)
+    vocab = load_pickle(args.vocab_path)
+    train_corpus, test_corpus = construct_train_test_corpus(vocab, args.train_corpus_path, args.test_corpus_path, args.out_dir)
     ## ----------- get train/test labels -----------
-    # train_labels = generate_labels_from_file(args.train_labels_path, os.path.join(args.out_dir, 'train.labels'))
-    # test_labels = generate_labels_from_file(args.test_labels_path, os.path.join(args.out_dir, 'test.labels'))
+    train_labels = generate_labels_from_file_and_error(args.train_labels_path, os.path.join(args.out_dir, 'train_error.index'), os.path.join(args.out_dir, 'train.labels'))
+    test_labels = generate_labels_from_file_and_error(args.test_labels_path, os.path.join(args.out_dir, 'test_error.index'), os.path.join(args.out_dir, 'test.labels'))
     # ----------- generate label pairs (used by deepwalk) ----------
-    if args.if_label_pair:
-        label_pairs = generate_label_pair_from_file(os.path.join(args.out_dir, 'train.labels'), os.path.join(args.out_dir, 'labels.pair'))
+    #if args.if_label_pair:
+    #    label_pairs = generate_label_pair_from_file(os.path.join(args.out_dir, 'train.labels'), os.path.join(args.out_dir, 'labels.pair'))
         # ------------ analysis of labels ------------
         # label_pairs = load_pickle(os.path.join(args.out_dir, 'labels.pair'))
         # l = label_pairs.flatten()
