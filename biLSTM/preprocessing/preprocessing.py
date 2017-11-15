@@ -83,14 +83,14 @@ def generate_labels_from_file_and_error(file_name, error_file, output):
     try:
         fp = open(file_name, 'r')
         _ = fp.readline()
-        #line_index = 0
+        line_index = 0
         while True:
             line = fp.readline()
-            #line_index += 1
+            line_index += 1
             if not line:
                 break
-            # if line_index in error_index:
-            #     continue
+            if line_index in error_index:
+                continue
             labels_str = line.split(' ', 1)[0]
             labels_str = labels_str.split(',')
             labels_doc = [int(label) for label in labels_str]
@@ -98,9 +98,9 @@ def generate_labels_from_file_and_error(file_name, error_file, output):
     except Exception as e:
         raise e
     # delete error index
-    for ind in error_index:
-        del labels[ind]
-    print 'num of y_label: ' + len(labels)
+    # for ind in error_index:
+    #     del labels[ind]
+    print 'num of y_label: ' + str(len(labels))
     dump_pickle(labels, output)
     return labels
 
