@@ -42,7 +42,7 @@ def main():
     # test_labels: 'datasets/AmazonCat-13K/rawdata/amazonCat_test.txt'
     # out_dir: 'datasets/AmazonCat-13K/output/'
     ## ----------- get train/test corpus -----------
-    #vocab = load_pickle(args.vocab_path)
+    vocab = load_pickle(args.vocab_path)
     #train_corpus, test_corpus = construct_train_test_corpus(vocab, args.train_corpus_path, args.test_corpus_path, args.out_dir)
     ## ----------- get train/test labels -----------
     train_labels = generate_labels_from_file_and_error(args.train_labels_path, os.path.join(args.out_dir, 'train_error.index'), os.path.join(args.out_dir, 'train.labels'))

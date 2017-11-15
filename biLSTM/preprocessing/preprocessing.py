@@ -146,7 +146,7 @@ def get_max_seq_len(data):
     max_seq_len = max(all_seq_len)
     return max_seq_len
 
-def batch_data(data, labels, max_seq_len, num_label, vocab, word_embeddings, batch_size=32):
+def batch_data(data, labels, max_seq_len, num_labels, vocab, word_embeddings, batch_size=32):
     num = len(data)
     #max_seq_len = get_max_seq_len(data)
     x = []
@@ -167,7 +167,7 @@ def batch_data(data, labels, max_seq_len, num_label, vocab, word_embeddings, bat
             except Exception as e:
                 print s
                 raise e
-            l_v = generate_label_vector(labels[s], num_label)
+            l_v = generate_label_vector(labels[s], num_labels)
             batch_x.append(emb)
             batch_y.append(l_v)
             batch_l.append(seq_len)
@@ -222,7 +222,7 @@ def gen_word_emb_from_str(str):
     v = [float(e) for e in v_str.split()]
     return v
 
-def generate_label_vector(labels, num_label):
-    return np.sum(np.eye(num_label)[labels], axis=0)
+def generate_label_vector(labels, num_labels):
+    return np.sum(np.eye(num_labels)[labels], axis=0)
 
 

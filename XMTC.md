@@ -7,6 +7,7 @@
 		- DeepWalk
 		- KATE
 		- Implementation
+		- Problem
 	- Analysis of raw data
 
 <!-- /MarkdownTOC -->
@@ -95,5 +96,13 @@ labels.edgelist is the file used for deepwalk. (notice the format is edgelist) \
 labels.embeddings is the embedding file for each label.
 
 For AmazonCat-13K, the label dimensionality is 13330, but the number of labels which appear in labels.pair is 13326. Thus, there are 4 labels that occur separately: [5960, 390, 342, 5071] where indices are from 0 on.
+
+### Problem
+
+1. invalid text
+
+There are some examples whose texts are invalid. (the words in text cannot be found in vocab) Thus, these examples should be excluded.
+For AmazonCat-13K, valid/invalid train examples: 1182134/4105;
+valid/invalid test examples: 305701/1081
 
 ## Analysis of raw data

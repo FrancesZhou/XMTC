@@ -50,18 +50,12 @@ class ModelSolver(object):
             true_labels = np.squeeze(np.nonzero(tar[i]))
             if len(np.intersect1d(n_labels, true_labels)):
                 count += 1
-        return count*1.0/num
+        #return count*1.0/num
+        return count, count*1.0/num
 
     def train(self):
-        x = self.train_data['x']
-        y = self.train_data['y']
-        l = self.train_data['l']
-
-        x_test = self.test_data['x']
-        y_test = self.test_data['y']
-        l_test = self.test_data['l']
-
-        y_test_concate = np.concatenate(y_test, axis=0)
+        train_loader = self.train_data
+        test_loader = self.test_data
 
         # build_model
         y_, loss = self.model.build_model()
@@ -74,54 +68,123 @@ class ModelSolver(object):
             train_op = optimizer.apply_gradients(grads_and_vars=grads_and_vars)
 
         tf.get_variable_scope().reuse_variables()
-
-        # summary op
-        # tf.summary.scalar('batch_loss', loss)
-        # for var in tf.trainable_variables():
-        #     tf.summary.histogram(var.op.name, var)
-        # for grad, var in grads_and_vars:
-        #     tf.summary.histogram(var.op.name + '/gradient', grad)
-        # summary_op = tf.summary.merge_all()
-
         with tf.Session() as sess:
             tf.global_variables_initializer().run()
-            #summary_writer = tf.summary.FileWriter(self.log_path, graph=sess.graph)
-            #saver = tf.train.Saver(tf.global_variables())
-            # if self.pretrained_model is not None:
-            #     print "Start training with pretrained model..."
-            #     saver.restore(sess, self.pretrained_model)
-
-            #start_t = time.time()
             for e in range(self.n_epochs):
                 curr_loss = 0
-                for i in range(len(x)):
-                    feed_dict = {self.model.x: np.array(x[i]), self.model.y: np.array(y[i]), self.model.seqlen: np.array(l[i])}
+                for i in range(train_loader.num_batch):
+                    if i%1000 == 0:
+                        print i
+                    x, y, seq_l = train_loader.next_batch()
+                    feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
+                                 self.model.seqlen: np.array(seq_l)}
                     _, l_ = sess.run([train_op, loss], feed_dict)
                     curr_loss += l_
-
-                    # # write summary for tensorboard visualization
-                    # if i % 100 == 0:
-                    #     print("at epoch " + str(e) + ', ' + str(i))
-                    #     summary = sess.run(summary_op, feed_dict)
-                    #     summary_writer.add_summary(summary, e * len(x) + i)
                 print('at epoch ' + str(e) + ', train loss is ' + str(curr_loss))
 
                 # --- test ---
-                if e%2 == 0:
+                if e % 2 == 0:
                     val_loss = 0
-                    y_prob = []
-                    for i in range(len(x_test)):
-                        feed_dict = {self.model.x: np.array(x_test[i]), self.model.y: np.array(y_test[i]),
-                                     self.model.seqlen: np.array(l_test[i])}
+                    c_1 = 0
+                    c_3 = 0
+                    c_5 = 0
+                    #y_prob = []
+                    for i in range(test_loader.num_batch):
+                        x, y, seq_l = test_loader.next_batch()
+                        feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
+                                     self.model.seqlen: np.array(seq_l)}
                         y_p, l_ = sess.run([y_, loss], feed_dict)
                         val_loss += l_
-                        y_prob.append(y_p)
-                    y_prob = np.concatenate(y_prob, axis=0)
-                    precision_1 = self.precision(y_prob, y_test_concate, 1)
-                    precision_3 = self.precision(y_prob, y_test_concate, 3)
-                    precision_5 = self.precision(y_prob, y_test_concate, 5)
-                    print 'at epoch'+str(e)+', test loss is '+str(val_loss)
+                        count_1, _ = self.precision(y_p, y, 1)
+                        count_3, _ = self.precision(y_p, y, 3)
+                        count_5, _ = self.precision(y_p, y, 5)
+                        c_1 += count_1
+                        c_3 += count_3
+                        c_5 += count_5
+                        #y_prob.append(y_p)
+                    # y_prob = np.concatenate(y_prob, axis=0)
+                    # precision_1 = self.precision(y_prob, y_test_concate, 1)
+                    # precision_3 = self.precision(y_prob, y_test_concate, 3)
+                    # precision_5 = self.precision(y_prob, y_test_concate, 5)
+                    precision_1 = c_1 * 1.0 / test_loader.num_of_used_data
+                    precision_3 = c_3 * 1.0 / test_loader.num_of_used_data
+                    precision_5 = c_5 * 1.0 / test_loader.num_of_used_data
+                    print 'at epoch' + str(e) + ', test loss is ' + str(val_loss)
                     print 'precision@1: ' + str(precision_1)
                     print 'precision@3: ' + str(precision_3)
                     print 'precision@5: ' + str(precision_5)
-                    #print "elapsed time: ", time.time() - start_t
+
+
+    # def train(self):
+    #     x = self.train_data['x']
+    #     y = self.train_data['y']
+    #     l = self.train_data['l']
+    #
+    #     x_test = self.test_data['x']
+    #     y_test = self.test_data['y']
+    #     l_test = self.test_data['l']
+    #
+    #     y_test_concate = np.concatenate(y_test, axis=0)
+    #
+    #     # build_model
+    #     y_, loss = self.model.build_model()
+    #
+    #     # train op
+    #     with tf.name_scope('optimizer'):
+    #         optimizer = self.optimizer(learning_rate=self.learning_rate)
+    #         grads = tf.gradients(loss, tf.trainable_variables())
+    #         grads_and_vars = list(zip(grads, tf.trainable_variables()))
+    #         train_op = optimizer.apply_gradients(grads_and_vars=grads_and_vars)
+    #
+    #     tf.get_variable_scope().reuse_variables()
+    #
+    #     # summary op
+    #     # tf.summary.scalar('batch_loss', loss)
+    #     # for var in tf.trainable_variables():
+    #     #     tf.summary.histogram(var.op.name, var)
+    #     # for grad, var in grads_and_vars:
+    #     #     tf.summary.histogram(var.op.name + '/gradient', grad)
+    #     # summary_op = tf.summary.merge_all()
+    #
+    #     with tf.Session() as sess:
+    #         tf.global_variables_initializer().run()
+    #         #summary_writer = tf.summary.FileWriter(self.log_path, graph=sess.graph)
+    #         #saver = tf.train.Saver(tf.global_variables())
+    #         # if self.pretrained_model is not None:
+    #         #     print "Start training with pretrained model..."
+    #         #     saver.restore(sess, self.pretrained_model)
+    #
+    #         #start_t = time.time()
+    #         for e in range(self.n_epochs):
+    #             curr_loss = 0
+    #             for i in range(len(x)):
+    #                 feed_dict = {self.model.x: np.array(x[i]), self.model.y: np.array(y[i]), self.model.seqlen: np.array(l[i])}
+    #                 _, l_ = sess.run([train_op, loss], feed_dict)
+    #                 curr_loss += l_
+    #
+    #                 # # write summary for tensorboard visualization
+    #                 # if i % 100 == 0:
+    #                 #     print("at epoch " + str(e) + ', ' + str(i))
+    #                 #     summary = sess.run(summary_op, feed_dict)
+    #                 #     summary_writer.add_summary(summary, e * len(x) + i)
+    #             print('at epoch ' + str(e) + ', train loss is ' + str(curr_loss))
+    #
+    #             # --- test ---
+    #             if e%2 == 0:
+    #                 val_loss = 0
+    #                 y_prob = []
+    #                 for i in range(len(x_test)):
+    #                     feed_dict = {self.model.x: np.array(x_test[i]), self.model.y: np.array(y_test[i]),
+    #                                  self.model.seqlen: np.array(l_test[i])}
+    #                     y_p, l_ = sess.run([y_, loss], feed_dict)
+    #                     val_loss += l_
+    #                     y_prob.append(y_p)
+    #                 y_prob = np.concatenate(y_prob, axis=0)
+    #                 precision_1 = self.precision(y_prob, y_test_concate, 1)
+    #                 precision_3 = self.precision(y_prob, y_test_concate, 3)
+    #                 precision_5 = self.precision(y_prob, y_test_concate, 5)
+    #                 print 'at epoch'+str(e)+', test loss is '+str(val_loss)
+    #                 print 'precision@1: ' + str(precision_1)
+    #                 print 'precision@3: ' + str(precision_3)
+    #                 print 'precision@5: ' + str(precision_5)
+    #                 #print "elapsed time: ", time.time() - start_t

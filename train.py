@@ -9,7 +9,8 @@ from __future__ import absolute_import
 import os
 import argparse
 import numpy as np
-from biLSTM.preprocessing.preprocessing import batch_data, get_max_seq_len, construct_train_test_corpus, generate_labels_from_file, generate_label_pair_from_file
+from biLSTM.preprocessing.preprocessing import get_max_seq_len, construct_train_test_corpus, generate_labels_from_file, generate_label_pair_from_file
+from biLSTM.preprocessing.dataloader import DataLoader
 from biLSTM.core.biLSTM import biLSTM
 from biLSTM.core.solver import ModelSolver
 from biLSTM.utils.io_utils import load_pickle, write_file, load_txt
@@ -34,11 +35,12 @@ def main():
     args = parse.parse_args()
 
     # x,y,l- input
-    vocab = load_pickle(args.vocab_path)
+    #vocab = load_pickle(args.vocab_path)
+    print 'load word/label embeddings'
     word_embeddings = load_txt(args.word_embedding_path)
     label_embeddings = load_pickle(args.label_embedding_path)
-    num_label = len(label_embeddings)
-
+    num_labels = len(label_embeddings)
+    print 'load train/test data'
     train_data = load_pickle(args.train_corpus_path)
     test_data = load_pickle(args.train_corpus_path)
     train_label = load_pickle(args.train_labels_path)
@@ -46,20 +48,22 @@ def main():
 
     max_seq_len = get_max_seq_len(train_data)
     # batch_data(data, labels, max_seq_len, num_label, vocab, word_embeddings, batch_size=32):
-    print 'get batch data...'
-    train_x, train_y, train_l = batch_data(train_data, train_label, max_seq_len, num_label, vocab, word_embeddings, args.batch_size)
-    test_x, test_y, test_l = batch_data(test_data, test_label, max_seq_len, num_label, vocab, word_embeddings, args.batch_size)
+    print 'create train/test data loader...'
+    # train_x, train_y, train_l = batch_data(train_data, train_label, max_seq_len, num_label, vocab, word_embeddings, args.batch_size)
+    # test_x, test_y, test_l = batch_data(test_data, test_label, max_seq_len, num_label, vocab, word_embeddings, args.batch_size)
+    train_loader = DataLoader(train_data, train_label, args.batch_size, max_seq_len, num_labels, word_embeddings)
+    test_loader = DataLoader(test_data, test_label, args.batch_size, max_seq_len, num_labels, word_embeddings)
 
     # ----- train -----
-    train = {'x': train_x, 'y': train_y, 'l': train_l}
-    test = {'x': test_x, 'y': test_y, 'l': test_l}
+    # train = {'x': train_x, 'y': train_y, 'l': train_l}
+    # test = {'x': test_x, 'y': test_y, 'l': test_l}
     print 'build biLSTM model...'
     # def __init__(self, seq_max_len, input_dim, num_label, num_hidden, num_classify_hidden, label_embeddings):
-    model = biLSTM(max_seq_len, 300, num_label, 512, 128, label_embeddings)
+    model = biLSTM(max_seq_len, 300, num_labels, 512, 128, label_embeddings)
 
     print 'model solver...'
     # def __init__(self, model, train_data, test_data, **kwargs):
-    solver = ModelSolver(model, train, test,
+    solver = ModelSolver(model, train_loader, test_loader,
                          n_epochs=args.n_epochs,
                          batch_size=args.batch_size,
                          update_rule=args.update_rule,
