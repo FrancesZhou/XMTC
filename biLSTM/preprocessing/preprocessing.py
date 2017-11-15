@@ -184,8 +184,8 @@ def generate_embedding_from_vocabID(sequence, max_seq_len, word_embeddings):
             #index = vocab.index(sequence[i])
             emb_str = word_embeddings[i]
             embeddings.append(gen_word_emb_from_str(emb_str))
-        except Exception:
-            continue
+        except Exception as e:
+            raise e
     seq_len = len(embeddings)
     zero_len = int(max_seq_len - seq_len)
     embeddings = np.array(embeddings)
