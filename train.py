@@ -45,6 +45,11 @@ def main():
     test_data = load_pickle(args.test_corpus_path)
     train_label = load_pickle(args.train_labels_path)
     test_label = load_pickle(args.test_labels_path)
+    
+    train_data = train_data[:len(train_data)/10]
+    test_data = test_data[:len(test_data)/10]
+    train_label = train_label[:len(train_data)/10]
+    test_label = test_label[:len(test_data)/10]
 
     max_seq_len = get_max_seq_len(train_data)
     # batch_data(data, labels, max_seq_len, num_label, vocab, word_embeddings, batch_size=32):
@@ -59,7 +64,7 @@ def main():
     # test = {'x': test_x, 'y': test_y, 'l': test_l}
     print 'build biLSTM model...'
     # def __init__(self, seq_max_len, input_dim, num_label, num_hidden, num_classify_hidden, label_embeddings):
-    model = biLSTM(max_seq_len, 300, num_labels, 512, 128, label_embeddings, args.batch_size)
+    model = biLSTM(max_seq_len, 300, num_labels, 64, 32, label_embeddings, args.batch_size)
 
     print 'model solver...'
     # def __init__(self, model, train_data, test_data, **kwargs):

@@ -28,13 +28,15 @@ class DataLoader():
             self.num_of_used_data = self.num_batch * self.batch_size
         else:
             print 'error: num of data is not equal to num of y.'
-        self.batch_start = range(self.num_batch) * self.batch_size
-        self.batch_end = range(1, self.num_batch) * self.batch_size
+        self.batch_start = np.arange(self.num_batch) * self.batch_size
+        self.batch_end = np.arange(1, self.num_batch) * self.batch_size
 
     def next_batch(self):
         data_batch = self.data[self.batch_start[self.pointer]:self.batch_end[self.pointer]]
         labels_batch = self.labels[self.batch_start[self.pointer]:self.batch_end[self.pointer]]
         #
+	#print len(data_batch)
+	#print len(labels_batch)
         batch_x = []
         batch_y = []
         batch_l = []
