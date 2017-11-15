@@ -58,6 +58,7 @@ def construct_corpus_from_file_vocab(corpus_path, vocab):
             if len(token_indices):
                 corpus.append(token_indices)
             else:
+		print line_index
                 error_index.append(line_index)
 
         fp.close()
