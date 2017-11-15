@@ -21,8 +21,8 @@ def main():
     parse.add_argument('-train_labels', '--train_labels_path', type=str, default='datasets/AmazonCat-13K/output/train.labels', help='path to the training labels')
     parse.add_argument('-test_labels', '--test_labels_path', type=str, default='datasets/AmazonCat-13K/output/test.labels', help='path to the testing labels')
 
-    parse.add_argument('-vocab', '--vocab_path', type=str, default='datasets/AmazonCat-13K/vocab', help='path to the testing labels')
-    parse.add_argument('-word_embeddings', '--word_embedding_path', type=str, default='datasets/AmazonCat-13K/glove.840B.300d.txt', help='path to the word embeddings')
+    parse.add_argument('-vocab', '--vocab_path', type=str, default='datasets/vocab', help='path to the testing labels')
+    parse.add_argument('-word_embeddings', '--word_embedding_path', type=str, default='datasets/glove.840B.300d.txt', help='path to the word embeddings')
     parse.add_argument('-label_embeddings', '--label_embedding_path', type=str, default='datasets/AmazonCat-13K/all_labels.embeddings',
                        help='path to the label embeddings')
     #parse.add_argument('-o', '--out_dir', type=str, required=True, help='path to the output dir')
