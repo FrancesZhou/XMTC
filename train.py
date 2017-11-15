@@ -59,7 +59,7 @@ def main():
     # test = {'x': test_x, 'y': test_y, 'l': test_l}
     print 'build biLSTM model...'
     # def __init__(self, seq_max_len, input_dim, num_label, num_hidden, num_classify_hidden, label_embeddings):
-    model = biLSTM(max_seq_len, 300, num_labels, 512, 128, label_embeddings)
+    model = biLSTM(max_seq_len, 300, num_labels, 512, 128, label_embeddings, args.batch_size)
 
     print 'model solver...'
     # def __init__(self, model, train_data, test_data, **kwargs):

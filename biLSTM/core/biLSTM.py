@@ -9,19 +9,20 @@ from __future__ import absolute_import
 import tensorflow as tf
 
 class biLSTM(object):
-    def __init__(self, seq_max_len, input_dim, num_label, num_hidden, num_classify_hidden, label_embeddings):
+    def __init__(self, seq_max_len, input_dim, num_label, num_hidden, num_classify_hidden, label_embeddings, batch_size):
         self.num_hidden = num_hidden
         self.seq_max_len = seq_max_len
         self.input_dim = input_dim
         self.num_label = num_label
         self.num_classify_hidden = num_classify_hidden
         self.label_embeddings = label_embeddings
+        self.batch_size = batch_size
 
         self.weight_initializer = tf.contrib.layers.xavier_initializer()
         self.const_initializer = tf.constant_initializer()
 
-        self.x = tf.placeholder(tf.float32, [None, self.seq_max_len, self.input_dim])
-        self.y = tf.placeholder(tf.float32, [None, self.num_label])
+        self.x = tf.placeholder(tf.float32, [self.batch_size, self.seq_max_len, self.input_dim])
+        self.y = tf.placeholder(tf.float32, [self.batch_size, self.num_label])
         self.seqlen = tf.placeholder(tf.int32, [None])
 
     def attention_layer(self, hidden_states, label_embedding, num_hidden, num_label_embedding):
@@ -82,7 +83,7 @@ class biLSTM(object):
         y = tf.concat([1-y, y], axis=1)
 
         #batch_size = tf.shape(x)[0]
-	batch_size = x.get_shape().as_list()[0]
+        # batch_size = x.get_shape().as_list()[0]
 
         # ----------- biLSTM ------------
         # activation: tanh(default)
@@ -102,7 +103,7 @@ class biLSTM(object):
         # ------------ attention and classification --------------
         num_label_embedding = self.label_embeddings.shape[-1]
         y_ = []
-        for i in range(batch_size):
+        for i in range(self.batch_size):
             #hidden_states = outputs[i, 0:self.seqlen[i], :]
             y_.append(
                 self.classification(outputs[i, 0:self.seqlen[i], :], self.label_embeddings, self.num_hidden, num_label_embedding))
