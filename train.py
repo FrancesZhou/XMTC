@@ -42,7 +42,7 @@ def main():
     num_labels = len(label_embeddings)
     print 'load train/test data'
     train_data = load_pickle(args.train_corpus_path)
-    test_data = load_pickle(args.train_corpus_path)
+    test_data = load_pickle(args.test_corpus_path)
     train_label = load_pickle(args.train_labels_path)
     test_label = load_pickle(args.test_labels_path)
 

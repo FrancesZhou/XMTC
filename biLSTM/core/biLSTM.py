@@ -18,7 +18,7 @@ class biLSTM(object):
         self.label_embeddings = label_embeddings
 
         self.weight_initializer = tf.contrib.layers.xavier_initializer()
-        self.const_initializer = tf.contrib_initializer()
+        self.const_initializer = tf.constant_initializer()
 
         self.x = tf.placeholder(tf.float32, [None, self.seq_max_len, self.input_dim])
         self.y = tf.placeholder(tf.float32, [None, self.num_label])
@@ -78,18 +78,18 @@ class biLSTM(object):
         x = self.x
         y = self.y
         # transform y to [batch_size, self.num_label, 2]
-        y = tf.expand_dim(y,-1)
-        y = tf.concatenate([1-y, y], axis=1)
+        y = tf.expand_dims(y,-1)
+        y = tf.concat([1-y, y], axis=1)
 
-        batch_size = tf.shape(x)[0]
+        #batch_size = tf.shape(x)[0]
+	batch_size = x.get_shape().as_list()[0]
 
         # ----------- biLSTM ------------
         # activation: tanh(default)
-        fw_lstm = tf.contrib.rnn.BaisicLSTMCell(self.num_hidden)
-        bw_lstm = tf.contrib.rnn.BaisicLSTMCell(self.num_hidden)
+        fw_lstm = tf.contrib.rnn.BasicLSTMCell(self.num_hidden)
+        bw_lstm = tf.contrib.rnn.BasicLSTMCell(self.num_hidden)
 
-        outputs, states = tf.contrib.rnn.stack_bidirectional_dynamic_rnn(
-            [fw_lstm], [bw_lstm], x, dtype=tf.float32, sequence_length=self.seqlen )
+        outputs, _, _ = tf.contrib.rnn.stack_bidirectional_dynamic_rnn([fw_lstm], [bw_lstm], x, dtype=tf.float32, sequence_length=self.seqlen)
         outputs = tf.stack(outputs)
         print('outputs_shape : ', outputs.get_shape().as_list())
         # transpose the output back to [batch_size, n_step, num_hidden)
@@ -100,9 +100,9 @@ class biLSTM(object):
         # outputs = tf.gather(tf.reshape(outputs, [-1, self.num_hidden]), index)
         # print('after indexing, outputs_shape : ', outputs.get_shape().as_list())
         # ------------ attention and classification --------------
-        num_label_embedding = self.label_embeddings.get_shape().as_list()[-1]
+        num_label_embedding = self.label_embeddings.shape[-1]
         y_ = []
-        for i in batch_size:
+        for i in range(batch_size):
             #hidden_states = outputs[i, 0:self.seqlen[i], :]
             y_.append(
                 self.classification(outputs[i, 0:self.seqlen[i], :], self.label_embeddings, self.num_hidden, num_label_embedding))
