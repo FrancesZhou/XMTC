@@ -48,8 +48,8 @@ def main():
     
     train_data = train_data[:len(train_data)/10]
     test_data = test_data[:len(test_data)/10]
-    train_label = train_label[:len(train_data)/10]
-    test_label = test_label[:len(test_data)/10]
+    train_label = train_label[:len(train_data)]
+    test_label = test_label[:len(test_data)]
 
     max_seq_len = get_max_seq_len(train_data)
     # batch_data(data, labels, max_seq_len, num_label, vocab, word_embeddings, batch_size=32):
