@@ -76,10 +76,14 @@ class ModelSolver(object):
                 #for i in range(5):
                     #print i
                 for i in range(700, train_loader.num_batch):
-                    print i
+                    #print i
                     #if i%50 == 0:
                     #    print i
-                    x, y, seq_l = train_loader.next_batch()
+                    try:
+                        x, y, seq_l = train_loader.next_batch()
+                    except Exception as e:
+                        print i
+                        raise e
                     feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
                                  self.model.seqlen: np.array(seq_l)}
                     _, l_ = sess.run([train_op, loss], feed_dict)
