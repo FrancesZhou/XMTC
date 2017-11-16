@@ -75,8 +75,9 @@ class ModelSolver(object):
                 curr_loss = 0
 		#for i in range(5):
 		#    print i
-                for i in range(train_loader.num_batch):
-                    if i%50 == 0:
+                for i in range(700, train_loader.num_batch):
+		    print i
+                    #if i%50 == 0:
                         print i
                     x, y, seq_l = train_loader.next_batch()
 		    #print len(x)
