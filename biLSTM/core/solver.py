@@ -70,19 +70,16 @@ class ModelSolver(object):
         tf.get_variable_scope().reuse_variables()
         with tf.Session() as sess:
             tf.global_variables_initializer().run()
-	    for e in range(1):
+            for e in range(1):
             #for e in range(self.n_epochs):
                 curr_loss = 0
-		#for i in range(5):
-		#    print i
+                #for i in range(5):
+                    #print i
                 for i in range(700, train_loader.num_batch):
-		    print i
+                    print i
                     #if i%50 == 0:
-                        print i
+                    #    print i
                     x, y, seq_l = train_loader.next_batch()
-		    #print len(x)
-		    #print len(y)
-		    #print len(seq_l)
                     feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
                                  self.model.seqlen: np.array(seq_l)}
                     _, l_ = sess.run([train_op, loss], feed_dict)
@@ -91,15 +88,15 @@ class ModelSolver(object):
 
                 # --- test ---
                 if e  == 0:
-		    print 'test'
+                    print 'test'
                     val_loss = 0
                     c_1 = 0
                     c_3 = 0
                     c_5 = 0
                     #y_prob = []
                     for i in range(test_loader.num_batch):
-			if i%50 == 0:
-			    print i
+                        if i%50 == 0:
+                            print i
                         x, y, seq_l = test_loader.next_batch()
                         feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
                                      self.model.seqlen: np.array(seq_l)}
