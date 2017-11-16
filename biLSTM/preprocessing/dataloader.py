@@ -35,8 +35,8 @@ class DataLoader():
         data_batch = self.data[self.batch_start[self.pointer]:self.batch_end[self.pointer]]
         labels_batch = self.labels[self.batch_start[self.pointer]:self.batch_end[self.pointer]]
         #
-	print len(data_batch)
-	print len(labels_batch)
+	#print len(data_batch)
+	#print len(labels_batch)
         batch_x = []
         batch_y = []
         batch_l = []
