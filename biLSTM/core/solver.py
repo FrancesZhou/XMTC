@@ -76,6 +76,7 @@ class ModelSolver(object):
 		#train_loader.pointer = 738
                 #for i in range(5):
                     #print i
+		#for i in range(10):
                 for i in range(train_loader.num_batch):
                     #print i
                     if i%50 == 0:
@@ -99,6 +100,7 @@ class ModelSolver(object):
                     c_3 = 0
                     c_5 = 0
                     #y_prob = []
+		    #for i in range(10):
                     for i in range(test_loader.num_batch):
                         if i%50 == 0:
                             print i
