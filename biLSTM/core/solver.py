@@ -73,12 +73,15 @@ class ModelSolver(object):
             for e in range(1):
             #for e in range(self.n_epochs):
                 curr_loss = 0
-                #train_loader.pointer = 738
+                train_loader.pointer = 7386
+		print train_loader.num_batch
                 #for i in range(5):
                     #print i
 		        #for i in range(10):
-                for i in range(train_loader.num_batch):
-                    #print i
+                for i in range(7386, train_loader.num_batch):
+                    print i
+		    print train_loader.batch_start[train_loader.pointer]
+		    print train_loader.batch_end[train_loader.pointer]
                     if i % 50 == 0:
                         print i
                     try:
