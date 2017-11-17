@@ -73,13 +73,13 @@ class ModelSolver(object):
             for e in range(1):
             #for e in range(self.n_epochs):
                 curr_loss = 0
-		#train_loader.pointer = 738
+                #train_loader.pointer = 738
                 #for i in range(5):
                     #print i
-		#for i in range(10):
+		        #for i in range(10):
                 for i in range(train_loader.num_batch):
                     #print i
-                    if i%50 == 0:
+                    if i % 50 == 0:
                         print i
                     try:
                         x, y, seq_l = train_loader.next_batch()
@@ -93,16 +93,16 @@ class ModelSolver(object):
                 print('at epoch ' + str(e) + ', train loss is ' + str(curr_loss))
 
                 # --- test ---
-                if e  == 0:
+                if e == 0:
                     print 'test'
                     val_loss = 0
                     c_1 = 0
                     c_3 = 0
                     c_5 = 0
                     #y_prob = []
-		    #for i in range(10):
+		            #for i in range(10):
                     for i in range(test_loader.num_batch):
-                        if i%50 == 0:
+                        if i % 50 == 0:
                             print i
                         x, y, seq_l = test_loader.next_batch()
                         feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
