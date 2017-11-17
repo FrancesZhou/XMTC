@@ -69,7 +69,9 @@ def main():
 
 
     train_labels = load_pickle(os.path.join(args.out_dir, 'train.labels'))
+    test_labels = load_pickle(os.path.join(args.out_dir, 'test.labels'))
     max_num_labels, mean_num_labels = get_max_num_labels(train_labels)
+    max_num_labels2, mean_num_labels2 = get_max_num_labels(test_labels)
     num_labels = int(max_num_labels + mean_num_labels) + 1
     for i in range(10):
         pos_labels = train_labels[i]
