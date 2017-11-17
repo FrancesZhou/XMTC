@@ -75,7 +75,7 @@ class ModelSolver(object):
                 curr_loss = 0
                 #train_loader.pointer = 7386
                 #print train_loader.num_batch
-                #for i in range(5):
+                #for i in range(200):
                     #print i
 		        #for i in range(10):
                 for i in range(train_loader.num_batch):
@@ -103,13 +103,14 @@ class ModelSolver(object):
                     c_3 = 0
                     c_5 = 0
                     #y_prob = []
-		            #for i in range(10):
+		            #for i in range(10):i
+		    #for i in range(200):
                     for i in range(test_loader.num_batch):
                         if i % 100 == 0:
                             print i
                         x, y, seq_l, indices = test_loader.next_batch()
                         feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
-                                     self.model.seqlen: np.array(seq_l), self.label_indices: indices}
+                                     self.model.seqlen: np.array(seq_l), self.model.label_indices: indices}
                         y_p, l_ = sess.run([y_, loss], feed_dict)
                         val_loss += l_
                         count_1, _ = self.precision(y_p, y, 1)
