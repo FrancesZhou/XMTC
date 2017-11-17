@@ -146,6 +146,15 @@ def get_max_seq_len(data):
     max_seq_len = max(all_seq_len)
     return max_seq_len
 
+def get_max_num_labels(labels):
+    num = len(labels)
+    all_num_labels = np.zeros(num)
+    for i in range(num):
+        all_num_labels[i] = len(labels[i])
+    max_num_labels = max(all_num_labels)
+    mean_num_labels = np.mean(all_num_labels)
+    return max_num_labels, mean_num_labels
+
 def batch_data(data, labels, max_seq_len, num_labels, vocab, word_embeddings, batch_size=32):
     num = len(data)
     #max_seq_len = get_max_seq_len(data)
@@ -224,5 +233,17 @@ def gen_word_emb_from_str(str):
 
 def generate_label_vector(labels, num_labels):
     return np.sum(np.eye(num_labels)[labels], axis=0)
+
+def generate_label_vector_of_fixed_length(pos_labels, num_labels, num_all_labels):
+    all_labels = np.arange(num_all_labels)
+    all_neg_labels = np.array(list(set(all_labels) - set(pos_labels)))
+    neg_labels = np.random.choice(all_neg_labels, num_labels-len(pos_labels))
+    index_labels = np.concatenate([pos_labels, neg_labels])
+    value_labels = np.concatenate([np.ones(len(pos_labels), dtype=int), np.zeros(len(neg_labels), dtype=int)])
+    zipped = zip(index_labels, value_labels)
+    zipped = sorted(zipped, key=lambda x: x[0])
+    label_indices, labels = zip(*zipped)
+    return label_indices, labels
+
 
 

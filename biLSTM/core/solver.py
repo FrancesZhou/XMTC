@@ -73,24 +73,24 @@ class ModelSolver(object):
             for e in range(1):
             #for e in range(self.n_epochs):
                 curr_loss = 0
-                train_loader.pointer = 7386
-		print train_loader.num_batch
+                #train_loader.pointer = 7386
+                #print train_loader.num_batch
                 #for i in range(5):
                     #print i
 		        #for i in range(10):
-                for i in range(7386, train_loader.num_batch):
-                    print i
-		    print train_loader.batch_start[train_loader.pointer]
-		    print train_loader.batch_end[train_loader.pointer]
-                    if i % 50 == 0:
+                for i in range(train_loader.num_batch):
+                    #print i
+                    #print train_loader.batch_start[train_loader.pointer]
+                    #print train_loader.batch_end[train_loader.pointer]
+                    if i % 100 == 0:
                         print i
                     try:
-                        x, y, seq_l = train_loader.next_batch()
+                        x, y, seq_l, indices = train_loader.next_batch()
                     except Exception as e:
                         print i
                         raise e
                     feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
-                                 self.model.seqlen: np.array(seq_l)}
+                                 self.model.seqlen: np.array(seq_l), self.model.label_indices: indices}
                     _, l_ = sess.run([train_op, loss], feed_dict)
                     curr_loss += l_
                 print('at epoch ' + str(e) + ', train loss is ' + str(curr_loss))
@@ -105,11 +105,11 @@ class ModelSolver(object):
                     #y_prob = []
 		            #for i in range(10):
                     for i in range(test_loader.num_batch):
-                        if i % 50 == 0:
+                        if i % 100 == 0:
                             print i
-                        x, y, seq_l = test_loader.next_batch()
+                        x, y, seq_l, indices = test_loader.next_batch()
                         feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
-                                     self.model.seqlen: np.array(seq_l)}
+                                     self.model.seqlen: np.array(seq_l), self.label_indices: indices}
                         y_p, l_ = sess.run([y_, loss], feed_dict)
                         val_loss += l_
                         count_1, _ = self.precision(y_p, y, 1)
@@ -123,6 +123,7 @@ class ModelSolver(object):
                     # precision_1 = self.precision(y_prob, y_test_concate, 1)
                     # precision_3 = self.precision(y_prob, y_test_concate, 3)
                     # precision_5 = self.precision(y_prob, y_test_concate, 5)
+                    # precision_1 = c_1 * 1.0 / test_loader.num_of_used_data
                     precision_1 = c_1 * 1.0 / test_loader.num_of_used_data
                     precision_3 = c_3 * 1.0 / test_loader.num_of_used_data
                     precision_5 = c_5 * 1.0 / test_loader.num_of_used_data

@@ -9,7 +9,7 @@ from __future__ import absolute_import
 import os
 import argparse
 import numpy as np
-from biLSTM.preprocessing.preprocessing import get_max_seq_len, construct_train_test_corpus, generate_labels_from_file, generate_label_pair_from_file
+from biLSTM.preprocessing.preprocessing import get_max_seq_len, get_max_num_labels, construct_train_test_corpus, generate_labels_from_file, generate_label_pair_from_file
 from biLSTM.preprocessing.dataloader import DataLoader
 from biLSTM.core.biLSTM import biLSTM
 from biLSTM.core.solver import ModelSolver
@@ -39,25 +39,28 @@ def main():
     print 'load word/label embeddings'
     word_embeddings = load_txt(args.word_embedding_path)
     label_embeddings = load_pickle(args.label_embedding_path)
-    num_labels = len(label_embeddings)
+    num_all_labels = len(label_embeddings)
     print 'load train/test data'
     train_data = load_pickle(args.train_corpus_path)
     test_data = load_pickle(args.test_corpus_path)
     train_label = load_pickle(args.train_labels_path)
     test_label = load_pickle(args.test_labels_path)
     
-    train_data = train_data[:len(train_data)/10]
-    test_data = test_data[:len(test_data)/10]
-    train_label = train_label[:len(train_data)]
-    test_label = test_label[:len(test_data)]
+    # train_data = train_data[:len(train_data)/10]
+    # test_data = test_data[:len(test_data)/10]
+    # train_label = train_label[:len(train_data)]
+    # test_label = test_label[:len(test_data)]
 
     max_seq_len = get_max_seq_len(train_data)
+    max_num_labels, mean_num_labels = get_max_num_labels(train_label)
+    num_labels = int(max_num_labels + mean_num_labels) + 1
+
     # batch_data(data, labels, max_seq_len, num_label, vocab, word_embeddings, batch_size=32):
     print 'create train/test data loader...'
     # train_x, train_y, train_l = batch_data(train_data, train_label, max_seq_len, num_label, vocab, word_embeddings, args.batch_size)
     # test_x, test_y, test_l = batch_data(test_data, test_label, max_seq_len, num_label, vocab, word_embeddings, args.batch_size)
-    train_loader = DataLoader(train_data, train_label, args.batch_size, max_seq_len, num_labels, word_embeddings)
-    test_loader = DataLoader(test_data, test_label, args.batch_size, max_seq_len, num_labels, word_embeddings)
+    train_loader = DataLoader(train_data, train_label, args.batch_size, max_seq_len, num_labels, num_all_labels, word_embeddings)
+    test_loader = DataLoader(test_data, test_label, args.batch_size, max_seq_len, num_labels, num_all_labels, word_embeddings)
 
     # ----- train -----
     # train = {'x': train_x, 'y': train_y, 'l': train_l}

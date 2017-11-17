@@ -9,7 +9,7 @@ from __future__ import absolute_import
 import os
 import argparse
 import numpy as np
-from biLSTM.preprocessing.preprocessing import construct_train_test_corpus, generate_labels_from_file_and_error, generate_label_pair_from_file
+from biLSTM.preprocessing.preprocessing import get_max_num_labels, generate_label_vector_of_fixed_length, construct_train_test_corpus, generate_labels_from_file_and_error, generate_label_pair_from_file
 from biLSTM.utils.io_utils import load_pickle, write_file
 
 def main():
@@ -42,11 +42,11 @@ def main():
     # test_labels: 'datasets/AmazonCat-13K/rawdata/amazonCat_test.txt'
     # out_dir: 'datasets/AmazonCat-13K/output/'
     ## ----------- get train/test corpus -----------
-    vocab = load_pickle(args.vocab_path)
+    #vocab = load_pickle(args.vocab_path)
     #train_corpus, test_corpus = construct_train_test_corpus(vocab, args.train_corpus_path, args.test_corpus_path, args.out_dir)
     ## ----------- get train/test labels -----------
-    train_labels = generate_labels_from_file_and_error(args.train_labels_path, os.path.join(args.out_dir, 'train_error.index'), os.path.join(args.out_dir, 'train.labels'))
-    test_labels = generate_labels_from_file_and_error(args.test_labels_path, os.path.join(args.out_dir, 'test_error.index'), os.path.join(args.out_dir, 'test.labels'))
+    #train_labels = generate_labels_from_file_and_error(args.train_labels_path, os.path.join(args.out_dir, 'train_error.index'), os.path.join(args.out_dir, 'train.labels'))
+    #test_labels = generate_labels_from_file_and_error(args.test_labels_path, os.path.join(args.out_dir, 'test_error.index'), os.path.join(args.out_dir, 'test.labels'))
     # ----------- generate label pairs (used by deepwalk) ----------
     #if args.if_label_pair:
     #    label_pairs = generate_label_pair_from_file(os.path.join(args.out_dir, 'train.labels'), os.path.join(args.out_dir, 'labels.pair'))
@@ -67,6 +67,15 @@ def main():
         # print(set(all_labels)-set(l))
         # print 'done.'
 
+
+    train_labels = load_pickle(os.path.join(args.out_dir, 'train.labels'))
+    max_num_labels, mean_num_labels = get_max_num_labels(train_labels)
+    num_labels = int(max_num_labels + mean_num_labels) + 1
+    for i in range(10):
+        pos_labels = train_labels[i]
+        indices, labels = generate_label_vector_of_fixed_length(pos_labels, num_labels, 13330)
+        print indices
+        print labels
 
 
 
