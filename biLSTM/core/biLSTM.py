@@ -16,7 +16,8 @@ class biLSTM(object):
         self.num_labels = num_labels
         #self.num_label_embedding = num_label_embedding
         self.num_classify_hidden = num_classify_hidden
-        self.label_embeddings = tf.cast(label_embeddings, tf.float32)
+        #self.label_embeddings = tf.cast(label_embeddings, tf.float32)
+        self.label_embeddings = tf.Variable(tf.cast(label_embeddings, tf.float32))
         self.batch_size = batch_size
 
         self.weight_initializer = tf.contrib.layers.xavier_initializer()
