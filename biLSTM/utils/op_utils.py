@@ -27,6 +27,9 @@ def precision(pre, tar, indices):
     ndcg_1 = []
     ndcg_3 = []
     ndcg_5 = []
+    #print len(pre)
+    #print len(tar)
+    #print len(indices)
     for i in range(len(pre)):
         # pre_labels = np.argsort(pre[i])
         label_score = []
@@ -39,10 +42,10 @@ def precision(pre, tar, indices):
         pre_labels = [x[0] for x in label_score]
 
         true_pos = np.squeeze(np.nonzero(tar[i]))
-        true_labels = s_indices[true_pos]
+        true_labels = np.array(s_indices[true_pos])
         r = []
-        for pre in pre_labels:
-            if pre in true_labels:
+        for p_ in pre_labels:
+            if p_ in true_labels:
                 r.append(1)
             else:
                 r.append(0)

@@ -67,7 +67,7 @@ class ModelSolver(object):
                 curr_loss = 0
                 # train_loader.pointer = 7386
                 # print train_loader.num_batch
-                # for i in range(200):
+                #for i in range(200):
                 for i in range(train_loader.num_batch):
                     # print i
                     # print train_loader.batch_start[train_loader.pointer]
@@ -97,7 +97,7 @@ class ModelSolver(object):
                     # ndcg_3 = []
                     # ndcg_5 = []
                     # y_prob = []
-                    # for i in range(200):
+                    #for i in range(200):
                     for i in range(test_loader.num_batch):
                         if i % 100 == 0:
                             print i
