@@ -8,6 +8,7 @@
 		- KATE
 		- Implementation
 		- Problem
+		- procedure
 	- Analysis of raw data
 
 <!-- /MarkdownTOC -->
@@ -104,5 +105,16 @@ For AmazonCat-13K, the label dimensionality is 13330, but the number of labels w
 There are some examples whose texts are invalid. (the words in text cannot be found in vocab) Thus, these examples should be excluded.
 For AmazonCat-13K, valid/invalid train examples: 1182134/4105;
 valid/invalid test examples: 305701/1081
+
+### procedure
+
+when label embeddings are given, (not in trainable variables)
+training for all negative labels, run 50 batches for 4 minutes. 1182134/16 /50 *4/60 = 98 h
+training for limited random negative labels, run 100 batches for 70 seconds. 1182134/16 /100 *70/3600 = 14 h
+
+first try - label embedding fixed, calculate count/all
+p@1 : 0.10524
+p@3 ：0.22905
+p#5 ：0.32749
 
 ## Analysis of raw data
