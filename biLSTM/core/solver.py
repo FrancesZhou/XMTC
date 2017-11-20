@@ -10,9 +10,10 @@ import os
 import time
 import numpy as np
 import tensorflow as tf
-from biLSTM.preprocessing.preprocessing import batch_data, get_max_seq_len, construct_train_test_corpus, \
-    generate_labels_from_file, generate_label_pair_from_file
-from biLSTM.utils.io_utils import load_pickle, write_file, load_txt
+# from biLSTM.preprocessing.preprocessing import batch_data, get_max_seq_len, construct_train_test_corpus, \
+#     generate_labels_from_file, generate_label_pair_from_file
+# from biLSTM.utils.io_utils import load_pickle, write_file, load_txt
+from biLSTM.utils.op_utils import precision
 
 
 class ModelSolver(object):
@@ -43,16 +44,6 @@ class ModelSolver(object):
             # if not os.path.exists(self.log_path):
             #     os.makedirs(self.log_path)
 
-    def precision(self, pre, tar, n):
-        num = len(pre)
-        count = 0
-        for i in range(len(pre)):
-            n_labels = np.argsort(pre[i])[-n:]
-            true_labels = np.squeeze(np.nonzero(tar[i]))
-            if len(np.intersect1d(n_labels, true_labels)):
-                count += 1
-        # return count*1.0/num
-        return count, count * 1.0 / num
 
     def train(self):
         train_loader = self.train_data
@@ -76,7 +67,7 @@ class ModelSolver(object):
                 curr_loss = 0
                 # train_loader.pointer = 7386
                 # print train_loader.num_batch
-                # for i in range(200):
+                #for i in range(200):
                 for i in range(train_loader.num_batch):
                     # print i
                     # print train_loader.batch_start[train_loader.pointer]
@@ -98,11 +89,15 @@ class ModelSolver(object):
                 if e == 0:
                     print 'test'
                     val_loss = 0
-                    c_1 = 0
-                    c_3 = 0
-                    c_5 = 0
+                    metric = []
+                    # p_1 = []
+                    # p_3 = []
+                    # p_5 = []
+                    # ndcg_1 = []
+                    # ndcg_3 = []
+                    # ndcg_5 = []
                     # y_prob = []
-                    # for i in range(200):
+                    #for i in range(200):
                     for i in range(test_loader.num_batch):
                         if i % 100 == 0:
                             print i
@@ -111,26 +106,21 @@ class ModelSolver(object):
                                      self.model.seqlen: np.array(seq_l), self.model.label_indices: indices}
                         y_p, l_ = sess.run([y_, loss], feed_dict)
                         val_loss += l_
-                        count_1, _ = self.precision(y_p, y, 1)
-                        count_3, _ = self.precision(y_p, y, 3)
-                        count_5, _ = self.precision(y_p, y, 5)
-                        c_1 += count_1
-                        c_3 += count_3
-                        c_5 += count_5
+                        batch_pre = precision(y_p, y, indices)
+                        metric.append(batch_pre)
+
                         # y_prob.append(y_p)
                     # y_prob = np.concatenate(y_prob, axis=0)
                     # precision_1 = self.precision(y_prob, y_test_concate, 1)
-                    # precision_3 = self.precision(y_prob, y_test_concate, 3)
-                    # precision_5 = self.precision(y_prob, y_test_concate, 5)
                     # precision_1 = c_1 * 1.0 / test_loader.num_of_used_data
-                    precision_1 = c_1 * 1.0 / test_loader.num_of_used_data
-                    precision_3 = c_3 * 1.0 / test_loader.num_of_used_data
-                    precision_5 = c_5 * 1.0 / test_loader.num_of_used_data
+                    mean_metric = np.mean(metric, axis=0)
                     print 'at epoch' + str(e) + ', test loss is ' + str(val_loss)
-                    print 'precision@1: ' + str(precision_1)
-                    print 'precision@3: ' + str(precision_3)
-                    print 'precision@5: ' + str(precision_5)
-
+                    print 'precision@1: ' + str(mean_metric[0])
+                    print 'precision@3: ' + str(mean_metric[1])
+                    print 'precision@5: ' + str(mean_metric[2])
+                    print 'ndcg@1: ' + str(mean_metric[3])
+                    print 'ndcg@3: ' + str(mean_metric[4])
+                    print 'ndcg@5: ' + str(mean_metric[5])
 
                     # def train(self):
                     #     x = self.train_data['x']
