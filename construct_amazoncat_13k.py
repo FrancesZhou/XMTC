@@ -8,6 +8,7 @@ from __future__ import absolute_import
 
 import os
 import argparse
+import json
 import numpy as np
 from biLSTM.preprocessing.preprocessing import get_max_num_labels, generate_label_vector_of_fixed_length, construct_train_test_corpus, generate_labels_from_file_and_error, generate_label_pair_from_file
 from biLSTM.utils.io_utils import load_pickle, dump_pickle, write_file
@@ -156,7 +157,7 @@ def preprocessing_for_descriptions():
     label_data = {}
     with open(label_train_file) as file:
         label_train_lines = file.readlines()
-        for k, v in train_id_index:
+        for k, v in train_id_index.items():
             labels_str = label_train_lines[v+1].split(' ', 1)[0]
             labels_str = labels_str.split(',')
             labels_doc = [int(label) for label in labels_str]
@@ -164,35 +165,44 @@ def preprocessing_for_descriptions():
 
     with open(label_test_file) as file:
         label_test_lines = file.readlines()
-        for k, v in test_id_index:
+        for k, v in test_id_index.items():
             labels_str = label_test_lines[v+1].split(' ', 1)[0]
             labels_str = labels_str.split(',')
             labels_doc = [int(label) for label in labels_str]
             label_data[k] = labels_doc
-    # ---------- processing
 
-    # for pid in des_data.keys():
-    #     if pid in title_train_data.keys():
-    #         text = title_train_data[pid] + ': '
-    #         id_index = train_id_index[pid]
-    #         label = label_train_data[id_index]
-    #         train_pid.append(pid)
-    #     elif pid in title_test_data.keys():
-    #         text = title_test_data[pid] + ': '
-    #         id_index = test_id_index[pid]
-    #         label = label_test_data[id_index]
-    #         test_pid.append(pid)
-    #     else:
-    #         print 'error!'
-    #     for i in range(len(cat_data[pid])):
-    #         if i == len(cat_data[pid]):
-    #             text = text + cat_data[pid][i] + '.'
-    #         else:
-    #             text = text + cat_data[pid][i] + ';'
-    #     text = text + des_data[pid]
-    #     doc_data[pid] = text
-    #     label_data[pid] = label
+    # save doc_data, label_data
+    #cat_file = 'datasets/AmazonCat-13K/RawData/categories.txt'
+    doc_data_file = 'AmazonCat-13K/output/descriptions/doc_data.json'
+    label_data_file = 'AmazonCat-13K/output/descriptions/label_data.json'
+    with open(doc_data_file, 'w') as file:
+        json.dump(doc_data, file)
+    with open(label_data_file, 'w') as file:
+        json.dump(label_data, file)
 
+def generate_label_pair_from_file():
+    with open('AmazonCat-13K/output/descriptions/label_data.json', 'r') as file:
+        label_data = json.load(file)
+    all_labels = []
+    # get label pairs
+    label_pairs = []
+    for _, labels_doc in label_data.items:
+        all_labels.append(labels_doc)
+        if len(labels_doc) == 1:
+            continue
+        labels_doc = sorted(labels_doc)
+        label_pair_start = labels_doc[0]
+        for label in labels_doc[1:]:
+            label_pairs.append([label_pair_start, label])
+    # delete duplica
+    label_pairs = np.array(label_pairs, dtype=np.int32)
+    label_pairs = np.unique(label_pairs, axis=0)
+
+    all_labels = np.unique(np.concatenate(all_labels))
+    all_label_pair = np.unique(np.concatenate(label_pairs))
+    separate_labels = list(set(all_labels) - set(all_label_pair))
+    print len(separate_labels)
+    return all_labels, label_pairs
 
 def main():
     parse = argparse.ArgumentParser()
@@ -226,7 +236,7 @@ def main():
     ## ----------- get train/test corpus -----------
     # vocab = load_pickle(args.vocab_path)
     preprocessing_for_descriptions()
-
+    generate_label_pair_from_file()
 
     # train_labels = load_pickle(os.path.join(args.out_dir, 'train.labels'))
     # test_labels = load_pickle(os.path.join(args.out_dir, 'test.labels'))
