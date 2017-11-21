@@ -108,13 +108,26 @@ valid/invalid test examples: 305701/1081
 
 ### procedure
 
+----------- using all titles as text -------------
 when label embeddings are given, (not in trainable variables)
 training for all negative labels, run 50 batches for 4 minutes. 1182134/16 /50 *4/60 = 98 h
 training for limited random negative labels, run 100 batches for 70 seconds. 1182134/16 /100 *70/3600 = 14 h
 
-first try - label embedding fixed, calculate count/all
+first try - label embedding fixed, train 1 epoch, calculate count/all
 p@1 : 0.10524
 p@3 ：0.22905
 p#5 ：0.32749
+
+second try - label embedding fixed, train 1 epoch, calculate real precision and ndcg
+p@1 : 0.1046	ndcg@1 : 0.1034
+p@3 : 0.1032	ndcg@3 : 0.1012
+p@5 : 0.1026	ndcg@5 : 0.1037
+
+Comments-1 from Miss Shen
+1. ratio between positive samples and negative samples should be fixed.
+2. use descriptions instead of titles
+3. decrease the dimension of label embedding, delete those separate labels
+
+----------- using descriptions as text -------------
 
 ## Analysis of raw data

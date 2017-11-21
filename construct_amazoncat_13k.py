@@ -10,7 +10,189 @@ import os
 import argparse
 import numpy as np
 from biLSTM.preprocessing.preprocessing import get_max_num_labels, generate_label_vector_of_fixed_length, construct_train_test_corpus, generate_labels_from_file_and_error, generate_label_pair_from_file
-from biLSTM.utils.io_utils import load_pickle, write_file
+from biLSTM.utils.io_utils import load_pickle, dump_pickle, write_file
+
+def preprocessing_for_all_titles(args, vocab):
+    train_corpus, test_corpus = construct_train_test_corpus(vocab, args.train_corpus_path, args.test_corpus_path, args.out_dir)
+    # ----------- get train/test labels -----------
+    train_labels = generate_labels_from_file_and_error(args.train_labels_path,
+                                                       os.path.join(args.out_dir, 'train_error.index'),
+                                                       os.path.join(args.out_dir, 'train.labels'))
+    test_labels = generate_labels_from_file_and_error(args.test_labels_path, os.path.join(args.out_dir, 'test_error.index'),
+                                                      os.path.join(args.out_dir, 'test.labels'))
+    #----------- generate label pairs(used by deepwalk) ----------
+    if args.if_label_pair:
+        label_pairs = generate_label_pair_from_file(os.path.join(args.out_dir, 'train.labels'),
+                                                    os.path.join(args.out_dir, 'labels.pair'))
+        #------------ analysis of labels - -----------
+        label_pairs = load_pickle(os.path.join(args.out_dir, 'labels.pair'))
+        l = label_pairs.flatten()
+        l = np.unique(l)
+        print len(l)
+        print max(l)
+        print min(l)
+        # find those separate labels
+        all_labels = load_pickle(os.path.join(args.out_dir, 'train.labels'))
+        all_labels = np.hstack(all_labels)
+        all_labels = np.unique(all_labels)
+        print len(all_labels)
+        print max(all_labels)
+        print min(all_labels)
+        print(set(all_labels) - set(l))
+        print 'done.'
+
+def preprocessing_for_descriptions():
+    des_file = 'datasets/AmazonCat-13K/RawData/descriptions.txt'
+    cat_file = 'datasets/AmazonCat-13K/RawData/categories.txt'
+    title_train_file = 'datasets/AmazonCat-13K/ProcessedData/AmazonCat-13K_train_map.txt'
+    title_test_file = 'datasets/AmazonCat-13K/ProcessedData/AmazonCat-13K_test_map.txt'
+    label_train_file = 'datasets/AmazonCat-13K/ProcessedData/amazonCat_train.txt'
+    label_test_file = 'datasets/AmazonCat-13K/ProcessedData/amazonCat_test.txt'
+    # corpus: titles: cat1; cat2; cat3. Descriptions
+    # des_data
+    with open(des_file) as file:
+        des_lines = file.readlines()
+        i = 0
+        des_data = {}
+        #print des_lines[-3:]
+        while i<len(des_lines):
+            pid = des_lines[i].split()[-1]
+            des = des_lines[i+1].split(' ', 1)[-1]
+            des_data[pid] = des
+            try:
+                if des_lines[i+2] == '\n':
+                    i += 3
+                else:
+                    print 'error!'
+            except Exception as e:
+                if i+2 == len(des_lines):
+                    break
+                else:
+                    raise e
+    # cat_data
+    with open(cat_file) as file:
+        cat_lines = file.readlines()
+        i = 0
+        cat_data = {}
+        #print cat_lines[-5:]
+        while i<len(cat_lines):
+            pid = cat_lines[i].strip()
+            i += 1
+            cats = []
+            while True:
+                try:
+                    line = cat_lines[i]
+                except Exception as e:
+                    if i == len(cat_lines):
+                        break
+                    else:
+                        raise e
+                if line[0] == ' ':
+                    cats.append(line.strip())
+                    i += 1
+                else:
+                    cat_data[pid] = cats
+                    break
+    no_ids = list(set(des_data.keys()) - set(cat_data.keys()))
+    print len(no_ids)
+    for no_id in no_ids:
+        del des_data[no_id]
+    #print len(list(set(des_data.keys()) - set(cat_data.keys())))
+    no_ids_cat = list(set(cat_data.keys()) - set(des_data.keys()))
+    for no_id in no_ids_cat:
+        del cat_data[no_id]
+
+    # train_id_index
+    doc_data = {}
+    pids = des_data.keys()
+    with open(title_train_file) as file:
+        title_train_lines = file.readlines()
+        train_id_index = {}
+        for i in range(len(title_train_lines)):
+            if len(pids) == 0:
+                break
+            pid, title = title_train_lines[i].split('->', 1)
+            if pid in pids:
+                text = title.strip() + '. Categories: '
+                cats = cat_data[pid]
+                for j in range(len(cats)):
+                    if j == len(cats) - 1:
+                        text = text + cats[j] + '. '
+                    else:
+                        text = text + cats[j] + '; '
+                des = des_data[pid]
+                text = text + 'Description: ' + des
+                doc_data[pid] = text
+                train_id_index[pid] = i
+                pids.remove(pid)
+    # test_id_index
+    with open(title_test_file) as file:
+        title_test_lines = file.readlines()
+        test_id_index = {}
+        for i in range(len(title_test_lines)):
+            if len(pids) == 0:
+                break
+            pid, title = title_test_lines[i].split('->', 1)
+            if pid in pids:
+                text = title.strip() + '. Categories: '
+                cats = cat_data[pid]
+                for j in range(len(cats)):
+                    if j == len(cats) - 1:
+                        text = text + cats[j] + '. '
+                    else:
+                        text = text + cats[j] + '; '
+                des = des_data[pid]
+                text = text + 'Descriptions: ' + des
+                doc_data[pid] = text
+                test_id_index[pid] = i
+                pids.remove(pid)
+    # no_id_title = list(set(des_data.keys()) - set(title_train_data.keys()) - set(title_test_data.keys()))
+    # print len(no_id_title)
+    # if len(no_id_title):
+    #     for no_id in no_id_title:
+    #         del des_data[no_id]
+    # print len(list(set(des_data.keys()) - set(title_train_data.keys()) - set(title_test_data.keys())))
+
+    label_data = {}
+    with open(label_train_file) as file:
+        label_train_lines = file.readlines()
+        for k, v in train_id_index:
+            labels_str = label_train_lines[v+1].split(' ', 1)[0]
+            labels_str = labels_str.split(',')
+            labels_doc = [int(label) for label in labels_str]
+            label_data[k] = labels_doc
+
+    with open(label_test_file) as file:
+        label_test_lines = file.readlines()
+        for k, v in test_id_index:
+            labels_str = label_test_lines[v+1].split(' ', 1)[0]
+            labels_str = labels_str.split(',')
+            labels_doc = [int(label) for label in labels_str]
+            label_data[k] = labels_doc
+    # ---------- processing
+
+    # for pid in des_data.keys():
+    #     if pid in title_train_data.keys():
+    #         text = title_train_data[pid] + ': '
+    #         id_index = train_id_index[pid]
+    #         label = label_train_data[id_index]
+    #         train_pid.append(pid)
+    #     elif pid in title_test_data.keys():
+    #         text = title_test_data[pid] + ': '
+    #         id_index = test_id_index[pid]
+    #         label = label_test_data[id_index]
+    #         test_pid.append(pid)
+    #     else:
+    #         print 'error!'
+    #     for i in range(len(cat_data[pid])):
+    #         if i == len(cat_data[pid]):
+    #             text = text + cat_data[pid][i] + '.'
+    #         else:
+    #             text = text + cat_data[pid][i] + ';'
+    #     text = text + des_data[pid]
+    #     doc_data[pid] = text
+    #     label_data[pid] = label
+
 
 def main():
     parse = argparse.ArgumentParser()
@@ -42,42 +224,20 @@ def main():
     # test_labels: 'datasets/AmazonCat-13K/rawdata/amazonCat_test.txt'
     # out_dir: 'datasets/AmazonCat-13K/output/'
     ## ----------- get train/test corpus -----------
-    #vocab = load_pickle(args.vocab_path)
-    #train_corpus, test_corpus = construct_train_test_corpus(vocab, args.train_corpus_path, args.test_corpus_path, args.out_dir)
-    ## ----------- get train/test labels -----------
-    #train_labels = generate_labels_from_file_and_error(args.train_labels_path, os.path.join(args.out_dir, 'train_error.index'), os.path.join(args.out_dir, 'train.labels'))
-    #test_labels = generate_labels_from_file_and_error(args.test_labels_path, os.path.join(args.out_dir, 'test_error.index'), os.path.join(args.out_dir, 'test.labels'))
-    # ----------- generate label pairs (used by deepwalk) ----------
-    #if args.if_label_pair:
-    #    label_pairs = generate_label_pair_from_file(os.path.join(args.out_dir, 'train.labels'), os.path.join(args.out_dir, 'labels.pair'))
-        # ------------ analysis of labels ------------
-        # label_pairs = load_pickle(os.path.join(args.out_dir, 'labels.pair'))
-        # l = label_pairs.flatten()
-        # l = np.unique(l)
-        # print len(l)
-        # print max(l)
-        # print min(l)
-        # # find those separate labels
-        # all_labels = load_pickle(os.path.join(args.out_dir, 'train.labels'))
-        # all_labels = np.hstack(all_labels)
-        # all_labels = np.unique(all_labels)
-        # print len(all_labels)
-        # print max(all_labels)
-        # print min(all_labels)
-        # print(set(all_labels)-set(l))
-        # print 'done.'
+    # vocab = load_pickle(args.vocab_path)
+    preprocessing_for_descriptions()
 
 
-    train_labels = load_pickle(os.path.join(args.out_dir, 'train.labels'))
-    test_labels = load_pickle(os.path.join(args.out_dir, 'test.labels'))
-    max_num_labels, mean_num_labels = get_max_num_labels(train_labels)
-    max_num_labels2, mean_num_labels2 = get_max_num_labels(test_labels)
-    num_labels = int(max_num_labels + mean_num_labels) + 1
-    for i in range(10):
-        pos_labels = train_labels[i]
-        indices, labels = generate_label_vector_of_fixed_length(pos_labels, num_labels, 13330)
-        print indices
-        print labels
+    # train_labels = load_pickle(os.path.join(args.out_dir, 'train.labels'))
+    # test_labels = load_pickle(os.path.join(args.out_dir, 'test.labels'))
+    # max_num_labels, mean_num_labels = get_max_num_labels(train_labels)
+    # max_num_labels2, mean_num_labels2 = get_max_num_labels(test_labels)
+    # num_labels = int(max_num_labels + mean_num_labels) + 1
+    # for i in range(10):
+    #     pos_labels = train_labels[i]
+    #     indices, labels = generate_label_vector_of_fixed_length(pos_labels, num_labels, 13330)
+    #     print indices
+    #     print labels
 
 
 

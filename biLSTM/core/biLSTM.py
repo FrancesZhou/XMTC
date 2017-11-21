@@ -9,14 +9,14 @@ from __future__ import absolute_import
 import tensorflow as tf
 
 class biLSTM(object):
-    def __init__(self, seq_max_len, input_dim, num_labels, label_embeddings, num_hidden, num_classify_hidden, batch_size):
+    def __init__(self, seq_max_len, input_dim, num_label_embedding, num_hidden, num_classify_hidden, batch_size):
         self.num_hidden = num_hidden
         self.seq_max_len = seq_max_len
         self.input_dim = input_dim
-        self.num_labels = num_labels
-        #self.num_label_embedding = num_label_embedding
+        #self.num_labels = num_labels
+        self.num_label_embedding = num_label_embedding
         self.num_classify_hidden = num_classify_hidden
-        self.label_embeddings = tf.cast(label_embeddings, tf.float32)
+        #self.label_embeddings = tf.cast(label_embeddings, tf.float32)
         #self.label_embeddings = tf.Variable(tf.cast(label_embeddings, tf.float32))
         self.batch_size = batch_size
 
@@ -24,26 +24,27 @@ class biLSTM(object):
         self.const_initializer = tf.constant_initializer()
 
         self.x = tf.placeholder(tf.float32, [self.batch_size, self.seq_max_len, self.input_dim])
-        self.y = tf.placeholder(tf.float32, [self.batch_size, self.num_labels])
+        self.y = tf.placeholder(tf.float32, [self.batch_size, 2])
+        #self.y = tf.placeholder(tf.float32, [self.batch_size, self.num_labels])
         self.seqlen = tf.placeholder(tf.int32, [self.batch_size])
-        self.label_indices = tf.placeholder(tf.int32, [self.batch_size, self.num_labels])
-        #self.label_embeddings = tf.placeholder(tf.float32, [self.batch_size, self.num_labels, self.num_label_embedding])
+        #self.label_indices = tf.placeholder(tf.int32, [self.batch_size, self.num_labels])
+        self.label_embeddings = tf.placeholder(tf.float32, [self.batch_size, self.num_label_embedding])
 
     def attention_layer(self, hidden_states, label_embedding, num_hidden, num_label_embedding):
         # attention: a*W*b
         with tf.variable_scope('att_layer'):
             w = tf.get_variable('w', [num_hidden, num_label_embedding], initializer=self.weight_initializer)
-            #b = tf.get_variable('b', [])
             s = tf.matmul(tf.matmul(hidden_states, w), label_embedding)
-            #s = tf.softmax(s, 0)
             s = tf.expand_dim(tf.softmax(s))
             return tf.reduce_sum(tf.multiply(s, hidden_states), 0)
 
     def attention_layer_all(self, hidden_states, label_embeddings, num_hidden, num_label_embedding, reuse):
+        # for one label, num_labels = 1
         with tf.variable_scope('att_layer', reuse=reuse):
             w = tf.get_variable('w', [num_hidden, num_label_embedding], initializer=self.weight_initializer)
             # hidden_states: [seq_len, num_hidden]
             # label_embeddings: [num_labels, num_label_embedding]
+            # score: h*W*l
             s = tf.matmul(tf.matmul(hidden_states, w), tf.transpose(label_embeddings))
             # s: [seq_len, num_labels]
             s = tf.nn.softmax(s, 0)
@@ -79,13 +80,11 @@ class biLSTM(object):
 
     def build_model(self):
         # x: [batch_size, self.seq_max_len, self.input_dim]
-        # y: [batch_size, self.num_labels]
+        # y: [batch_size, 2]
         x = self.x
         y = self.y
-        # transform y to [batch_size, self.num_labels, 2]
-        y = tf.expand_dims(y, -1)
-        y = tf.concat([1-y, y], axis=1)
-
+        #y = tf.expand_dims(y, -1)
+        #y = tf.concat([1-y, y], axis=1)
         #batch_size = tf.shape(x)[0]
         # batch_size = x.get_shape().as_list()[0]
 
@@ -99,33 +98,35 @@ class biLSTM(object):
         print('outputs_shape : ', outputs.get_shape().as_list())
         # transpose the output back to [batch_size, n_step, num_hidden)
         # outputs = tf.transpose(outputs, [1, 0, 2])
-
         #index = tf.range(0, batch_size)*self.seq_max_len + (self.seqlen - 1)
         # Indexing
         # outputs = tf.gather(tf.reshape(outputs, [-1, self.num_hidden]), index)
         # print('after indexing, outputs_shape : ', outputs.get_shape().as_list())
         # ------------ attention and classification --------------
-        num_label_embedding = self.label_embeddings.shape[-1]
+        #num_label_embedding = self.label_embeddings.shape[-1]
         y_ = []
-        #print 'clssify:'
         for i in range(self.batch_size):
             #hidden_states = outputs[i, 0:self.seqlen[i], :]
             #print i
-            y_.append(self.classification(outputs[i, 0:self.seqlen[i], :],
-                                          tf.gather(self.label_embeddings, self.label_indices[i]),
+            y_i = self.classification(outputs[i, 0:self.seqlen[i], :],
+                                          self.label_embeddings[i],
                                           2*self.num_hidden,
-                                          num_label_embedding,
-                                          reuse=(i!=0)))
+                                          self.num_label_embedding,
+                                          reuse=(i!=0))
+            print tf.shape(tf.squeeze(y_i))
+            y_.append(tf.squeeze(y_i))
         y_ = tf.stack(y_)
         # predict labels
-        y_labels = tf.argmax(y_, axis=-1)
-        y_labels_prob = y_[:,:,-1]
-        print y_labels_prob.get_shape().as_list()
+        # y_labels = tf.argmax(y_, axis=-1)
+        # y_labels_prob = y_[:,:,-1]
+        # print y_labels_prob.get_shape().as_list()
         # calculate loss
-        y_tar = tf.reshape(y, [-1, 2])
-        y_pre = tf.reshape(y_, [-1, 2])
+        # y_tar = tf.reshape(y, [-1, 2])
+        # y_pre = tf.reshape(y_, [-1, 2])
+        y_pre = y_
+        y_tar = y
         loss = tf.losses.sigmoid_cross_entropy(y_tar, y_pre)
-        return y_labels_prob, loss
+        return y_pre, loss
 
 
 
