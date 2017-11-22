@@ -63,8 +63,8 @@ class DataLoader():
 
 
 class DataLoader2():
-    def __init__(self, doc_data, label_data, all_labels, label_embeddings, batch_size, vocab, word_embeddings, pos_neg_ratio, max_seq_len=None):
-        self.doc_data = doc_data
+    def __init__(self, doc_wordID_data, label_data, all_labels, label_embeddings, batch_size, vocab, word_embeddings, pos_neg_ratio, max_seq_len=None):
+        self.doc_wordID_data = doc_wordID_data
         self.label_data = label_data
         self.pids = self.label_data.keys()
         self.all_labels = all_labels
@@ -77,25 +77,21 @@ class DataLoader2():
         self.initialize_dataloader()
 
     def initialize_dataloader(self):
-        print 'num of doc: ' + str(len(self.doc_data))
+        print 'num of doc: ' + str(len(self.doc_wordID_data))
         print 'num of y: ' + str(len(self.label_data))
         # define number of positive and negative samples in a batch
         self.num_pos = self.batch_size / (self.pos_neg_ratio + 1)
         self.num_neg = self.batch_size - self.num_pos
         # doc_token_data consists of wordIDs in vocab.
-        self.doc_token_data = {}
         self.doc_length = {}
         all_length = []
-	count = 0
-        for pid, seq in self.doc_data.items():
-	    #print pid
-	    count += 1
-	    if count % 50 == 0:
-		print count
-            token_indices = get_wordID_from_vocab(seq, self.vocab)
-            self.doc_token_data[pid] = token_indices
-            all_length.append(len(token_indices))
-            self.doc_length[pid] = len(token_indices)
+        count = 0
+        for pid, seq in self.doc_wordID_data.items():
+            count += 1
+            if count % 50 == 0:
+                print count
+            all_length.append(len(seq))
+            self.doc_length[pid] = len(seq)
         # assign max_seq_len if None
         if self.max_seq_len is None:
             self.max_seq_len = max(all_length)
@@ -128,11 +124,11 @@ class DataLoader2():
             pid, label = self.generate_pos_sample()
             batch_pid.append(pid)
             batch_label.append(label)
-            _, embeddings = generate_embedding_from_vocabID(self.doc_token_data[pid], self.max_seq_len, self.word_embeddings)
+            _, embeddings = generate_embedding_from_vocabID(self.doc_wordID_data[pid], self.max_seq_len, self.word_embeddings)
             batch_x.append(embeddings)
             batch_y.append([0, 1])
             batch_length.append(self.doc_length[pid])
-            batch_label_embedding.append(self.word_embeddings[label])
+            batch_label_embedding.append(self.label_embeddings[label])
             if not self.pids_copy:
                 self.end_of_data = True
                 break
@@ -141,11 +137,11 @@ class DataLoader2():
             pid, label = self.generate_neg_sample()
             batch_pid.append(pid)
             batch_label.append(label)
-            _, embeddings = generate_embedding_from_vocabID(self.doc_token_data[pid], self.max_seq_len, self.word_embeddings)
+            _, embeddings = generate_embedding_from_vocabID(self.doc_wordID_data[pid], self.max_seq_len, self.word_embeddings)
             batch_x.append(embeddings)
             batch_y.append([1, 0])
             batch_length.append(self.doc_length[pid])
-            batch_label_embedding.append(self.word_embeddings[label])
+            batch_label_embedding.append(self.label_embeddings[label])
         return batch_pid, batch_label, batch_x, batch_y, batch_length, batch_label_embedding
 
     def reset_data(self):

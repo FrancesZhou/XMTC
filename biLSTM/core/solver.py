@@ -65,14 +65,10 @@ class ModelSolver(object):
                 while ~train_loader.end_of_data:
                     if i % 100 == 0:
                         print i
-                    #try:
                     _, _, x, y, seq_l, label_emb = train_loader.next_batch()
-                    #except Exception as e:
-                    #    print i
-                    #    raise e
-		    if len(x) < self.batch_size:
-			train_loader.reset_data()
-			break
+                    if len(x) < self.batch_size:
+                        train_loader.reset_data()
+                        break
                     feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
                                  self.model.seqlen: np.array(seq_l), self.model.label_embeddings: label_emb}
                     _, l_ = sess.run([train_op, loss], feed_dict)
@@ -95,9 +91,9 @@ class ModelSolver(object):
                             print i
                         batch_pid, batch_label, x, y, seq_l, label_emb = test_loader.next_batch()
                         if len(batch_pid) < self.batch_size:
-			    test_loader.reset_data()
-			    break
-			feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
+                            test_loader.reset_data()
+                            break
+                        feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
                                      self.model.seqlen: np.array(seq_l), self.model.label_embeddings: label_emb}
                         y_p, l_ = sess.run([y_, loss], feed_dict)
                         val_loss += l_

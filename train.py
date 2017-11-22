@@ -17,8 +17,8 @@ from biLSTM.utils.io_utils import load_pickle, load_txt
 
 def main():
     parse = argparse.ArgumentParser()
-    parse.add_argument('-doc_data', '--doc_data_path', type=str,
-                       default='datasets/AmazonCat-13K/output/descriptions/label_pair/doc_data.pkl',
+    parse.add_argument('-doc_wordID_data', '--doc_wordID_data_path', type=str,
+                       default='datasets/AmazonCat-13K/output/descriptions/label_pair/doc_wordID_data.pkl',
                        help='path to the documents')
     parse.add_argument('-label_data', '--label_data_path', type=str,
                        default='datasets/AmazonCat-13K/output/descriptions/label_pair/label_data.pkl',
@@ -54,11 +54,11 @@ def main():
     #label_embeddings = load_pickle(args.label_embedding_path)
     label_embeddings = generate_label_embedding_from_file(args.label_embedding_path)
     print 'load train/test data'
-    doc_data = load_pickle(args.doc_data_path)
+    doc_wordID_data = load_pickle(args.doc_wordID_data_path)
     label_data = load_pickle(args.label_data_path)
     train_pid = load_pickle(args.train_pid_path)
     test_pid = load_pickle(args.test_pid_path)
-    train_doc, train_label, test_doc, test_label = get_train_test_doc_label_data(doc_data, label_data, train_pid, test_pid)
+    train_doc, train_label, test_doc, test_label = get_train_test_doc_label_data(doc_wordID_data, label_data, train_pid, test_pid)
     # train_data = train_data[:len(train_data)/10]
     # test_data = test_data[:len(test_data)/10]
     # train_label = train_label[:len(train_data)]

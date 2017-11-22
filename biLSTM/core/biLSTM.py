@@ -44,15 +44,15 @@ class biLSTM(object):
             # label_embeddings: [num_labels, num_label_embedding]
             # score: h*W*l
             #s = tf.matmul(tf.matmul(hidden_states, w), tf.transpose(label_embeddings))
-	    s = tf.matmul(tf.matmul(hidden_states, w), tf.expand_dims(label_embeddings, axis=-1))
-	    #s: [seq_len, num_labels]
-	    s = tf.nn.softmax(s, 0)
-	    # s_expand: [num_labels, seq_len, 1]
-	    s_expand = tf.expand_dims(tf.transpose(s), axis=-1)
-	    # s_hidden: [num_labels, seq_len, num_hidden]
-	    s_hidden = tf.multiply(s_expand, hidden_states)
-	    return tf.reduce_sum(s_hidden, axis=1)
-	    #s = tf.reduce_sum(tf.multiply(tf.matmul(hidden_states, w), label_embeddings), axis=-1)
+            s = tf.matmul(tf.matmul(hidden_states, w), tf.expand_dims(label_embeddings, axis=-1))
+            #s: [seq_len, num_labels]
+            s = tf.nn.softmax(s, 0)
+            # s_expand: [num_labels, seq_len, 1]
+            s_expand = tf.expand_dims(tf.transpose(s), axis=-1)
+            # s_hidden: [num_labels, seq_len, num_hidden]
+            s_hidden = tf.multiply(s_expand, hidden_states)
+            return tf.reduce_sum(s_hidden, axis=1)
+            #s = tf.reduce_sum(tf.multiply(tf.matmul(hidden_states, w), label_embeddings), axis=-1)
             # s: [seq_len]
             #s = tf.nn.softmax(s)
             #s_hidden = tf.multiply(tf.expand_dims(s, axis=-1), hidden_states)
@@ -71,7 +71,7 @@ class biLSTM(object):
             with tf.variable_scope('label'):
                 w = tf.get_variable('w', [num_label_embedding, self.num_classify_hidden], initializer=self.weight_initializer)
                 #label_att = tf.matmul(label_embeddings, w)
-		label_att = tf.matmul(tf.expand_dims(label_embeddings, axis=0), w)
+                label_att = tf.matmul(tf.expand_dims(label_embeddings, axis=0), w)
             b = tf.get_variable('b', [self.num_classify_hidden], initializer=self.const_initializer)
             z_label_plus = tf.nn.relu(z_att + label_att) + b
             # z_label_plus: [num_labels, num_classify_hidden]

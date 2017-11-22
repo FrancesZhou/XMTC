@@ -10,7 +10,7 @@ import os
 import argparse
 import json
 import numpy as np
-from biLSTM.preprocessing.preprocessing import generate_label_embedding_from_file, generate_label_vector_of_fixed_length, construct_train_test_corpus, generate_labels_from_file_and_error, generate_label_pair_from_file
+from biLSTM.preprocessing.preprocessing import get_wordID_from_vocab, generate_label_embedding_from_file, generate_label_vector_of_fixed_length, construct_train_test_corpus, generate_labels_from_file_and_error, generate_label_pair_from_file
 from biLSTM.utils.io_utils import load_pickle, dump_pickle, write_file
 
 def preprocessing_for_all_titles(args, vocab):
@@ -201,7 +201,8 @@ def generate_label_pair_from_file():
     label_pairs = np.array(label_pairs, dtype=np.int32)
     label_pairs = np.unique(label_pairs, axis=0)
 
-    all_labels = np.unique(np.concatenate(all_labels))
+    all_labels = np.concatenate(all_labels)
+    all_labels = np.unique(all_labels)
     all_label_pair = np.unique(np.concatenate(label_pairs))
     separate_labels = list(set(all_labels) - set(all_label_pair))
     print len(separate_labels)
@@ -245,6 +246,18 @@ def get_valid_doc_label_data(separate_labels):
     dump_pickle(train_pid, 'datasets/AmazonCat-13K/output/descriptions/label_pair/train_pid.pkl')
     dump_pickle(test_pid, 'datasets/AmazonCat-13K/output/descriptions/label_pair/test_pid.pkl')
 
+def get_doc_wordID_data_from_vocab(vocab):
+    doc_data = load_pickle('datasets/AmazonCat-13K/output/descriptions/label_pair/doc_data.pkl')
+    doc_token_data = {}
+    count = 0
+    for pid, seq in doc_data.items():
+        count += 1
+        if count % 50 == 0:
+            print count
+        token_indices = get_wordID_from_vocab(seq, vocab)
+        doc_token_data[pid] = token_indices
+    doc_wordID_data_file = 'datasets/AmazonCat-13K/output/descriptions/label_pair/doc_wordID_data.pkl'
+    dump_pickle(doc_token_data, doc_wordID_data_file)
 
 def main():
     parse = argparse.ArgumentParser()
@@ -271,14 +284,15 @@ def main():
     args = parse.parse_args()
 
     ## ----------- get train/test corpus -----------
-    vocab = load_pickle(args.vocab_path)
     # preprocessing_for_descriptions()
-    # _, separate_labels = generate_label_pair_from_file()
+    #_, separate_labels = generate_label_pair_from_file()
     # separate_labels = [342, 744, 5960]
     # write_label_pair()
     # get_valid_doc_label_data(separate_labels)
     # label_embeddings = generate_label_embedding_from_file('datasets/AmazonCat-13K/output/descriptions/label_pair/label.embeddings')
     # dump_pickle(label_embeddings, 'datasets/AmazonCat-13K/output/descriptions/label_pair/label_embeddings.pkl')
+    vocab = load_pickle(args.vocab_path)
+    get_doc_wordID_data_from_vocab(vocab)
 
 
 
