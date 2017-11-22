@@ -9,22 +9,35 @@ from __future__ import absolute_import
 import os
 import argparse
 import numpy as np
-from biLSTM.preprocessing.preprocessing import get_max_seq_len, get_max_num_labels, construct_train_test_corpus, generate_labels_from_file, generate_label_pair_from_file
-from biLSTM.preprocessing.dataloader import DataLoader
+from biLSTM.preprocessing.preprocessing import get_max_num_labels, get_train_test_doc_label_data
+from biLSTM.preprocessing.dataloader import DataLoader2
 from biLSTM.core.biLSTM import biLSTM
 from biLSTM.core.solver import ModelSolver
-from biLSTM.utils.io_utils import load_pickle, write_file, load_txt
+from biLSTM.utils.io_utils import load_pickle, load_txt
 
 def main():
     parse = argparse.ArgumentParser()
-    parse.add_argument('-train_corpus', '--train_corpus_path', type=str, default='datasets/AmazonCat-13K/output/train.corpus', help='path to the training corpus')
-    parse.add_argument('-test_corpus', '--test_corpus_path', type=str, default='datasets/AmazonCat-13K/output/test.corpus', help='path to the testing corpus')
-    parse.add_argument('-train_labels', '--train_labels_path', type=str, default='datasets/AmazonCat-13K/output/train.labels', help='path to the training labels')
-    parse.add_argument('-test_labels', '--test_labels_path', type=str, default='datasets/AmazonCat-13K/output/test.labels', help='path to the testing labels')
-
-    parse.add_argument('-vocab', '--vocab_path', type=str, default='datasets/vocab', help='path to the testing labels')
-    parse.add_argument('-word_embeddings', '--word_embedding_path', type=str, default='datasets/glove.840B.300d.txt', help='path to the word embeddings')
-    parse.add_argument('-label_embeddings', '--label_embedding_path', type=str, default='datasets/AmazonCat-13K/all_labels.embeddings',
+    parse.add_argument('-doc_data', '--doc_data_path', type=str,
+                       default='datasets/AmazonCat-13K/output/descriptions/label_pair/doc_data.pkl',
+                       help='path to the documents')
+    parse.add_argument('-label_data', '--label_data_path', type=str,
+                       default='datasets/AmazonCat-13K/output/descriptions/label_pair/label_data.pkl',
+                       help='path to the labels')
+    parse.add_argument('-train_pid', '--train_pid_path', type=str,
+                       default='datasets/AmazonCat-13K/output/descriptions/label_pair/train_pid.pkl',
+                       help='path to the training pids')
+    parse.add_argument('-test_pid', '--test_pid_path', type=str,
+                       default='datasets/AmazonCat-13K/output/descriptions/label_pair/test_pid.pkl',
+                       help='path to the testing pids')
+    parse.add_argument('-all_labels', '--all_labels_path', type=str,
+                       default='datasets/AmazonCat-13K/output/descriptions/label_pair/all_labels.pkl',
+                       help='path to the all_labels')
+    parse.add_argument('-vocab', '--vocab_path', type=str, default='datasets/vocab', help='path to the vocab')
+    parse.add_argument('-word_embeddings', '--word_embedding_path', type=str,
+                       default='datasets/glove.840B.300d.txt',
+                       help='path to the word embeddings')
+    parse.add_argument('-label_embeddings', '--label_embedding_path', type=str,
+                       default='datasets/AmazonCat-13K/output/descriptions/label_pair/label_embeddings.pkl',
                        help='path to the label embeddings')
     #parse.add_argument('-o', '--out_dir', type=str, required=True, help='path to the output dir')
     # -- default
@@ -35,39 +48,33 @@ def main():
     args = parse.parse_args()
 
     # x,y,l- input
-    #vocab = load_pickle(args.vocab_path)
+    vocab = load_pickle(args.vocab_path)
     print 'load word/label embeddings'
+    # word_embeddings: readlines() from .txt file
+    # word_embeddings: 'word': word_embedding\n
     word_embeddings = load_txt(args.word_embedding_path)
     label_embeddings = load_pickle(args.label_embedding_path)
-    num_all_labels = len(label_embeddings)
     print 'load train/test data'
-    train_data = load_pickle(args.train_corpus_path)
-    test_data = load_pickle(args.test_corpus_path)
-    train_label = load_pickle(args.train_labels_path)
-    test_label = load_pickle(args.test_labels_path)
-    
+    doc_data = load_pickle(args.doc_data_path)
+    label_data = load_pickle(args.label_data_path)
+    train_pid = load_pickle(args.train_pid_path)
+    test_pid = load_pickle(args.test_pid_path)
+    train_doc, train_label, test_doc, test_label = get_train_test_doc_label_data(doc_data, label_data, train_pid, test_pid)
     # train_data = train_data[:len(train_data)/10]
     # test_data = test_data[:len(test_data)/10]
     # train_label = train_label[:len(train_data)]
     # test_label = test_label[:len(test_data)]
-
-    max_seq_len = get_max_seq_len(train_data)
+    all_labels = load_pickle(args.all_labels_path)
+    print 'create train/test data loader...'
+    train_loader = DataLoader2(train_doc, train_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, pos_neg_ratio=1)
+    max_seq_len = train_loader.max_seq_len
+    test_loader = DataLoader2(test_doc, test_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, pos_neg_ratio=1, max_seq_len=max_seq_len)
     max_num_labels, mean_num_labels = get_max_num_labels(train_label)
     num_labels = int(max_num_labels + mean_num_labels) + 1
-
-    # batch_data(data, labels, max_seq_len, num_label, vocab, word_embeddings, batch_size=32):
-    print 'create train/test data loader...'
-    # train_x, train_y, train_l = batch_data(train_data, train_label, max_seq_len, num_label, vocab, word_embeddings, args.batch_size)
-    # test_x, test_y, test_l = batch_data(test_data, test_label, max_seq_len, num_label, vocab, word_embeddings, args.batch_size)
-    train_loader = DataLoader(train_data, train_label, args.batch_size, max_seq_len, num_labels, num_all_labels, word_embeddings)
-    test_loader = DataLoader(test_data, test_label, args.batch_size, max_seq_len, num_labels, num_all_labels, word_embeddings)
-
     # ----- train -----
-    # train = {'x': train_x, 'y': train_y, 'l': train_l}
-    # test = {'x': test_x, 'y': test_y, 'l': test_l}
     print 'build biLSTM model...'
-    # def __init__(self, seq_max_len, input_dim, num_labels, label_embeddings, num_hidden, num_classify_hidden, batch_size):
-    model = biLSTM(max_seq_len, 300, num_labels, label_embeddings, 64, 32, args.batch_size)
+    # (self, max_seq_len, input_dim, num_label_embedding, num_hidden, num_classify_hidden)
+    model = biLSTM(max_seq_len, 300, 64, 64, 32)
 
     print 'model solver...'
     # def __init__(self, model, train_data, test_data, **kwargs):
@@ -78,7 +85,6 @@ def main():
                          learning_rate=args.learning_rate)
     print 'begin training...'
     solver.train()
-
 
 
 if __name__ == "__main__":

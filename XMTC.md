@@ -129,5 +129,37 @@ Comments-1 from Miss Shen
 3. decrease the dimension of label embedding, delete those separate labels
 
 ----------- using descriptions as text -------------
+categories: 2674 products
+descriptions: 1680 products
+set(descriptions) - set(categories): 91 products. Thus, we use 1589 categories and descriptions.
+FILE:
+doc_data (len-1589): {'pid': 'title'+'Categories: '+categories+'Descriptions: '+descriptions, ...}
+label_data (len-1589): {'pid': [label1,label2,...], 'pid': [label1,label2, ...], ...}
+train_pid (len-1290): [pid0, pid1, ..., pid1289]
+test_pid (len-299): [pid0, pid1, ..., pid298]
+
+all_labels (len-1788)
+all_labels_in_pair (len-1785)
+separate labels: 342, 744, 5960
+After removing separate labels, number of train/test examples is 1234/282, doc_data/label_data (len-1516)
+FILE:
+all_labels (len-1785): [label1, label2, ..., label1784]
+doc_data (len-1516): {'pid': 'title'+'Categories: '+categories+'Descriptions: '+descriptions, ...}
+label_data (len-1516): {'pid': [label1,label2,...], 'pid': [label1,label2, ...], ...}
+train_pid (len-1234): [pid0, pid1, ..., pid1233]
+test_pid (len-282): [pid0, pid1, ..., pid281]
+
+try:
+1. use descriptions, deepwalk
+2. use descriptions, LINE
+3. use descriptions, label embeddings represented as aggregates of word embeddings
+
+when generating postive samples,
+1) randomly choose one pid from train_pid
+2) randomly choose one label from label_data[pid]
+3) follow-up processing: remove the label in label_data[pid], if label_data[pid] is empty: train_pid.remove(pid), del label_data[pid].
+when generating negative samples,
+1) randomly choose one pid from train_pid
+2) randomly choose one label from set(all_labels)-set(label_data[pid])
 
 ## Analysis of raw data

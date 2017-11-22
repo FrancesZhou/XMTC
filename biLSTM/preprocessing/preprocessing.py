@@ -15,24 +15,26 @@ def not_empty(s):
     #return s.strip()
     return s and s.strip()
 
-def construct_corpus_from_file(corpus_path):
-    corpus = []
-    try:
-        fp = open(corpus_path, 'r')
-        for line in open(corpus_path):
-            line = fp.readline()
-            text = line.split('->', 1)[1]
-            all_tokens = re.split('([A-Za-z]+)|([0-9]+)|(\W)', text)
-            #print all_tokens
-            all_tokens = filter(not_empty, all_tokens)
-            all_tokens = [e.strip() for e in all_tokens]
-            corpus.append(all_tokens)
+# input: a text with several words, vocab
+# output: a list consisted of wordIDs in vocab
+def get_wordID_from_vocab(text, vocab):
+    all_tokens = re.split('([A-Za-z]+)|([0-9]+)|(\W)', text)
+    all_tokens = filter(not_empty, all_tokens)
+    all_tokens = [e.strip() for e in all_tokens]
+    # check if tokens are in the vocab
+    token_indices = []
+    for t in all_tokens:
+        try:
+            ind = vocab.index(t)
+            token_indices.append(ind)
+        except:
+            continue
+    return token_indices
 
-        fp.close()
-    except Exception as e:
-        raise e
-    return corpus
-
+# input: corpus_file (N titles after pid->)
+# output:
+# N lists which contain wordIDs in vocab,
+# error_index which refers to those invalid title words
 def construct_corpus_from_file_vocab(corpus_path, vocab):
     corpus = []
     line_index = 0
@@ -44,7 +46,6 @@ def construct_corpus_from_file_vocab(corpus_path, vocab):
             line_index += 1
             text = line.split('->', 1)[1]
             all_tokens = re.split('([A-Za-z]+)|([0-9]+)|(\W)', text)
-            #print all_tokens
             all_tokens = filter(not_empty, all_tokens)
             all_tokens = [e.strip() for e in all_tokens]
             # check if tokens are in the vocab
@@ -60,14 +61,14 @@ def construct_corpus_from_file_vocab(corpus_path, vocab):
             else:
                 print line_index
                 error_index.append(line_index)
-
         fp.close()
     except Exception as e:
         raise e
-    print len(corpus)
-    print len(error_index)
+    # print len(corpus)
+    # print len(error_index)
     return corpus, error_index
 
+# construct train/test corpus
 def construct_train_test_corpus(vocab, train_path, test_path, output):
     train_corpus, train_error_index = construct_corpus_from_file_vocab(train_path, vocab)
     test_corpus, test_error_index = construct_corpus_from_file_vocab(test_path, vocab)
@@ -77,6 +78,9 @@ def construct_train_test_corpus(vocab, train_path, test_path, output):
     dump_pickle(test_error_index, os.path.join(output, 'test_error.index'))
     return train_corpus, test_corpus
 
+# input: label_file (N label+feature)
+# output: labels which contain positive labels for each line
+# delete error lines
 def generate_labels_from_file_and_error(file_name, error_file, output):
     labels = []
     error_index = load_pickle(error_file)
@@ -97,18 +101,17 @@ def generate_labels_from_file_and_error(file_name, error_file, output):
             labels.append(labels_doc)
     except Exception as e:
         raise e
-    # delete error index
-    # for ind in error_index:
-    #     del labels[ind]
     print 'num of y_label: ' + str(len(labels))
     dump_pickle(labels, output)
     return labels
 
+# input: label_file (N label+feature)
+# output: labels which contain positive labels for each product
 def generate_labels_from_file(file_name, output):
     labels = []
     try:
         fp = open(file_name, 'r')
-        header = fp.readline()
+        _ = fp.readline()
         while True:
             line = fp.readline()
             if not line:
@@ -122,6 +125,8 @@ def generate_labels_from_file(file_name, output):
     dump_pickle(labels, output)
     return labels
 
+# input: labels (lists) which contain positive labels for each product
+# output: label pairs used for creating label.edgelist
 def generate_label_pair_from_file(file_name, output):
     labels = load_pickle(file_name)
     label_pairs = []
@@ -138,6 +143,8 @@ def generate_label_pair_from_file(file_name, output):
     dump_pickle(label_pairs, output)
     return label_pairs
 
+# input: data
+# output: get maximum length of all data
 def get_max_seq_len(data):
     num = len(data)
     all_seq_len = np.zeros(num)
@@ -146,6 +153,8 @@ def get_max_seq_len(data):
     max_seq_len = max(all_seq_len)
     return max_seq_len
 
+# input: labels (lists)
+# output: get maximum/mean number of positive labels in all products
 def get_max_num_labels(labels):
     num = len(labels)
     all_num_labels = np.zeros(num)
@@ -157,7 +166,6 @@ def get_max_num_labels(labels):
 
 def batch_data(data, labels, max_seq_len, num_labels, vocab, word_embeddings, batch_size=32):
     num = len(data)
-    #max_seq_len = get_max_seq_len(data)
     x = []
     y = []
     length = []
@@ -171,7 +179,6 @@ def batch_data(data, labels, max_seq_len, num_labels, vocab, word_embeddings, ba
         # --- x
         for s in range(i, max(i+batch_size, num)):
             try:
-                #seq_len, emb = generate_embedding(data[s], max_seq_len, vocab, word_embeddings)
                 seq_len, emb = generate_embedding_from_vocabID(data[s], max_seq_len, word_embeddings)
             except Exception as e:
                 print s
@@ -186,13 +193,14 @@ def batch_data(data, labels, max_seq_len, num_labels, vocab, word_embeddings, ba
         i = i + batch_size
     return x, y, length
 
+# input: sequence which contains word indices in vocab, maximum sequence length, word_embeddings
+# output: real sequence length, embedding matrix for sequence
 def generate_embedding_from_vocabID(sequence, max_seq_len, word_embeddings):
     embeddings = []
     seq_len = min(len(sequence), max_seq_len)
     for i in range(seq_len):
         try:
-            #index = vocab.index(sequence[i])
-            emb_str = word_embeddings[i]
+            emb_str = word_embeddings[sequence[i]]
             embeddings.append(gen_word_emb_from_str(emb_str))
         except Exception as e:
             raise e
@@ -206,6 +214,8 @@ def generate_embedding_from_vocabID(sequence, max_seq_len, word_embeddings):
         embeddings = np.concatenate((embeddings, zero_emb), axis=0)
     return seq_len, embeddings
 
+# input: sequence which contains words, maximum sequence length, vocab, word_embeddings
+# output: real sequence length, embedding matrix for sequence
 def generate_embedding(sequence, max_seq_len, vocab, word_embeddings):
     embeddings = []
     seq_len = min(len(sequence), max_seq_len)
@@ -226,6 +236,8 @@ def generate_embedding(sequence, max_seq_len, vocab, word_embeddings):
         embeddings = np.concatenate((embeddings, zero_emb), axis=0)
     return seq_len, embeddings
 
+# input: line in word_embedding txt
+# output: word embedding
 def gen_word_emb_from_str(str):
     _, v_str = str.split(' ', 1)
     v = [float(e) for e in v_str.split()]
@@ -245,5 +257,30 @@ def generate_label_vector_of_fixed_length(pos_labels, num_labels, num_all_labels
     label_indices, labels = zip(*zipped)
     return label_indices, labels
 
+# input: doc_data, label_data, train_pid, test_pid
+# output: train_doc, train_label, test_doc, test_label
+def get_train_test_doc_label_data(doc_data, label_data, train_pid, test_pid):
+    train_doc = {}
+    train_label = {}
+    for pid in train_pid:
+        train_doc[pid] = doc_data[pid]
+        train_label[pid] = label_data[pid]
+    test_doc = {}
+    test_label = {}
+    for pid in test_pid:
+        test_doc[pid] = doc_data[pid]
+        test_label[pid] = label_data[pid]
+    return train_doc, train_label, test_doc, test_label
 
+# input: label_embedding txt
+# output: dict of label_embedding: {label: embedding, ...}
+def generate_label_embedding_from_file(file):
+    label_embeddings = {}
+    with open(file, 'r') as df:
+        lines = df.readlines()
+        for line in lines[1:]:
+            label, v_str = line.split(' ', 1)
+            v = [float(e) for e in v_str.split()]
+            label_embeddings[int(label)] = v
+    return label_embeddings
 

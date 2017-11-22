@@ -10,7 +10,7 @@ import os
 import argparse
 import json
 import numpy as np
-from biLSTM.preprocessing.preprocessing import get_max_num_labels, generate_label_vector_of_fixed_length, construct_train_test_corpus, generate_labels_from_file_and_error, generate_label_pair_from_file
+from biLSTM.preprocessing.preprocessing import generate_label_embedding_from_file, generate_label_vector_of_fixed_length, construct_train_test_corpus, generate_labels_from_file_and_error, generate_label_pair_from_file
 from biLSTM.utils.io_utils import load_pickle, dump_pickle, write_file
 
 def preprocessing_for_all_titles(args, vocab):
@@ -172,21 +172,24 @@ def preprocessing_for_descriptions():
             label_data[k] = labels_doc
 
     # save doc_data, label_data
-    #cat_file = 'datasets/AmazonCat-13K/RawData/categories.txt'
-    doc_data_file = 'AmazonCat-13K/output/descriptions/doc_data.json'
-    label_data_file = 'AmazonCat-13K/output/descriptions/label_data.json'
-    with open(doc_data_file, 'w') as file:
-        json.dump(doc_data, file)
-    with open(label_data_file, 'w') as file:
-        json.dump(label_data, file)
+    train_pid = train_id_index.keys()
+    test_pid = test_id_index.keys()
+    doc_data_file = 'datasets/AmazonCat-13K/output/descriptions/doc_data.pkl'
+    label_data_file = 'datasets/AmazonCat-13K/output/descriptions/label_data.pkl'
+    train_pid_file = 'datasets/AmazonCat-13K/output/descriptions/train_pid.pkl'
+    test_pid_file = 'datasets/AmazonCat-13K/output/descriptions/test_pid.pkl'
+    dump_pickle(doc_data, doc_data_file)
+    dump_pickle(label_data, label_data_file)
+    dump_pickle(train_pid, train_pid_file)
+    dump_pickle(test_pid, test_pid_file)
 
 def generate_label_pair_from_file():
-    with open('AmazonCat-13K/output/descriptions/label_data.json', 'r') as file:
-        label_data = json.load(file)
+    file = 'datasets/AmazonCat-13K/output/descriptions/label_data.pkl'
+    label_data = load_pickle(file)
     all_labels = []
     # get label pairs
     label_pairs = []
-    for _, labels_doc in label_data.items:
+    for _, labels_doc in label_data.items():
         all_labels.append(labels_doc)
         if len(labels_doc) == 1:
             continue
@@ -202,7 +205,46 @@ def generate_label_pair_from_file():
     all_label_pair = np.unique(np.concatenate(label_pairs))
     separate_labels = list(set(all_labels) - set(all_label_pair))
     print len(separate_labels)
-    return all_labels, label_pairs
+    dump_pickle(label_pairs, 'datasets/AmazonCat-13K/output/descriptions/label_pair/labels_pair.pkl')
+    dump_pickle(all_label_pair, 'datasets/AmazonCat-13K/output/descriptions/label_pair/all_labels.pkl')
+    return all_labels, separate_labels
+
+def write_label_pair():
+    txtfile = open('datasets/AmazonCat-13K/output/descriptions/label_pair/labels.edgelist', 'w')
+    label_pairs = load_pickle('datasets/AmazonCat-13K/output/descriptions/label_pair/labels_pair.pkl')
+    for i in range(len(label_pairs)):
+        txtfile.write(str(label_pairs[i][0]) + '\t' + str(label_pairs[i][1]))
+        txtfile.write('\n')
+
+def get_valid_doc_label_data(separate_labels):
+    doc_data_file = 'datasets/AmazonCat-13K/output/descriptions/doc_data.pkl'
+    label_data_file = 'datasets/AmazonCat-13K/output/descriptions/label_data.pkl'
+    train_pid_file = 'datasets/AmazonCat-13K/output/descriptions/train_pid.pkl'
+    test_pid_file = 'datasets/AmazonCat-13K/output/descriptions/test_pid.pkl'
+    doc_data = load_pickle(doc_data_file)
+    label_data = load_pickle(label_data_file)
+    train_pid = load_pickle(train_pid_file)
+    test_pid = load_pickle(test_pid_file)
+    for pid, l in label_data.items():
+        l2 = list(set(l) - set(separate_labels))
+        if len(l2) > 1:
+            label_data[pid] = l2
+        else:
+            del label_data[pid]
+            del doc_data[pid]
+            if pid in train_pid:
+                train_pid.remove(pid)
+            elif pid in test_pid:
+                test_pid.remove(pid)
+            else:
+                print 'error!'
+    # for l in separate_labels:
+    #     all_labels.remove(l)
+    dump_pickle(doc_data, 'datasets/AmazonCat-13K/output/descriptions/label_pair/doc_data.pkl')
+    dump_pickle(label_data, 'datasets/AmazonCat-13K/output/descriptions/label_pair/label_data.pkl')
+    dump_pickle(train_pid, 'datasets/AmazonCat-13K/output/descriptions/label_pair/train_pid.pkl')
+    dump_pickle(test_pid, 'datasets/AmazonCat-13K/output/descriptions/label_pair/test_pid.pkl')
+
 
 def main():
     parse = argparse.ArgumentParser()
@@ -228,26 +270,16 @@ def main():
                        help='path to the testing labels')
     args = parse.parse_args()
 
-    # train_corpus: 'datasets/AmazonCat-13K/rawdata/AmazonCat-13K_train_map.txt'
-    # test_corpus: 'datasets/AmazonCat-13K/rawdata/AmazonCat-13K_test_map.txt'
-    # train_labels: 'datasets/AmazonCat-13K/rawdata/amazonCat_train.txt'
-    # test_labels: 'datasets/AmazonCat-13K/rawdata/amazonCat_test.txt'
-    # out_dir: 'datasets/AmazonCat-13K/output/'
     ## ----------- get train/test corpus -----------
-    # vocab = load_pickle(args.vocab_path)
-    preprocessing_for_descriptions()
-    generate_label_pair_from_file()
+    vocab = load_pickle(args.vocab_path)
+    # preprocessing_for_descriptions()
+    # _, separate_labels = generate_label_pair_from_file()
+    # separate_labels = [342, 744, 5960]
+    # write_label_pair()
+    # get_valid_doc_label_data(separate_labels)
+    # label_embeddings = generate_label_embedding_from_file('datasets/AmazonCat-13K/output/descriptions/label_pair/label.embeddings')
+    # dump_pickle(label_embeddings, 'datasets/AmazonCat-13K/output/descriptions/label_pair/label_embeddings.pkl')
 
-    # train_labels = load_pickle(os.path.join(args.out_dir, 'train.labels'))
-    # test_labels = load_pickle(os.path.join(args.out_dir, 'test.labels'))
-    # max_num_labels, mean_num_labels = get_max_num_labels(train_labels)
-    # max_num_labels2, mean_num_labels2 = get_max_num_labels(test_labels)
-    # num_labels = int(max_num_labels + mean_num_labels) + 1
-    # for i in range(10):
-    #     pos_labels = train_labels[i]
-    #     indices, labels = generate_label_vector_of_fixed_length(pos_labels, num_labels, 13330)
-    #     print indices
-    #     print labels
 
 
 

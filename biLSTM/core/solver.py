@@ -13,7 +13,7 @@ import tensorflow as tf
 # from biLSTM.preprocessing.preprocessing import batch_data, get_max_seq_len, construct_train_test_corpus, \
 #     generate_labels_from_file, generate_label_pair_from_file
 # from biLSTM.utils.io_utils import load_pickle, write_file, load_txt
-from biLSTM.utils.op_utils import precision
+from biLSTM.utils.op_utils import precision, precision_for_all
 
 
 class ModelSolver(object):
@@ -21,7 +21,6 @@ class ModelSolver(object):
         self.model = model
         self.train_data = train_data
         self.test_data = test_data
-
         self.n_epochs = kwargs.pop('n_epochs', 10)
         self.batch_size = kwargs.pop('batch_size', 32)
         self.learning_rate = kwargs.pop('learning_rate', 0.000001)
@@ -31,7 +30,10 @@ class ModelSolver(object):
         # self.log_path = kwargs.pop('log_path', './log/')
         # self.pretrained_model = kwargs.pop('pretrained_model', None)
         # self.test_model = kwargs.pop('test_model', './model/lstm/model-1')
-
+        # if not os.path.exists(self.model_path):
+        #     os.makedirs(self.model_path)
+        # if not os.path.exists(self.log_path):
+        #     os.makedirs(self.log_path)
         if self.update_rule == 'adam':
             self.optimizer = tf.train.AdamOptimizer
         elif self.update_rule == 'momentum':
@@ -39,19 +41,12 @@ class ModelSolver(object):
         elif self.update_rule == 'rmsprop':
             self.optimizer = tf.train.RMSPropOptimizer
 
-            # if not os.path.exists(self.model_path):
-            #     os.makedirs(self.model_path)
-            # if not os.path.exists(self.log_path):
-            #     os.makedirs(self.log_path)
-
-
     def train(self):
         train_loader = self.train_data
         test_loader = self.test_data
 
         # build_model
         y_, loss = self.model.build_model()
-
         # train op
         with tf.name_scope('optimizer'):
             optimizer = self.optimizer(learning_rate=self.learning_rate)
@@ -65,55 +60,52 @@ class ModelSolver(object):
             for e in range(1):
                 # for e in range(self.n_epochs):
                 curr_loss = 0
-                # train_loader.pointer = 7386
-                # print train_loader.num_batch
                 #for i in range(200):
-                for i in range(train_loader.num_batch):
-                    # print i
-                    # print train_loader.batch_start[train_loader.pointer]
-                    # print train_loader.batch_end[train_loader.pointer]
+                i = 0
+                while ~train_loader.end_of_data:
                     if i % 100 == 0:
                         print i
                     try:
-                        x, y, seq_l, indices = train_loader.next_batch()
+                        _, _, x, y, seq_l, label_emb = train_loader.next_batch()
                     except Exception as e:
                         print i
                         raise e
                     feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
-                                 self.model.seqlen: np.array(seq_l), self.model.label_indices: indices}
+                                 self.model.seqlen: np.array(seq_l), self.model.label_embeddings: label_emb}
                     _, l_ = sess.run([train_op, loss], feed_dict)
                     curr_loss += l_
+                    i += 1
+                else:
+                    train_loader.reset_data()
                 print('at epoch ' + str(e) + ', train loss is ' + str(curr_loss))
 
-                # --- test ---
+                # ----------------- test ---------------------
                 if e == 0:
-                    print 'test'
+                    print '=============== test ================'
                     val_loss = 0
-                    metric = []
-                    # p_1 = []
-                    # p_3 = []
-                    # p_5 = []
-                    # ndcg_1 = []
-                    # ndcg_3 = []
-                    # ndcg_5 = []
-                    # y_prob = []
+                    pred_pid_label = dict.fromkeys(test_loader.label_data.keys(), [])
+                    pred_pid_score = dict.fromkeys(test_loader.label_data.keys(), [])
                     #for i in range(200):
-                    for i in range(test_loader.num_batch):
+                    i = 0
+                    while ~test_loader.end_of_data:
                         if i % 100 == 0:
                             print i
-                        x, y, seq_l, indices = test_loader.next_batch()
+                        batch_pid, batch_label, x, y, seq_l, label_emb = test_loader.next_batch()
                         feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
-                                     self.model.seqlen: np.array(seq_l), self.model.label_indices: indices}
+                                     self.model.seqlen: np.array(seq_l), self.model.label_embeddings: label_emb}
                         y_p, l_ = sess.run([y_, loss], feed_dict)
                         val_loss += l_
-                        batch_pre = precision(y_p, y, indices)
-                        metric.append(batch_pre)
-
-                        # y_prob.append(y_p)
-                    # y_prob = np.concatenate(y_prob, axis=0)
-                    # precision_1 = self.precision(y_prob, y_test_concate, 1)
-                    # precision_1 = c_1 * 1.0 / test_loader.num_of_used_data
-                    mean_metric = np.mean(metric, axis=0)
+                        #batch_pre = precision(y_p, y, indices)
+                        #metric.append(batch_pre)
+                        i += 1
+                        # get all predictions
+                        for j in range(len(batch_pid)):
+                            pred_pid_label[batch_pid[j]].append(batch_label[j])
+                            pred_pid_score[batch_pid[j]].append(y_p[j])
+                    else:
+                        test_loader.reset_data()
+                    # mean_metric = np.mean(metric, axis=0)
+                    mean_metric = precision_for_all(test_loader.label_data, pred_pid_label, pred_pid_score)
                     print 'at epoch' + str(e) + ', test loss is ' + str(val_loss)
                     print 'precision@1: ' + str(mean_metric[0])
                     print 'precision@3: ' + str(mean_metric[1])
