@@ -49,8 +49,8 @@ def main():
     print 'load word/label embeddings'
     # word_embeddings: readlines() from .txt file
     # word_embeddings: 'word': word_embedding\n
-    #word_embeddings = load_txt(args.word_embedding_path)
-    word_embeddings = []
+    word_embeddings = load_txt(args.word_embedding_path)
+    #word_embeddings = []
     #label_embeddings = load_pickle(args.label_embedding_path)
     label_embeddings = generate_label_embedding_from_file(args.label_embedding_path)
     print 'load train/test data'
@@ -72,7 +72,7 @@ def main():
     # ----- train -----
     print 'build biLSTM model...'
     # (self, max_seq_len, input_dim, num_label_embedding, num_hidden, num_classify_hidden)
-    model = biLSTM(max_seq_len, 300, 64, 64, 32)
+    model = biLSTM(max_seq_len, 300, 64, 64, 32, args.batch_size)
 
     print 'model solver...'
     # def __init__(self, model, train_data, test_data, **kwargs):

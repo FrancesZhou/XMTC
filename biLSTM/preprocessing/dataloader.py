@@ -86,7 +86,12 @@ class DataLoader2():
         self.doc_token_data = {}
         self.doc_length = {}
         all_length = []
+	count = 0
         for pid, seq in self.doc_data.items():
+	    #print pid
+	    count += 1
+	    if count % 50 == 0:
+		print count
             token_indices = get_wordID_from_vocab(seq, self.vocab)
             self.doc_token_data[pid] = token_indices
             all_length.append(len(token_indices))
@@ -101,7 +106,7 @@ class DataLoader2():
         label = np.random.choice(self.label_data_copy[pid])
         # follow-up processing
         self.label_data_copy[pid].remove(label)
-        if ~self.label_data_copy[pid]:
+        if not self.label_data_copy[pid]:
             self.pids_copy.remove(pid)
             del self.label_data_copy[pid]
         return pid, label
@@ -128,7 +133,7 @@ class DataLoader2():
             batch_y.append([0, 1])
             batch_length.append(self.doc_length[pid])
             batch_label_embedding.append(self.word_embeddings[label])
-            if len(self.pids_copy) == 0:
+            if not self.pids_copy:
                 self.end_of_data = True
                 break
         # negative
@@ -141,7 +146,7 @@ class DataLoader2():
             batch_y.append([1, 0])
             batch_length.append(self.doc_length[pid])
             batch_label_embedding.append(self.word_embeddings[label])
-        return batch_x, batch_y, batch_length, batch_label_embedding
+        return batch_pid, batch_label, batch_x, batch_y, batch_length, batch_label_embedding
 
     def reset_data(self):
         self.label_data_copy = dict(self.label_data)
