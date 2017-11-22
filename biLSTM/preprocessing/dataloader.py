@@ -8,7 +8,7 @@ from __future__ import absolute_import
 
 import numpy as np
 import re
-from .preprocessing import generate_embedding_from_vocabID, generate_label_vector_of_fixed_length, get_text_word_embeddings
+from .preprocessing import generate_embedding_from_vocabID, generate_label_vector_of_fixed_length, get_wordID_from_vocab
 
 class DataLoader():
     def __init__(self, data, labels, batch_size, max_seq_len, num_labels, num_all_labels, word_embeddings):
@@ -87,7 +87,7 @@ class DataLoader2():
         self.doc_length = {}
         all_length = []
         for pid, seq in self.doc_data.items():
-            token_indices = get_text_word_embeddings(seq, self.vocab)
+            token_indices = get_wordID_from_vocab(seq, self.vocab)
             self.doc_token_data[pid] = token_indices
             all_length.append(len(token_indices))
             self.doc_length[pid] = len(token_indices)

@@ -9,7 +9,7 @@ from __future__ import absolute_import
 import os
 import argparse
 import numpy as np
-from biLSTM.preprocessing.preprocessing import get_max_num_labels, get_train_test_doc_label_data
+from biLSTM.preprocessing.preprocessing import generate_label_embedding_from_file, get_train_test_doc_label_data
 from biLSTM.preprocessing.dataloader import DataLoader2
 from biLSTM.core.biLSTM import biLSTM
 from biLSTM.core.solver import ModelSolver
@@ -53,7 +53,8 @@ def main():
     # word_embeddings: readlines() from .txt file
     # word_embeddings: 'word': word_embedding\n
     word_embeddings = load_txt(args.word_embedding_path)
-    label_embeddings = load_pickle(args.label_embedding_path)
+    #label_embeddings = load_pickle(args.label_embedding_path)
+    label_embeddings = generate_label_embedding_from_file('datasets/AmazonCat-13K/output/descriptions/label_pair/label.embeddings')
     print 'load train/test data'
     doc_data = load_pickle(args.doc_data_path)
     label_data = load_pickle(args.label_data_path)
@@ -64,7 +65,8 @@ def main():
     # test_data = test_data[:len(test_data)/10]
     # train_label = train_label[:len(train_data)]
     # test_label = test_label[:len(test_data)]
-    all_labels = load_pickle(args.all_labels_path)
+    #all_labels = load_pickle(args.all_labels_path)
+    all_labels = label_embeddings.keys()
     print 'create train/test data loader...'
     train_loader = DataLoader2(train_doc, train_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, pos_neg_ratio=1)
     max_seq_len = train_loader.max_seq_len
