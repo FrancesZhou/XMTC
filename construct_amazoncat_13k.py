@@ -262,9 +262,13 @@ def get_doc_wordID_data_from_vocab(vocab):
 def process_word_embeddings(file):
     txt_word_embeddings = load_txt(file)
     word_embeddings = []
+    count = 0
     for line in txt_word_embeddings:
+        if count % 1000 == 0:
+            print count
         emb = gen_word_emb_from_str(line)
         word_embeddings.append(emb)
+        count += 1
     word_embeddings = np.array(word_embeddings, dtype=np.float32)
     np.save('datasets/word_embeddings.npy', word_embeddings)
 
@@ -318,7 +322,7 @@ def main():
     #vocab = load_pickle(args.vocab_path)
     #get_doc_wordID_data_from_vocab(vocab)
     #get_train_test_pos_samples()
-    process_word_embeddings('datasets/glove.840B.300d')
+    process_word_embeddings('datasets/glove.840B.300d.txt')
 
 
 
