@@ -57,13 +57,14 @@ class ModelSolver(object):
         tf.get_variable_scope().reuse_variables()
         with tf.Session() as sess:
             tf.global_variables_initializer().run()
-            for e in range(1):
+            for e in range(6):
                 # for e in range(self.n_epochs):
                 curr_loss = 0
                 #for i in range(200):
                 i = 0
+		#for i in range(10):
                 while ~train_loader.end_of_data:
-                    if i % 100 == 0:
+                    if i % 10 == 0:
                         print i
                     _, _, x, y, seq_l, label_emb = train_loader.next_batch()
                     if len(x) < self.batch_size:
@@ -79,15 +80,16 @@ class ModelSolver(object):
                 print('at epoch ' + str(e) + ', train loss is ' + str(curr_loss))
 
                 # ----------------- test ---------------------
-                if e == 0:
+                if e in [1,3,5]:
                     print '=============== test ================'
                     val_loss = 0
                     pred_pid_label = dict.fromkeys(test_loader.label_data.keys(), [])
                     pred_pid_score = dict.fromkeys(test_loader.label_data.keys(), [])
                     #for i in range(200):
                     i = 0
+		    #for i in range(10):
                     while ~test_loader.end_of_data:
-                        if i % 100 == 0:
+                        if i % 10 == 0:
                             print i
                         batch_pid, batch_label, x, y, seq_l, label_emb = test_loader.next_batch()
                         if len(batch_pid) < self.batch_size:
