@@ -10,8 +10,8 @@ import os
 import argparse
 import json
 import numpy as np
-from biLSTM.preprocessing.preprocessing import get_wordID_from_vocab, generate_label_embedding_from_file, generate_label_vector_of_fixed_length, construct_train_test_corpus, generate_labels_from_file_and_error, generate_label_pair_from_file
-from biLSTM.utils.io_utils import load_pickle, dump_pickle, write_file
+from biLSTM.preprocessing.preprocessing import get_wordID_from_vocab, gen_word_emb_from_str, construct_train_test_corpus, generate_labels_from_file_and_error, generate_label_pair_from_file
+from biLSTM.utils.io_utils import load_pickle, dump_pickle, load_txt
 
 def preprocessing_for_all_titles(args, vocab):
     train_corpus, test_corpus = construct_train_test_corpus(vocab, args.train_corpus_path, args.test_corpus_path, args.out_dir)
@@ -259,8 +259,14 @@ def get_doc_wordID_data_from_vocab(vocab):
     doc_wordID_data_file = 'datasets/AmazonCat-13K/output/descriptions/label_pair/doc_wordID_data.pkl'
     dump_pickle(doc_token_data, doc_wordID_data_file)
 
-#def process_word_embeddings(file):
-#    with open(file, 'r') as df:
+def process_word_embeddings(file):
+    txt_word_embeddings = load_txt(file)
+    word_embeddings = []
+    for line in txt_word_embeddings:
+        emb = gen_word_emb_from_str(line)
+        word_embeddings.append(emb)
+    word_embeddings = np.array(word_embeddings, dtype=np.float32)
+    np.save('datasets/word_embeddings.npy', word_embeddings)
 
 def get_train_test_pos_samples():
     label_data = load_pickle('datasets/AmazonCat-13K/output/descriptions/label_pair/label_data.pkl')
@@ -311,7 +317,8 @@ def main():
     # dump_pickle(label_embeddings, 'datasets/AmazonCat-13K/output/descriptions/label_pair/label_embeddings.pkl')
     #vocab = load_pickle(args.vocab_path)
     #get_doc_wordID_data_from_vocab(vocab)
-    get_train_test_pos_samples()
+    #get_train_test_pos_samples()
+    process_word_embeddings('datasets/glove.840B.300d')
 
 
 

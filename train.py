@@ -30,8 +30,11 @@ def main():
                        default='datasets/AmazonCat-13K/output/descriptions/label_pair/test_pid.pkl',
                        help='path to the testing pids')
     parse.add_argument('-vocab', '--vocab_path', type=str, default='datasets/vocab', help='path to the vocab')
+    # parse.add_argument('-word_embeddings', '--word_embedding_path', type=str,
+    #                    default='datasets/glove.840B.300d.txt',
+    #                    help='path to the word embeddings')
     parse.add_argument('-word_embeddings', '--word_embedding_path', type=str,
-                       default='datasets/glove.840B.300d.txt',
+                       default='datasets/word_embeddings.npy',
                        help='path to the word embeddings')
     parse.add_argument('-label_embeddings', '--label_embedding_path', type=str,
                        default='datasets/AmazonCat-13K/output/descriptions/label_pair/label.embeddings',
@@ -49,7 +52,8 @@ def main():
     print 'load word/label embeddings'
     # word_embeddings: readlines() from .txt file
     # word_embeddings: 'word': word_embedding\n
-    word_embeddings = load_txt(args.word_embedding_path)
+    #word_embeddings = load_txt(args.word_embedding_path)
+    word_embeddings = np.load(args.word_embedding_path)
     #word_embeddings = []
     #label_embeddings = load_pickle(args.label_embedding_path)
     label_embeddings = generate_label_embedding_from_file(args.label_embedding_path)

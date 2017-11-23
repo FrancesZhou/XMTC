@@ -200,8 +200,9 @@ def generate_embedding_from_vocabID(sequence, max_seq_len, word_embeddings):
     seq_len = min(len(sequence), max_seq_len)
     for i in range(seq_len):
         try:
-            emb_str = word_embeddings[sequence[i]]
-            embeddings.append(gen_word_emb_from_str(emb_str))
+            embeddings.append(word_embeddings[sequence[i]])
+            # emb_str = word_embeddings[sequence[i]]
+            # embeddings.append(gen_word_emb_from_str(emb_str))
         except Exception as e:
             raise e
     seq_len = len(embeddings)

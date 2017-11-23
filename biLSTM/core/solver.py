@@ -85,9 +85,10 @@ class ModelSolver(object):
                 if e in [1, 3, 5]:
                     print '=============== test ================'
                     val_loss = 0
-                    pred_pid_label = dict.fromkeys(test_loader.label_data.keys(), [])
-                    pred_pid_score = dict.fromkeys(test_loader.label_data.keys(), [])
-                    #for i in range(200):
+                    # pred_pid_label = dict.fromkeys(test_loader.label_data.keys(), [])
+                    # pred_pid_score = dict.fromkeys(test_loader.label_data.keys(), [])
+                    pre_pid_label = []
+                    pre_pid_score = []
                     i = 0
                     #for i in range(10):
                     while not test_loader.end_of_data:
@@ -106,12 +107,16 @@ class ModelSolver(object):
                         i += 1
                         # get all predictions
                         for j in range(len(batch_pid)):
-                            pred_pid_label[batch_pid[j]].append(batch_label[j])
-                            pred_pid_score[batch_pid[j]].append(y_p[j])
+                            try:
+                                pre_pid_label[batch_pid[j]].append(batch_label[j])
+                                pre_pid_score[batch_pid[j]].append(y_p[j])
+                            except KeyError:
+                                pre_pid_label[batch_pid[j]] = [batch_label[j]]
+                                pre_pid_score[batch_pid[j]] = [y_p[j]]
                     else:
                         test_loader.reset_data()
                     # mean_metric = np.mean(metric, axis=0)
-                    mean_metric = precision_for_all(test_loader.label_data, pred_pid_label, pred_pid_score)
+                    mean_metric = precision_for_all(test_loader.label_data, pre_pid_label, pre_pid_score)
                     print 'at epoch' + str(e) + ', test loss is ' + str(val_loss)
                     print 'precision@1: ' + str(mean_metric[0])
                     print 'precision@3: ' + str(mean_metric[1])

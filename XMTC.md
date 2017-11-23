@@ -154,6 +154,7 @@ try:
 2. use descriptions, LINE
 3. use descriptions, label embeddings represented as aggregates of word embeddings
 
+positive samples for training/testing: 6475/1488 
 when generating postive samples,
 1) randomly choose one pid from train_pid
 2) randomly choose one label from label_data[pid]
@@ -164,6 +165,6 @@ when generating negative samples,
 
 Optimization for tomorrow:
 1. word embeddings stored as npy file (20M, 300)
-2. 
+2. remove stop words in descriptions
 
 ## Analysis of raw data
