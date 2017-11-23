@@ -63,7 +63,7 @@ class ModelSolver(object):
                 #for i in range(200):
                 i = 0
                 #for i in range(10):
-                '''
+                #'''
                 while not train_loader.end_of_data:
                     if i % 10 == 0:
                         print i
@@ -79,7 +79,7 @@ class ModelSolver(object):
                 else:
                     train_loader.reset_data()
                 print('at epoch ' + str(e) + ', train loss is ' + str(curr_loss))
-                '''
+                #'''
 
                 # ----------------- test ---------------------
                 if e in [1, 3, 5]:
@@ -87,8 +87,8 @@ class ModelSolver(object):
                     val_loss = 0
                     # pred_pid_label = dict.fromkeys(test_loader.label_data.keys(), [])
                     # pred_pid_score = dict.fromkeys(test_loader.label_data.keys(), [])
-                    pre_pid_label = []
-                    pre_pid_score = []
+                    pre_pid_label = {}
+                    pre_pid_score = {}
                     i = 0
                     #for i in range(10):
                     while not test_loader.end_of_data:
@@ -117,6 +117,7 @@ class ModelSolver(object):
                         test_loader.reset_data()
                     # mean_metric = np.mean(metric, axis=0)
                     mean_metric = precision_for_all(test_loader.label_data, pre_pid_label, pre_pid_score)
+                    print len(mean_metric)
                     print 'at epoch' + str(e) + ', test loss is ' + str(val_loss)
                     print 'precision@1: ' + str(mean_metric[0])
                     print 'precision@3: ' + str(mean_metric[1])

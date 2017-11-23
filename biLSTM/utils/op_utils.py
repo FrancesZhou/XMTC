@@ -81,4 +81,4 @@ def precision_for_all(tar_pid_label, pred_pid_label, pred_pid_score):
         ndcg_1.append(ndcg_at_k(r, 1))
         ndcg_3.append(ndcg_at_k(r, 3))
         ndcg_5.append(ndcg_at_k(r, 5))
-    return np.mean([p_1, p_3, p_5, ndcg_1, ndcg_3, ndcg_5], axis=0)
+    return np.mean([p_1, p_3, p_5, ndcg_1, ndcg_3, ndcg_5], axis=1)
