@@ -62,7 +62,7 @@ class ModelSolver(object):
                 curr_loss = 0
                 #for i in range(200):
                 i = 0
-		#for i in range(10):
+                #for i in range(10):
                 while ~train_loader.end_of_data:
                     if i % 10 == 0:
                         print i
@@ -80,14 +80,14 @@ class ModelSolver(object):
                 print('at epoch ' + str(e) + ', train loss is ' + str(curr_loss))
 
                 # ----------------- test ---------------------
-                if e in [1,3,5]:
+                if e in [1, 3, 5]:
                     print '=============== test ================'
                     val_loss = 0
                     pred_pid_label = dict.fromkeys(test_loader.label_data.keys(), [])
                     pred_pid_score = dict.fromkeys(test_loader.label_data.keys(), [])
                     #for i in range(200):
                     i = 0
-		    #for i in range(10):
+                    #for i in range(10):
                     while ~test_loader.end_of_data:
                         if i % 10 == 0:
                             print i

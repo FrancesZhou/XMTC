@@ -8,6 +8,7 @@ from __future__ import absolute_import
 
 import numpy as np
 import re
+import copy
 from .preprocessing import generate_embedding_from_vocabID, generate_label_vector_of_fixed_length, get_wordID_from_vocab
 
 class DataLoader():
@@ -145,6 +146,8 @@ class DataLoader2():
         return batch_pid, batch_label, batch_x, batch_y, batch_length, batch_label_embedding
 
     def reset_data(self):
-        self.label_data_copy = dict(self.label_data)
-        self.pids_copy = list(self.pids)
+        # self.label_data_copy = dict(self.label_data)
+        # self.pids_copy = list(self.pids)
+        self.label_data_copy = copy.deepcopy(self.label_data)
+        self.pids_copy = copy.deepcopy(self.pids)
         self.end_of_data = False
