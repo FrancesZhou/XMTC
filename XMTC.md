@@ -163,8 +163,13 @@ when generating negative samples,
 1) randomly choose one pid from train_pid
 2) randomly choose one label from set(all_labels)-set(label_data[pid])
 
-Optimization for tomorrow:
-1. word embeddings stored as npy file (20M, 300)
-2. remove stop words in descriptions
+Optimization:
+1. word embeddings stored as npy file (20M, 300) -> make 2x speedup
+2. remove stop words in descriptions -> not good for some key words like 'not', 'few', 'zero'... but maybe useful for topic clssification.
+
+After storing word embeddings as npy file, we can process input wordID quick by extracting corresponding word embeddings from numpy ndarray.
+There are 809/186 batches in train/test datasets.
+For training, about 56 seconds for 10 batches - all about 75 minutes for one epoch
+For testing, about 27 seconds for 10 batches - all about 8 minutes for one epoch
 
 ## Analysis of raw data
