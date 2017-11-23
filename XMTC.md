@@ -162,4 +162,8 @@ when generating negative samples,
 1) randomly choose one pid from train_pid
 2) randomly choose one label from set(all_labels)-set(label_data[pid])
 
+Optimization for tomorrow:
+1. word embeddings stored as npy file (20M, 300)
+2. 
+
 ## Analysis of raw data
