@@ -259,6 +259,24 @@ def get_doc_wordID_data_from_vocab(vocab):
     doc_wordID_data_file = 'datasets/AmazonCat-13K/output/descriptions/label_pair/doc_wordID_data.pkl'
     dump_pickle(doc_token_data, doc_wordID_data_file)
 
+#def process_word_embeddings(file):
+#    with open(file, 'r') as df:
+
+def get_train_test_pos_samples():
+    label_data = load_pickle('datasets/AmazonCat-13K/output/descriptions/label_pair/label_data.pkl')
+    train_pid = load_pickle('datasets/AmazonCat-13K/output/descriptions/label_pair/train_pid.pkl')
+    test_pid = load_pickle('datasets/AmazonCat-13K/output/descriptions/label_pair/test_pid.pkl')
+    train_pos_samples = []
+    test_pos_samples = []
+    for pid in train_pid:
+        train_pos_samples.append(label_data[pid])
+    for pid in test_pid:
+        test_pos_samples.append(label_data[pid])
+    train_pos_samples = np.concatenate(train_pos_samples)
+    test_pos_samples = np.concatenate(test_pos_samples)
+    print len(train_pos_samples)
+    print len(test_pos_samples)
+
 def main():
     parse = argparse.ArgumentParser()
     parse.add_argument('-train_corpus', '--train_corpus_path', type=str,
@@ -291,9 +309,9 @@ def main():
     # get_valid_doc_label_data(separate_labels)
     # label_embeddings = generate_label_embedding_from_file('datasets/AmazonCat-13K/output/descriptions/label_pair/label.embeddings')
     # dump_pickle(label_embeddings, 'datasets/AmazonCat-13K/output/descriptions/label_pair/label_embeddings.pkl')
-    vocab = load_pickle(args.vocab_path)
-    get_doc_wordID_data_from_vocab(vocab)
-
+    #vocab = load_pickle(args.vocab_path)
+    #get_doc_wordID_data_from_vocab(vocab)
+    get_train_test_pos_samples()
 
 
 

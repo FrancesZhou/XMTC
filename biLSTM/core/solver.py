@@ -63,7 +63,8 @@ class ModelSolver(object):
                 #for i in range(200):
                 i = 0
                 #for i in range(10):
-                while ~train_loader.end_of_data:
+                '''
+                while not train_loader.end_of_data:
                     if i % 10 == 0:
                         print i
                     _, _, x, y, seq_l, label_emb = train_loader.next_batch()
@@ -78,6 +79,7 @@ class ModelSolver(object):
                 else:
                     train_loader.reset_data()
                 print('at epoch ' + str(e) + ', train loss is ' + str(curr_loss))
+                '''
 
                 # ----------------- test ---------------------
                 if e in [1, 3, 5]:
@@ -88,7 +90,7 @@ class ModelSolver(object):
                     #for i in range(200):
                     i = 0
                     #for i in range(10):
-                    while ~test_loader.end_of_data:
+                    while not test_loader.end_of_data:
                         if i % 10 == 0:
                             print i
                         batch_pid, batch_label, x, y, seq_l, label_emb = test_loader.next_batch()
