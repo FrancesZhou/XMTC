@@ -41,7 +41,7 @@ def main():
                        help='path to the label embeddings')
     #parse.add_argument('-o', '--out_dir', type=str, required=True, help='path to the output dir')
     # -- default
-    parse.add_argument('-n_epochs', '--n_epochs', type=int, default=30, help='number of epochs')
+    parse.add_argument('-n_epochs', '--n_epochs', type=int, default=10, help='number of epochs')
     parse.add_argument('-batch_size', '--batch_size', type=int, default=16, help='batch size')
     parse.add_argument('-lr', '--learning_rate', type=float, default=0.0002, help='learning rate')
     parse.add_argument('-update_rule', '--update_rule', type=str, default='adam', help='update rule')
@@ -84,7 +84,10 @@ def main():
                          n_epochs=args.n_epochs,
                          batch_size=args.batch_size,
                          update_rule=args.update_rule,
-                         learning_rate=args.learning_rate)
+                         learning_rate=args.learning_rate,
+                         pretrained_model=None,
+                         model_path='datasets/AmazonCat-13K/output/results/model_save/',
+                         test_path='datasets/AmazonCat-13K/output/results/model_save/')
     print 'begin training...'
     solver.train()
 
