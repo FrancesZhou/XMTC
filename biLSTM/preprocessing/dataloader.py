@@ -151,3 +151,73 @@ class DataLoader2():
         self.label_data_copy = copy.deepcopy(self.label_data)
         self.pids_copy = copy.deepcopy(self.pids)
         self.end_of_data = False
+
+# DataLoader3 is for testing all texts for all labels
+# produce each text and all labels per next_text()
+class DataLoader3():
+    def __init__(self, doc_wordID_data, label_data, all_labels, label_embeddings, batch_size, vocab, word_embeddings, pos_neg_ratio, max_seq_len=None):
+        self.doc_wordID_data = doc_wordID_data
+        self.label_data = label_data
+        self.pids = self.label_data.keys()
+        self.all_labels = all_labels
+        self.label_embeddings = label_embeddings
+        self.batch_size = batch_size
+        self.vocab = vocab
+        self.word_embeddings = word_embeddings
+        self.pos_neg_ratio = pos_neg_ratio
+        self.max_seq_len = max_seq_len
+        self.initialize_dataloader()
+
+    def initialize_dataloader(self):
+        print 'num of doc: ' + str(len(self.doc_wordID_data))
+        print 'num of y: ' + str(len(self.label_data))
+        self.num_batch_for_each_text = len(self.all_labels)/self.batch_size + 1
+        self.samples_of_last_batch_for_each_text = len(self.all_labels) % self.batch_size
+        # set all_label_embeddings for all_labels
+        self.all_label_embedding = []
+        for label in self.all_labels:
+            self.all_label_embedding.append(self.label_embeddings[label])
+        # set doc_length according to doc_wordID_data
+        # doc_wordID_data consists of wordIDs in vocab.
+        self.doc_length = {}
+        count = 0
+        for pid, seq in self.doc_wordID_data.items():
+            count += 1
+            if count % 50 == 0:
+                print count
+            self.doc_length[pid] = len(seq)
+        # assign max_seq_len if None
+        if self.max_seq_len is None:
+            self.max_seq_len = max(self.doc_length.values())
+        self.reset_data()
+
+    def next_text(self):
+        all_label_embedding = np.array(self.all_label_embedding)
+        try:
+            pid = self.pids_copy.pop()
+            x = generate_embedding_from_vocabID(self.doc_wordID_data[pid], self.max_seq_len, self.word_embeddings)
+            x = np.tile(x, (self.batch_size, 1, 1))
+            print x.shape
+            seq_len = np.repeat(self.doc_length[pid], self.batch_size)
+            print seq_len.shape
+            all_y = []
+            for label in self.all_labels:
+                if label in self.label_data[pid]:
+                    all_y.append(1)
+                else:
+                    all_y.append(0)
+            if self.samples_of_last_batch_for_each_text:
+                all_y = np.concatenate((all_y, np.zeros(self.batch_size-self.samples_of_last_batch_for_each_text)))
+                all_label_embedding = np.concatenate((all_label_embedding,
+                                                      np.zeros((self.batch_size-self.samples_of_last_batch_for_each_text, self.all_label_embedding.shape[-1]))), axis=0)
+        except IndexError:
+            self.end_of_data = True
+            return 0, 0, 0, 0, 0, 0
+        all_y = np.stack(np.split(np.array(all_y), self.num_batch_for_each_text))
+        all_label_embedding = np.stack(np.split(np.array(all_label_embedding), self.num_batch_for_each_text, axis=0))
+        return pid, x, seq_len, self.all_labels, all_y, all_label_embedding
+
+    def reset_data(self):
+        #self.label_data_copy = copy.deepcopy(self.label_data)
+        self.pids_copy = copy.deepcopy(self.pids)
+        self.end_of_data = False

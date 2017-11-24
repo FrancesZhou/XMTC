@@ -136,35 +136,39 @@ class ModelSolver(object):
             saver = tf.train.Saver()
             saver.restore(sess, tf.train.latest_checkpoint(self.test_path))
             print '=============== test ================'
-            val_loss = 0
+            test_loss = 0
             pre_pid_label = {}
             pre_pid_score = {}
             i = 0
-            while not test_loader.end_of_data:
+            while True:
                 if i % 10 == 0:
                     print i
-                batch_pid, batch_label, x, y, seq_l, label_emb = test_loader.next_batch()
-                if len(batch_pid) < self.batch_size:
+                pid, x, seq_l, all_labels, all_y_padding, all_label_emb_padding = test_loader.next_batch()
+                if test_loader.end_of_data:
                     test_loader.reset_data()
                     break
-                feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
-                             self.model.seqlen: np.array(seq_l), self.model.label_embeddings: label_emb}
-                y_p, l_ = sess.run([y_, loss], feed_dict)
-                val_loss += l_
+                prob_i = []
+                for ii in range(len(all_y_padding)):
+                    if ii % 10 == 0:
+                        print ii
+                    feed_dict = {self.model.x: np.array(x), self.model.y: np.array(all_y_padding[ii]),
+                             self.model.seqlen: np.array(seq_l), self.model.label_embeddings: all_label_emb_padding[ii]}
+                    y_p, l_ = sess.run([y_, loss], feed_dict)
+                    prob_i.append(y_p)
+                test_loss += l_
                 i += 1
                 # get all predictions
-                for j in range(len(batch_pid)):
-                    try:
-                        pre_pid_label[batch_pid[j]].append(batch_label[j])
-                        pre_pid_score[batch_pid[j]].append(y_p[j])
-                    except KeyError:
-                        pre_pid_label[batch_pid[j]] = [batch_label[j]]
-                        pre_pid_score[batch_pid[j]] = [y_p[j]]
-            else:
-                test_loader.reset_data()
+                pre_i = np.concatenate(prob_i)
+                pre_i = pre_i[:len(all_labels)]
+                try:
+                    pre_pid_label[pid].append(all_labels)
+                    pre_pid_score[pid].append(pre_i)
+                except KeyError:
+                    pre_pid_label[pid] = all_labels
+                    pre_pid_score[pid] = pre_i
             mean_metric = precision_for_all(test_loader.label_data, pre_pid_label, pre_pid_score)
             print len(mean_metric)
-            print 'test loss is ' + str(val_loss)
+            print 'test loss is ' + str(test_loss)
             print 'precision@1: ' + str(mean_metric[0])
             print 'precision@3: ' + str(mean_metric[1])
             print 'precision@5: ' + str(mean_metric[2])
