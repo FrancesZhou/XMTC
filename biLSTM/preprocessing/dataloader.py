@@ -155,7 +155,7 @@ class DataLoader2():
 # DataLoader3 is for testing all texts for all labels
 # produce each text and all labels per next_text()
 class DataLoader3():
-    def __init__(self, doc_wordID_data, label_data, all_labels, label_embeddings, batch_size, vocab, word_embeddings, pos_neg_ratio, max_seq_len=None):
+    def __init__(self, doc_wordID_data, label_data, all_labels, label_embeddings, batch_size, vocab, word_embeddings, max_seq_len=None):
         self.doc_wordID_data = doc_wordID_data
         self.label_data = label_data
         self.pids = self.label_data.keys()
@@ -164,7 +164,6 @@ class DataLoader3():
         self.batch_size = batch_size
         self.vocab = vocab
         self.word_embeddings = word_embeddings
-        self.pos_neg_ratio = pos_neg_ratio
         self.max_seq_len = max_seq_len
         self.initialize_dataloader()
 

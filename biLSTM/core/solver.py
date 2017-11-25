@@ -134,6 +134,7 @@ class ModelSolver(object):
         with tf.Session() as sess:
             #imported_meta = tf.train.import_meta_graph('model_final.meta')
             saver = tf.train.Saver()
+            print '=============== restore ============='
             saver.restore(sess, tf.train.latest_checkpoint(self.test_path))
             print '=============== test ================'
             test_loss = 0

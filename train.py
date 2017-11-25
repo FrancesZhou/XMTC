@@ -10,7 +10,7 @@ import os
 import argparse
 import numpy as np
 from biLSTM.preprocessing.preprocessing import generate_label_embedding_from_file, get_train_test_doc_label_data
-from biLSTM.preprocessing.dataloader import DataLoader2
+from biLSTM.preprocessing.dataloader import DataLoader2, DataLoader3
 from biLSTM.core.biLSTM import biLSTM
 from biLSTM.core.solver import ModelSolver
 from biLSTM.utils.io_utils import load_pickle, load_txt
@@ -39,6 +39,8 @@ def main():
     parse.add_argument('-label_embeddings', '--label_embedding_path', type=str,
                        default='datasets/AmazonCat-13K/output/descriptions/label_pair/label.embeddings',
                        help='path to the label embeddings')
+    parse.add_argument('-pretrained_model', '--pretrained_model_path', type=str,
+                       default=None, help='path to the pretrained model')
     #parse.add_argument('-o', '--out_dir', type=str, required=True, help='path to the output dir')
     # -- default
     parse.add_argument('-n_epochs', '--n_epochs', type=int, default=10, help='number of epochs')
@@ -90,6 +92,10 @@ def main():
                          test_path='datasets/AmazonCat-13K/output/results/model_save/')
     print 'begin training...'
     solver.train()
+
+    # test
+    test_all = DataLoader3(test_doc, test_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, max_seq_len)
+    solver.test(test_all)
 
 
 if __name__ == "__main__":
