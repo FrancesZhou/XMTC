@@ -141,10 +141,11 @@ class ModelSolver(object):
             pre_pid_label = {}
             pre_pid_score = {}
             i = 0
+            test_loader.pids_copy = test_loader.pids_copy[:3]
             while True:
-                if i % 10 == 0:
-                    print i
-                pid, x, seq_l, all_labels, all_y_padding, all_label_emb_padding = test_loader.next_batch()
+                #if i % 10 == 0:
+                print '---------- '+ str(i) + '----------'
+                pid, x, seq_l, all_labels, all_y_padding, all_label_emb_padding = test_loader.next_text()
                 if test_loader.end_of_data:
                     test_loader.reset_data()
                     break

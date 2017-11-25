@@ -194,11 +194,11 @@ class DataLoader3():
         all_label_embedding = np.array(self.all_label_embedding)
         try:
             pid = self.pids_copy.pop()
-            x = generate_embedding_from_vocabID(self.doc_wordID_data[pid], self.max_seq_len, self.word_embeddings)
+            _, x = generate_embedding_from_vocabID(self.doc_wordID_data[pid], self.max_seq_len, self.word_embeddings)
             x = np.tile(x, (self.batch_size, 1, 1))
-            print x.shape
+            #print x.shape
             seq_len = np.repeat(self.doc_length[pid], self.batch_size)
-            print seq_len.shape
+            #print seq_len.shape
             all_y = []
             for label in self.all_labels:
                 if label in self.label_data[pid]:
@@ -208,11 +208,13 @@ class DataLoader3():
             if self.samples_of_last_batch_for_each_text:
                 all_y = np.concatenate((all_y, np.zeros(self.batch_size-self.samples_of_last_batch_for_each_text)))
                 all_label_embedding = np.concatenate((all_label_embedding,
-                                                      np.zeros((self.batch_size-self.samples_of_last_batch_for_each_text, self.all_label_embedding.shape[-1]))), axis=0)
+                                                      np.zeros((self.batch_size-self.samples_of_last_batch_for_each_text, all_label_embedding.shape[-1]))), axis=0)
         except IndexError:
             self.end_of_data = True
             return 0, 0, 0, 0, 0, 0
-        all_y = np.stack(np.split(np.array(all_y), self.num_batch_for_each_text))
+        all_y = np.expand_dims(np.array(all_y), axis=-1)
+        all_y = np.concatenate((all_y, 1-all_y), axis=-1)
+        all_y = np.stack(np.split(np.array(all_y), self.num_batch_for_each_text, axis=0))
         all_label_embedding = np.stack(np.split(np.array(all_label_embedding), self.num_batch_for_each_text, axis=0))
         return pid, x, seq_len, self.all_labels, all_y, all_label_embedding
 

@@ -91,7 +91,7 @@ def main():
                          model_path='datasets/AmazonCat-13K/output/results/model_save/',
                          test_path='datasets/AmazonCat-13K/output/results/model_save/')
     print 'begin training...'
-    solver.train()
+    #solver.train()
 
     # test
     test_all = DataLoader3(test_doc, test_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, max_seq_len)
