@@ -67,6 +67,7 @@ def main():
     print 'create train/test data loader...'
     train_loader = DataLoader2(train_doc, train_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, pos_neg_ratio=1)
     max_seq_len = train_loader.max_seq_len
+    print 'max_seq_len: ' + str(max_seq_len)
     test_loader = DataLoader2(test_doc, test_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, pos_neg_ratio=1, max_seq_len=max_seq_len)
     # ----- train -----
     print 'build biLSTM model...'
@@ -84,7 +85,7 @@ def main():
                          model_path='datasets/Wiki10/output/results/model_save/',
                          test_path='datasets/Wiki10/output/results/model_save/')
     print 'begin training...'
-    solver.train()
+    solver.train('datasets/Wiki10/output/results/outcome.txt')
 
     # test
     # test_all = DataLoader3(test_doc, test_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, max_seq_len)

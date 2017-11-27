@@ -41,7 +41,8 @@ class ModelSolver(object):
         elif self.update_rule == 'rmsprop':
             self.optimizer = tf.train.RMSPropOptimizer
 
-    def train(self):
+    def train(self, output_file_path):
+        o_file = open(output_file_path, 'w')
         train_loader = self.train_data
         test_loader = self.test_data
         # build_model
@@ -64,6 +65,7 @@ class ModelSolver(object):
                 curr_loss = 0
                 i = 0
                 #'''
+                #train_loader.pids_copy = train_loader.pids_copy[:5]
                 while not train_loader.end_of_data:
                     if i % 10 == 0:
                         print i
@@ -78,7 +80,9 @@ class ModelSolver(object):
                     i += 1
                 else:
                     train_loader.reset_data()
-                print('at epoch ' + str(e) + ', train loss is ' + str(curr_loss))
+                w_text = 'at epoch ' + str(e) + ', train loss is ' + str(curr_loss) + '\n'
+                print w_text
+                o_file.write(w_text)
                 # save model
                 save_name = self.model_path + 'model'
                 saver.save(sess, save_name, global_step=e+1)
@@ -92,6 +96,7 @@ class ModelSolver(object):
                     pre_pid_label = {}
                     pre_pid_score = {}
                     i = 0
+                    #test_loader.pids_copy = test_loader.pids_copy[:5]
                     while not test_loader.end_of_data:
                         if i % 10 == 0:
                             print i
@@ -116,7 +121,15 @@ class ModelSolver(object):
                         test_loader.reset_data()
                     mean_metric = precision_for_all(test_loader.label_data, pre_pid_label, pre_pid_score)
                     print len(mean_metric)
-                    print 'at epoch' + str(e) + ', test loss is ' + str(val_loss)
+                    w_text =  'at epoch' + str(e) + ', test loss is ' + str(val_loss) + '\n'
+                    print w_text
+                    o_file.write(w_text)
+                    o_file.write('precision@1: ' + str(mean_metric[0]) + '\n')
+                    o_file.write('precision@3: ' + str(mean_metric[1]) + '\n')
+                    o_file.write('precision@5: ' + str(mean_metric[2]) + '\n')
+                    o_file.write('ndcg@1: ' + str(mean_metric[3]) + '\n')
+                    o_file.write('ndcg@3: ' + str(mean_metric[4]) + '\n')
+                    o_file.write('ndcg@5: ' + str(mean_metric[5]) + '\n')
                     print 'precision@1: ' + str(mean_metric[0])
                     print 'precision@3: ' + str(mean_metric[1])
                     print 'precision@5: ' + str(mean_metric[2])
@@ -127,6 +140,7 @@ class ModelSolver(object):
             save_name = self.model_path + 'model_final'
             saver.save(sess, save_name)
             print 'final model saved.'
+            o_file.close()
 
     def test(self, test_loader):
         # build_model
