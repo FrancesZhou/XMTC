@@ -182,19 +182,24 @@ train_titles(len-14146, unique-14144): all in train_data(len-14144)
 test_titles(len-6616, unique-6613): test_data(len-6606), 
 Two ['Worldbuilding', 'Methods of website linking'] duplicate in train_titles.
 Two ['Flying Spaghetti Monster', 'Treaty of Versailles', 'Bene Gesserit'] duplicate in test_titles.
-['Main Page', 'CPU socket', 'ISO 216', 'Albert Einstein', 'Information Technology Infrastructure Library', 'Language Integrated Query', 'Novikov self-consistency principle'] not in our raw data.
+['CPU socket', 'ISO 216', 'Albert Einstein', 'Information Technology Infrastructure Library', 'Language Integrated Query', 'Novikov self-consistency principle'] in both train/test titles.
+Thus, remove these 6 samples from test data.
 After manually modifying file names, we have train_data(len-14144), test_data(len-6613). Then we need to remove the duplica from train/test data, we finally have
 train_titles(len-14146, unique-14144): appeared in manik XML repository
 test_titles(len-6616, unique-6613): appeared in manik XML repository
 train_data(len-14142): remove all the replica
-test_data(len-6610): remove all the replica
+test_data(len-6604): remove all the replica and 6 samples which are already in train data.
 
 process labels:
-all_labels(len-29944), train/test data: 14142/6610
+all_labels(len-29944), train/test data: 14142/6604
 
 remove separate labels and invalid data... no invalid data...
 
 get doc_wordID_data and label_data
+
+max_seq_len: 562
+postive samples(labels) in train/test data: 263633/123492
+about 9 seconds for 80 positive samples -> 8.24h/3.86h for one epoch.
 
 #### unified processing
 train_data: {id: text, id: text, ...}
@@ -208,8 +213,3 @@ test_label: {id: labels, id: labels, ...}
 string and encodings: [refrence](http://www.cnblogs.com/sislcb/archive/2008/11/26/1341455.html)
 BeautifulSoup: [refrence1](http://cuiqingcai.com/1319.html) and [refrence2](http://www.w3school.com.cn/tags/tag_p.asp)
 save and restore tensorflow models: [refrence1](http://stackabuse.com/tensorflow-save-and-restore-models/) and [refrence2](http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/)
-
-
-WSDM camera-ready problem:
-1. corresponding author
-2. header too long (pagestyle: empty)

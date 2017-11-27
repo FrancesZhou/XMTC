@@ -133,9 +133,19 @@ def get_train_test_doc_data():
     #dump_pickle(train_doc_wordID, train_doc_wordID_final)
     dump_pickle(test_doc_wordID, test_doc_wordID_final)
 
+def get_number_of_all_positive_samples():
+    train_label = load_pickle(train_label_final)
+    test_label = load_pickle(test_label_final)
+    train_all_pos = np.concatenate(train_label.values())
+    test_all_pos = np.concatenate(test_label.values())
+    print len(train_all_pos)
+    print len(test_all_pos)
+
+
 #get_label_data()
 #generate_label_pair()
 #get_valid_train_test_data()
 
-get_train_test_doc_data()
-write_label_pairs_into_file(label_pairs_final, 'datasets/Wiki10/output/label_pair/labels.edgelist')
+# get_train_test_doc_data()
+# write_label_pairs_into_file(label_pairs_final, 'datasets/Wiki10/output/label_pair/labels.edgelist')
+get_number_of_all_positive_samples()
