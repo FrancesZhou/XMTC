@@ -208,7 +208,7 @@ def generate_label_pair_from_file():
     print len(separate_labels)
     dump_pickle(label_pairs, 'datasets/AmazonCat-13K/output/descriptions/label_pair/labels_pair.pkl')
     dump_pickle(all_label_pair, 'datasets/AmazonCat-13K/output/descriptions/label_pair/all_labels.pkl')
-    return all_labels, separate_labels
+    return all_label_pair, separate_labels
 
 def write_label_pair():
     txtfile = open('datasets/AmazonCat-13K/output/descriptions/label_pair/labels.edgelist', 'w')

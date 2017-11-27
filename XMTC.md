@@ -9,7 +9,7 @@
 		- Implementation
 		- Problem
 		- procedure
-	- Analysis of raw data
+	- Materials
 
 <!-- /MarkdownTOC -->
 # Extreme Multi-label Text Classification
@@ -107,7 +107,7 @@ For AmazonCat-13K, valid/invalid train examples: 1182134/4105;
 valid/invalid test examples: 305701/1081
 
 ### procedure
-
+#### AmazonCat-13K
 ----------- using all titles as text -------------
 when label embeddings are given, (not in trainable variables)
 training for all negative labels, run 50 batches for 4 minutes. 1182134/16 /50 *4/60 = 98 h
@@ -167,9 +167,49 @@ Optimization:
 1. word embeddings stored as npy file (20M, 300) -> make 2x speedup
 2. remove stop words in descriptions -> not good for some key words like 'not', 'few', 'zero'... but maybe useful for topic clssification.
 
-After storing word embeddings as npy file, we can process input wordID quick by extracting corresponding word embeddings from numpy ndarray.
+After storing word embeddings as npy file, we can process input wordID quicker by extracting corresponding word embeddings from numpy ndarray.
 There are 809/186 batches in train/test datasets.
 For training, about 56 seconds for 10 batches - all about 75 minutes for one epoch
 For testing, about 27 seconds for 10 batches - all about 8 minutes for one epoch
 
-## Analysis of raw data
+#### Wiki10-31K
+train_titles(len-14146): [title1, title2, ..., titleN], which is Unicode.
+test_titles(len-6616): [title1, title2, ..., titleN], which is Unicode.
+train_data(len-14144): {title1: text, title2: text, ..., titleN: text}, the titles are all Unicode but text is UTF-8.
+test_data(len-6613): {title1: text, title2: text, ..., titleN:text}, the titles are all Unicode but texts are UTF-8.
+=============== Details =================
+train_titles(len-14146, unique-14144): all in train_data(len-14144)
+test_titles(len-6616, unique-6613): test_data(len-6606), 
+Two ['Worldbuilding', 'Methods of website linking'] duplicate in train_titles.
+Two ['Flying Spaghetti Monster', 'Treaty of Versailles', 'Bene Gesserit'] duplicate in test_titles.
+['Main Page', 'CPU socket', 'ISO 216', 'Albert Einstein', 'Information Technology Infrastructure Library', 'Language Integrated Query', 'Novikov self-consistency principle'] not in our raw data.
+After manually modifying file names, we have train_data(len-14144), test_data(len-6613). Then we need to remove the duplica from train/test data, we finally have
+train_titles(len-14146, unique-14144): appeared in manik XML repository
+test_titles(len-6616, unique-6613): appeared in manik XML repository
+train_data(len-14142): remove all the replica
+test_data(len-6610): remove all the replica
+
+process labels:
+all_labels(len-29944), train/test data: 14142/6610
+
+remove separate labels and invalid data... no invalid data...
+
+get doc_wordID_data and label_data
+
+#### unified processing
+train_data: {id: text, id: text, ...}
+train_label: {id: labels, id: labels, ...}
+test_data: {id: text, id: text, ...}
+test_label: {id: labels, id: labels, ...}
+1. get train_doc and test_doc (contain wordID from vocab)
+2. get label embeddings
+
+## Materials
+string and encodings: [refrence](http://www.cnblogs.com/sislcb/archive/2008/11/26/1341455.html)
+BeautifulSoup: [refrence1](http://cuiqingcai.com/1319.html) and [refrence2](http://www.w3school.com.cn/tags/tag_p.asp)
+save and restore tensorflow models: [refrence1](http://stackabuse.com/tensorflow-save-and-restore-models/) and [refrence2](http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/)
+
+
+WSDM camera-ready problem:
+1. corresponding author
+2. header too long (pagestyle: empty)

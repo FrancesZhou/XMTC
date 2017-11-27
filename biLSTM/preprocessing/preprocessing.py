@@ -285,3 +285,10 @@ def generate_label_embedding_from_file(file):
             label_embeddings[int(label)] = v
     return label_embeddings
 
+def write_label_pairs_into_file(label_pairs_file, output_file):
+    txtfile = open(output_file, 'w')
+    label_pairs = load_pickle(label_pairs_file)
+    for i in range(len(label_pairs)):
+        txtfile.write(str(label_pairs[i][0]) + '\t' + str(label_pairs[i][1]))
+        txtfile.write('\n')
+
