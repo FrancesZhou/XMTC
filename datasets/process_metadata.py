@@ -39,7 +39,11 @@ others_file = 'metadata/others.pkl'
 
 meta_file = open('metadata.json', 'r')
 all_data = meta_file.readlines()
+i = 0
 for line in all_data:
+    if i % 50000 == 0:
+        print i
+    i += 1
     d = ast.literal_eval(line)
     asin = None
     for k, v in d.items():
