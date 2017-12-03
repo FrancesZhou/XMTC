@@ -172,6 +172,11 @@ There are 809/186 batches in train/test datasets.
 For training, about 56 seconds for 10 batches - all about 75 minutes for one epoch
 For testing, about 27 seconds for 10 batches - all about 8 minutes for one epoch
 
+===================== in metadata.json file =========================
+The big file contains: 9354832 categories data, 7997369 titles data, 5701344 descriptions data
+intersection between descriptions and titles: 5126052
+intersection between descriptions and categories: 5660786
+
 #### Wiki10-31K
 train_titles(len-14146): [title1, title2, ..., titleN], which is Unicode.
 test_titles(len-6616): [title1, title2, ..., titleN], which is Unicode.
