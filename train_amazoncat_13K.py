@@ -41,6 +41,8 @@ def main():
                        help='path to the label embeddings')
     parse.add_argument('-pretrained_model', '--pretrained_model_path', type=str,
                        default=None, help='path to the pretrained model')
+    parse.add_argument('-model_path', '--model_path', type=str, default='deepwalk/', help='path to save model')
+    parse.add_argument('-test_path', '--test_path', type=str, default='deepwalk/', help='path to load trained model')
     #parse.add_argument('-o', '--out_dir', type=str, required=True, help='path to the output dir')
     # -- default
     parse.add_argument('-n_epochs', '--n_epochs', type=int, default=10, help='number of epochs')
@@ -88,14 +90,14 @@ def main():
                          update_rule=args.update_rule,
                          learning_rate=args.learning_rate,
                          pretrained_model=None,
-                         model_path='datasets/AmazonCat-13K/output/results/model_save/',
-                         test_path='datasets/AmazonCat-13K/output/results/model_save/')
+                         model_path='datasets/AmazonCat-13K/output/results/model_save/' + args.model_path,
+                         test_path='datasets/AmazonCat-13K/output/results/model_save/' + args.test_path)
     print 'begin training...'
-    #solver.train()
+    solver.train(output_file_path='datasets/AmazonCat-13K/output/results/model_save/' + args.model_path + 'outcome')
 
     # test
-    test_all = DataLoader3(test_doc, test_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, max_seq_len)
-    solver.test(test_all)
+    #test_all = DataLoader3(test_doc, test_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, max_seq_len)
+    #solver.test(test_all)
 
 
 if __name__ == "__main__":
