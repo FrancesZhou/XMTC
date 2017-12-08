@@ -6,6 +6,7 @@
 	- Preliminary attention-based model for XMTC
 		- DeepWalk
 		- KATE
+		- SLEEC
 		- Implementation
 		- Problem
 		- procedure
@@ -77,6 +78,21 @@ docs with word_id and freqency. # docs: {'doc_name': {word_id: freq, ...}, ...} 
 
 **doc_labels: **
 lables for docs. # doc_labels: {'doc_name': 'label_name', ...}
+
+### SLEEC
+
+clustering: cluster on the feature vectors
+number of neighbors in SVP: 250
+number of neighbors when testing: 25
+
+smat_t:
+{
+	rows, cols (number of rows/cols)
+	val, val_t (non-zero elements incrementing from col/row)
+	row_ptr, col_ptr (i-th value is the number of non-zero elements from 1st to i-th rows/cols)
+	row_idx, col_idx (i-th value is the row/col index of the i-th elements in val_t/val)
+}
+
 
 ### Implementation
 
@@ -176,6 +192,18 @@ For testing, about 27 seconds for 10 batches - all about 8 minutes for one epoch
 The big file contains: 9354832 categories data, 7997369 titles data, 5701344 descriptions data
 intersection between descriptions and titles: 5126052
 intersection between descriptions and categories: 5660786
+
+for AmazonCat-13K
+number of train_pids: 1186239
+number of test_pids: 306782
+intersection between train_pids and des_asin: 687130
+intersection between test_pids and des_asin: 178802
+
+for Amazon-670K
+number of train_pids: 490449
+number of test_pids: 153025
+intersection between train_pids and des_asin: 335814
+intersection between test_pids and des_asin: 84953
 
 #### Wiki10-31K
 train_titles(len-14146): [title1, title2, ..., titleN], which is Unicode.
