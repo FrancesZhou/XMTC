@@ -259,13 +259,13 @@ class DataLoader4():
         if self.if_use_all_true_label:
             for pid, label in self.label_data.items():
                 candidate_label = filter(lambda x: x != 0, self.candidate_label_data[pid])
-                candidate_label = candidate_label - 1
-                self.candidate_label_data[pid] = np.unique(np.concatenate((candidate_label, label)))
+                candidate_label = np.asarray(candidate_label) - 1
+                self.candidate_label_data[pid] = np.unique(np.concatenate((candidate_label, np.asarray(label))))
         else:
             for pid, candidate_label in self.candidate_label_data.items():
                 candidate_label = filter(lambda x: x != 0, self.candidate_label_data[pid])
-                candidate_label = candidate_label - 1
-                self.candidate_label_data[pid] = candidate_label
+                candidate_label = np.asarray(candidate_label) - 1
+                self.candidate_label_data[pid] = candidate_label.tolist()
         self.reset_data()
 
     def generate_sample(self):

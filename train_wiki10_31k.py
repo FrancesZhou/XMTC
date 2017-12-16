@@ -9,6 +9,7 @@ from __future__ import absolute_import
 import os
 import argparse
 import numpy as np
+import scipy.io as sio
 from biLSTM.preprocessing.preprocessing import generate_label_embedding_from_file, get_train_test_doc_label_data
 from biLSTM.preprocessing.dataloader import DataLoader2, DataLoader4
 from biLSTM.core.biLSTM import biLSTM
