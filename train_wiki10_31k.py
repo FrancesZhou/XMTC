@@ -10,7 +10,7 @@ import os
 import argparse
 import numpy as np
 from biLSTM.preprocessing.preprocessing import generate_label_embedding_from_file, get_train_test_doc_label_data
-from biLSTM.preprocessing.dataloader import DataLoader2, DataLoader3
+from biLSTM.preprocessing.dataloader import DataLoader2, DataLoader4
 from biLSTM.core.biLSTM import biLSTM
 from biLSTM.core.solver import ModelSolver
 from biLSTM.utils.io_utils import load_pickle, load_txt
@@ -29,10 +29,15 @@ def main():
     parse.add_argument('-test_label_data', '--test_label_data_path', type=str,
                        default='datasets/Wiki10/output/final/test_label.pkl',
                        help='path to the test labels data')
+
+    parse.add_argument('-train_candidate_label_data', '--train_candidate_label_data_path', type=str,
+                       default='datasets/Wiki10/output/final/train_candidate_label.pkl',
+                       help='path to train candidate label data')
+    parse.add_argument('-test_candidate_label_data', '--test_candidate_label_data_path', type=str,
+                       default='datasets/Wiki10/output/final/test_candidate_label.pkl',
+                       help='path to test candidate label data')
+
     parse.add_argument('-vocab', '--vocab_path', type=str, default='datasets/vocab', help='path to the vocab')
-    # parse.add_argument('-word_embeddings', '--word_embedding_path', type=str,
-    #                    default='datasets/glove.840B.300d.txt',
-    #                    help='path to the word embeddings')
     parse.add_argument('-word_embeddings', '--word_embedding_path', type=str,
                        default='datasets/word_embeddings.npy',
                        help='path to the word embeddings')
@@ -58,17 +63,14 @@ def main():
     test_doc = load_pickle(args.test_doc_wordID_data_path)
     train_label = load_pickle(args.train_label_data_path)
     test_label = load_pickle(args.test_label_data_path)
-    # train_data = train_data[:len(train_data)/10]
-    # test_data = test_data[:len(test_data)/10]
-    # train_label = train_label[:len(train_data)]
-    # test_label = test_label[:len(test_data)]
-    #all_labels = load_pickle(args.all_labels_path)
+    train_candidate_label = load_pickle(args.train_candidate_label_data_path)
+    test_candidate_label = load_pickle(args.test_candidate_label_data_path)
     all_labels = label_embeddings.keys()
     print 'create train/test data loader...'
-    train_loader = DataLoader2(train_doc, train_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, pos_neg_ratio=1)
+    train_loader = DataLoader4(train_doc, train_label, train_candidate_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings)
     max_seq_len = train_loader.max_seq_len
     print 'max_seq_len: ' + str(max_seq_len)
-    test_loader = DataLoader2(test_doc, test_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, pos_neg_ratio=1, max_seq_len=max_seq_len)
+    test_loader = DataLoader4(test_doc, test_label, test_candidate_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, max_seq_len=max_seq_len)
     # ----- train -----
     print 'build biLSTM model...'
     # (self, max_seq_len, input_dim, num_label_embedding, num_hidden, num_classify_hidden)

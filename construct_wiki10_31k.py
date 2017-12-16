@@ -10,6 +10,7 @@ import os
 #import argparse
 import json
 import numpy as np
+import scipy.io as sio
 from biLSTM.preprocessing.preprocessing import get_wordID_from_vocab, write_label_pairs_into_file
 from biLSTM.utils.io_utils import load_pickle, dump_pickle, load_txt
 
@@ -33,6 +34,12 @@ test_label_final = 'datasets/Wiki10/output/final/test_label.pkl'
 label_pairs_final = 'datasets/Wiki10/output/label_pair/labels_pair.pkl'
 all_labels_final = 'datasets/Wiki10/output/label_pair/all_labels.pkl'
 
+train_candidate_label_file = 'datasets/Wiki10/output/candidate_train.mat'
+test_candidate_label_file = 'datasets/Wiki10/output/candidate_test.mat'
+train_candidate_label_final = 'datasets/Wiki10/output/final/train_candidate_label.pkl'
+test_candidate_label_final = 'datasets/Wiki10/output/final/test_candidate_label.pkl'
+
+# generate train/test label data from train_data, test_data, train_titles, test_titles
 def get_label_data():
     train_data = load_pickle(train_data_file)
     test_data = load_pickle(test_data_file)
@@ -63,6 +70,7 @@ def get_label_data():
     dump_pickle(train_label, train_label_file)
     dump_pickle(test_label, test_label_file)
 
+# generate label pair
 def generate_label_pair():
     train_label = load_pickle(train_label_file)
     all_labels = []
@@ -117,20 +125,20 @@ def get_valid_train_test_data():
 
 def get_train_test_doc_data():
     vocab = load_pickle('datasets/vocab')
-    #train_data = load_pickle(train_data_final)
+    train_data = load_pickle(train_data_final)
     test_data = load_pickle(test_data_final)
-    #train_doc_wordID = {}
+    train_doc_wordID = {}
     test_doc_wordID = {}
 
-    # for id, text in train_data.items():
-    #     text = id + '. ' + text
-    #     wordID = get_wordID_from_vocab(text, vocab)
-    #     train_doc_wordID[id] = wordID
+    for id, text in train_data.items():
+        text = id + '. ' + text
+        wordID = get_wordID_from_vocab(text, vocab)
+        train_doc_wordID[id] = wordID
     for id, text in test_data.items():
         text = id + '. ' + text
         wordID = get_wordID_from_vocab(text, vocab)
         test_doc_wordID[id] = wordID
-    #dump_pickle(train_doc_wordID, train_doc_wordID_final)
+    dump_pickle(train_doc_wordID, train_doc_wordID_final)
     dump_pickle(test_doc_wordID, test_doc_wordID_final)
 
 def get_number_of_all_positive_samples():
@@ -141,11 +149,34 @@ def get_number_of_all_positive_samples():
     print len(train_all_pos)
     print len(test_all_pos)
 
+# get candidate labels from SLEEC results
+def get_candidate_labels():
+    train_titles = load_pickle(train_titles_file)
+    test_titles = load_pickle(test_titles_file)
+    train_candidate_all = sio.loadmat(train_candidate_label_file)['candidate_train']
+    test_candidate_all = sio.loadmat(test_candidate_label_file)['candidate_test']
+    train_label = load_pickle(train_label_final)
+    test_label = load_pickle(test_label_final)
+    train_candidate_labels = {}
+    test_candidate_labels = {}
+    # train data
+    for pid, _ in train_label.items():
+        candidate_labels = train_candidate_all[train_titles.index(pid)]
+        train_candidate_labels[pid] = candidate_labels
+    for pid, _ in test_label.items():
+        candidate_labels = test_candidate_all[test_titles.index(pid)]
+        test_candidate_labels[pid] = candidate_labels
+    dump_pickle(train_candidate_labels, train_candidate_label_final)
+    dump_pickle(test_candidate_labels, test_candidate_label_final)
 
 #get_label_data()
 #generate_label_pair()
 #get_valid_train_test_data()
 
 # get_train_test_doc_data()
+
+get_candidate_labels()
+
 # write_label_pairs_into_file(label_pairs_final, 'datasets/Wiki10/output/label_pair/labels.edgelist')
-get_number_of_all_positive_samples()
+#get_number_of_all_positive_samples()
+

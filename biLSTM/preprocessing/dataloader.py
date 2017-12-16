@@ -222,3 +222,88 @@ class DataLoader3():
         #self.label_data_copy = copy.deepcopy(self.label_data)
         self.pids_copy = copy.deepcopy(self.pids)
         self.end_of_data = False
+
+# DataLoader4 is for loading candidate label subset from SLEEC
+class DataLoader4():
+    def __init__(self, doc_wordID_data, label_data, candidate_label_data, all_labels, label_embeddings, batch_size, vocab, word_embeddings, max_seq_len=None, if_use_all_true_label=False):
+        self.doc_wordID_data = doc_wordID_data
+        self.label_data = label_data
+        self.pids = self.label_data.keys()
+        self.all_labels = all_labels
+        self.candidate_label_data = candidate_label_data
+        self.label_embeddings = label_embeddings
+        self.batch_size = batch_size
+        self.vocab = vocab
+        self.word_embeddings = word_embeddings
+        self.max_seq_len = max_seq_len
+        self.if_use_all_true_label = if_use_all_true_label
+        self.initialize_dataloader()
+
+    def initialize_dataloader(self):
+        print 'num of doc: ' + str(len(self.doc_wordID_data))
+        print 'num of y: ' + str(len(self.label_data))
+        # doc_token_data consists of wordIDs in vocab.
+        self.doc_length = {}
+        all_length = []
+        count = 0
+        for pid, seq in self.doc_wordID_data.items():
+            count += 1
+            if count % 50 == 0:
+                print count
+            all_length.append(len(seq))
+            self.doc_length[pid] = len(seq)
+        # assign max_seq_len if None
+        if self.max_seq_len is None:
+            self.max_seq_len = max(all_length)
+        # if_use_all_true_label
+        if self.if_use_all_true_label:
+            for pid, label in self.label_data.items():
+                candidate_label = filter(lambda x: x != 0, self.candidate_label_data[pid])
+                candidate_label = candidate_label - 1
+                self.candidate_label_data[pid] = np.unique(np.concatenate((candidate_label, label)))
+        else:
+            for pid, candidate_label in self.candidate_label_data.items():
+                candidate_label = filter(lambda x: x != 0, self.candidate_label_data[pid])
+                candidate_label = candidate_label - 1
+                self.candidate_label_data[pid] = candidate_label
+        self.reset_data()
+
+    def generate_sample(self):
+        pid = np.random.choice(self.pids_copy)
+        label = np.random.choice(self.candidate_label_data_copy[pid])
+        # follow-up processing
+        self.candidate_label_data_copy[pid].remove(label)
+        if not self.candidate_label_data_copy[pid]:
+            self.pids_copy.remove(pid)
+            del self.candidate_label_data_copy[pid]
+        return pid, label
+
+    def next_batch(self):
+        batch_pid = []
+        batch_label = []
+        batch_x = []
+        batch_y = []
+        batch_length = []
+        batch_label_embedding = []
+        for i in range(self.batch_size):
+            pid, label = self.generate_sample()
+            batch_pid.append(pid)
+            batch_label.append(label)
+            _, embeddings = generate_embedding_from_vocabID(self.doc_wordID_data[pid], self.max_seq_len, self.word_embeddings)
+            batch_x.append(embeddings)
+            if label in self.label_data[pid]:
+                batch_y.append([0, 1])
+            else:
+                batch_y.append([1, 0])
+            batch_length.append(self.doc_length[pid])
+            batch_label_embedding.append(self.label_embeddings[label])
+            if not self.pids_copy:
+                self.end_of_data = True
+                break
+        return batch_pid, batch_label, batch_x, batch_y, batch_length, batch_label_embedding
+
+    def reset_data(self):
+        #self.label_data_copy = copy.deepcopy(self.label_data)
+        self.candidate_label_data_copy = copy.deepcopy(self.candidate_label_data)
+        self.pids_copy = copy.deepcopy(self.pids)
+        self.end_of_data = False

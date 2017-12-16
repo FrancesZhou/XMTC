@@ -217,9 +217,10 @@ Two ['Worldbuilding', 'Methods of website linking'] duplicate in train_titles.
 Two ['Flying Spaghetti Monster', 'Treaty of Versailles', 'Bene Gesserit'] duplicate in test_titles.
 ['CPU socket', 'ISO 216', 'Albert Einstein', 'Information Technology Infrastructure Library', 'Language Integrated Query', 'Novikov self-consistency principle'] in both train/test titles.
 Thus, remove these 6 samples from test data.
+
 After manually modifying file names, we have train_data(len-14144), test_data(len-6613). Then we need to remove the duplica from train/test data, we finally have
-train_titles(len-14146, unique-14144): appeared in manik XML repository
-test_titles(len-6616, unique-6613): appeared in manik XML repository
+train_titles(len-14146, unique-14144): as appeared in manik XML repository
+test_titles(len-6616, unique-6613): as appeared in manik XML repository
 train_data(len-14142): remove all the replica
 test_data(len-6604): remove all the replica and 6 samples which are already in train data.
 
@@ -231,7 +232,7 @@ remove separate labels and invalid data... no invalid data...
 get doc_wordID_data and label_data
 
 max_seq_len: 562
-postive samples(labels) in train/test data: 263633/123492
+positive samples(labels) in train/test data: 263633/123492
 about 9 seconds for 80 positive samples -> 8.24h/3.86h for one epoch.
 
 #### unified processing
