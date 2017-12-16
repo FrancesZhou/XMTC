@@ -162,10 +162,10 @@ def get_candidate_labels():
     # train data
     for pid, _ in train_label.items():
         candidate_labels = train_candidate_all[train_titles.index(pid)]
-        train_candidate_labels[pid] = candidate_labels
+        train_candidate_labels[pid] = candidate_labels.tolist()
     for pid, _ in test_label.items():
         candidate_labels = test_candidate_all[test_titles.index(pid)]
-        test_candidate_labels[pid] = candidate_labels
+        test_candidate_labels[pid] = candidate_labels.tolist()
     dump_pickle(train_candidate_labels, train_candidate_label_final)
     dump_pickle(test_candidate_labels, test_candidate_label_final)
 
