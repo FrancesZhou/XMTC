@@ -67,6 +67,7 @@ def main():
     train_candidate_label = load_pickle(args.train_candidate_label_data_path)
     test_candidate_label = load_pickle(args.test_candidate_label_data_path)
     all_labels = label_embeddings.keys()
+    print 'number of labels: ' + str(len(all_labels))
     print 'create train/test data loader...'
     train_loader = DataLoader4(train_doc, train_label, train_candidate_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings)
     max_seq_len = train_loader.max_seq_len
