@@ -245,11 +245,11 @@ class DataLoader4():
         # doc_token_data consists of wordIDs in vocab.
         self.doc_length = {}
         all_length = []
-        count = 0
+        #count = 0
         for pid, seq in self.doc_wordID_data.items():
-            count += 1
-            if count % 50 == 0:
-                print count
+            # count += 1
+            # if count % 50 == 0:
+            #     print count
             all_length.append(len(seq))
             self.doc_length[pid] = len(seq)
         # assign max_seq_len if None
