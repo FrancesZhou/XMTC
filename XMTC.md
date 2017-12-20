@@ -2,7 +2,7 @@
 <!-- MarkdownTOC depth=3 -->
 
 - Extreme Multi-label Text Classification
-	- Preliminary overview
+	- Datasets
 	- Preliminary attention-based model for XMTC
 		- DeepWalk
 		- KATE
@@ -15,17 +15,20 @@
 <!-- /MarkdownTOC -->
 # Extreme Multi-label Text Classification
 
-## Preliminary overview
+## Datasets
 
 For two datasets: AmazonCat-13K and Wiki10-30K
 
-1. AmazonCat-13K
-The descriptions are not complete. But the title information is alright. Try to build the attention-based neural network model on title sequences for multi-label classification.
+1. AmazonCat-13K [incomplete]
+The descriptions are not complete. But the title information is alright. Try to build the attention-based neural network model on title sequences for multi-label classification. (it's not good to use only titles)
+Extract corresponding asin data from metadata.json file, then we get much train/test data with more than half data points.
 
-2. Wiki10-30K
+2. Wiki10-31K
 The raw wikipedia text is alright except that you need to match the raw texts to the processed ones. It requires analyzing the raw html file. This needs lots of efforts.
 
-Please try first on title sequences.
+3. AmazonCat-14K [not suitable]
+The examples are not given corresponding asins, and some of titles in train/test data are marked as NA.
+They are not suitable for our experiments...
 
 ## Preliminary attention-based model for XMTC
 
@@ -189,7 +192,7 @@ For training, about 56 seconds for 10 batches - all about 75 minutes for one epo
 For testing, about 27 seconds for 10 batches - all about 8 minutes for one epoch
 
 ===================== in metadata.json file =========================
-The big file contains: 9354832 categories data, 7997369 titles data, 5701344 descriptions data
+The big file contains: 9430088 asins, 9354832 categories data, 7997369 titles data (253544 titles have multiple asins), 5701344 descriptions data
 intersection between descriptions and titles: 5126052
 intersection between descriptions and categories: 5660786
 
@@ -234,6 +237,10 @@ get doc_wordID_data and label_data
 max_seq_len: 562
 positive samples(labels) in train/test data: 263633/123492
 about 9 seconds for 80 positive samples -> 8.24h/3.86h for one epoch.
+
+
+candidate label subset from SLEEC
+train/test epoch: 26510/12380
 
 #### unified processing
 train_data: {id: text, id: text, ...}
