@@ -55,7 +55,11 @@ class ModelSolver(object):
             train_op = optimizer.apply_gradients(grads_and_vars=grads_and_vars)
 
         tf.get_variable_scope().reuse_variables()
-        with tf.Session() as sess:
+        # set upper limit of used gpu memory
+        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.5)
+        #gpu_options = tf.GPUOptions(allow_growth=True)
+        with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
+        #with tf.Session() as sess:
             tf.global_variables_initializer().run()
             saver = tf.train.Saver(tf.global_variables())
             if self.pretrained_model is not None:
@@ -67,7 +71,7 @@ class ModelSolver(object):
                 #'''
                 #train_loader.pids_copy = train_loader.pids_copy[:5]
                 while not train_loader.end_of_data:
-                    if i % 10 == 0:
+                    if i % 100 == 0:
                         print i
                     _, _, x, y, seq_l, label_emb = train_loader.next_batch()
                     if len(x) < self.batch_size:
@@ -98,7 +102,7 @@ class ModelSolver(object):
                     i = 0
                     #test_loader.pids_copy = test_loader.pids_copy[:5]
                     while not test_loader.end_of_data:
-                        if i % 10 == 0:
+                        if i % 100 == 0:
                             print i
                         batch_pid, batch_label, x, y, seq_l, label_emb = test_loader.next_batch()
                         if len(batch_pid) < self.batch_size:
