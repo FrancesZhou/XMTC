@@ -71,7 +71,7 @@ def main():
     all_labels = label_embeddings.keys()
     print 'number of labels: ' + str(len(all_labels))
     print 'create train/test data loader...'
-    train_loader = DataLoader4(train_doc, train_label, train_candidate_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, if_use_all_true_label=True)
+    train_loader = DataLoader4(train_doc, train_label, train_candidate_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, if_use_all_true_label=False)
     max_seq_len = train_loader.max_seq_len
     print 'max_seq_len: ' + str(max_seq_len)
     test_loader = DataLoader4(test_doc, test_label, test_candidate_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, max_seq_len=max_seq_len)
