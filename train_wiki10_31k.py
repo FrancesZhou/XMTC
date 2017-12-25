@@ -51,6 +51,7 @@ def main():
     #parse.add_argument('-o', '--out_dir', type=str, required=True, help='path to the output dir')
     # -- default
     parse.add_argument('-model', '--model', type=str, default='biLSTM', help='model: LSTM, biLSTM, CNN')
+    parse.add_argument('-if_all_true', '--if_all_true', type=bool, default=False, help='if use all true labels for training')
     parse.add_argument('-n_epochs', '--n_epochs', type=int, default=10, help='number of epochs')
     parse.add_argument('-batch_size', '--batch_size', type=int, default=16, help='batch size')
     parse.add_argument('-lr', '--learning_rate', type=float, default=0.0002, help='learning rate')
@@ -71,7 +72,7 @@ def main():
     all_labels = label_embeddings.keys()
     print 'number of labels: ' + str(len(all_labels))
     print 'create train/test data loader...'
-    train_loader = DataLoader4(train_doc, train_label, train_candidate_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, if_use_all_true_label=False)
+    train_loader = DataLoader4(train_doc, train_label, train_candidate_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, if_use_all_true_label=args.if_all_true)
     max_seq_len = train_loader.max_seq_len
     print 'max_seq_len: ' + str(max_seq_len)
     test_loader = DataLoader4(test_doc, test_label, test_candidate_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, max_seq_len=max_seq_len)
