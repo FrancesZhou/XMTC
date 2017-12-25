@@ -77,12 +77,14 @@ def main():
     print 'max_seq_len: ' + str(max_seq_len)
     test_loader = DataLoader4(test_doc, test_label, test_candidate_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, max_seq_len=max_seq_len)
     # ----- train -----
-    print 'build biLSTM model...'
+    #print 'build biLSTM model...'
     # (self, max_seq_len, input_dim, num_label_embedding, num_hidden, num_classify_hidden)
 
     if args.model == 'biLSTM':
+        print 'build biLSTM model ...'
         model = biLSTM(max_seq_len, 300, 64, 64, 32, args.batch_size)
     elif args.model == 'LSTM':
+        print 'build LSTM model ...'
         model = LSTM(max_seq_len, 300, 64, 64, 32, args.batch_size)
 
     print 'model solver...'
@@ -96,7 +98,7 @@ def main():
                          model_path='datasets/Wiki10/output/results/model_save/',
                          test_path='datasets/Wiki10/output/results/model_save/')
     print 'begin training...'
-    solver.train('datasets/Wiki10/output/results/outcome.txt')
+    solver.train('datasets/Wiki10/output/results/outcome2.txt')
 
     # test
     # test_all = DataLoader3(test_doc, test_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, max_seq_len)

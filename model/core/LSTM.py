@@ -95,7 +95,7 @@ class LSTM(object):
         # activation: tanh(default)
         # fw_lstm = tf.contrib.rnn.BasicLSTMCell(self.num_hidden)
         # bw_lstm = tf.contrib.rnn.BasicLSTMCell(self.num_hidden)
-        outputs = tf.nn.dynamic_rnn(tf.contrib.rnn.BasicLSTMCell(self.num_hidden), x, dtype=tf.float32, sequence_length=self.seqlen)
+        outputs, _ = tf.nn.dynamic_rnn(tf.contrib.rnn.BasicLSTMCell(self.num_hidden), x, dtype=tf.float32, sequence_length=self.seqlen)
         #outputs, _, _ = tf.contrib.rnn.stack_bidirectional_dynamic_rnn([fw_lstm], [bw_lstm], x, dtype=tf.float32, sequence_length=self.seqlen)
         outputs = tf.stack(outputs)
         print('outputs_shape : ', outputs.get_shape().as_list())
