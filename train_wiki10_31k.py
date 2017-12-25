@@ -13,6 +13,7 @@ import scipy.io as sio
 from model.preprocessing.preprocessing import generate_label_embedding_from_file, get_train_test_doc_label_data
 from model.preprocessing.dataloader import DataLoader2, DataLoader4
 from model.core.biLSTM import biLSTM
+from model.core.LSTM import LSTM
 from model.core.solver import ModelSolver
 from model.utils.io_utils import load_pickle, load_txt
 
@@ -49,6 +50,7 @@ def main():
                        default=None, help='path to the pretrained model')
     #parse.add_argument('-o', '--out_dir', type=str, required=True, help='path to the output dir')
     # -- default
+    parse.add_argument('-model', '--model', type=str, default='biLSTM', help='model: LSTM, biLSTM, CNN')
     parse.add_argument('-n_epochs', '--n_epochs', type=int, default=10, help='number of epochs')
     parse.add_argument('-batch_size', '--batch_size', type=int, default=16, help='batch size')
     parse.add_argument('-lr', '--learning_rate', type=float, default=0.0002, help='learning rate')
@@ -76,7 +78,11 @@ def main():
     # ----- train -----
     print 'build biLSTM model...'
     # (self, max_seq_len, input_dim, num_label_embedding, num_hidden, num_classify_hidden)
-    model = biLSTM(max_seq_len, 300, 64, 64, 32, args.batch_size)
+
+    if args.model == 'biLSTM':
+        model = biLSTM(max_seq_len, 300, 64, 64, 32, args.batch_size)
+    elif args.model == 'LSTM':
+        model = LSTM(max_seq_len, 300, 64, 64, 32, args.batch_size)
 
     print 'model solver...'
     # def __init__(self, model, train_data, test_data, **kwargs):
