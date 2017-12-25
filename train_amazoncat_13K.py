@@ -9,11 +9,11 @@ from __future__ import absolute_import
 import os
 import argparse
 import numpy as np
-from biLSTM.preprocessing.preprocessing import generate_label_embedding_from_file, get_train_test_doc_label_data
-from biLSTM.preprocessing.dataloader import DataLoader2, DataLoader3
-from biLSTM.core.biLSTM import biLSTM
-from biLSTM.core.solver import ModelSolver
-from biLSTM.utils.io_utils import load_pickle, load_txt
+from model.preprocessing.preprocessing import generate_label_embedding_from_file, get_train_test_doc_label_data
+from model.preprocessing.dataloader import DataLoader2, DataLoader3
+from model.core.biLSTM import biLSTM
+from model.core.solver import ModelSolver
+from model.utils.io_utils import load_pickle, load_txt
 
 def main():
     parse = argparse.ArgumentParser()

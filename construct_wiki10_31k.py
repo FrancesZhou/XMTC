@@ -11,8 +11,8 @@ import os
 import json
 import numpy as np
 import scipy.io as sio
-from biLSTM.preprocessing.preprocessing import get_wordID_from_vocab, write_label_pairs_into_file
-from biLSTM.utils.io_utils import load_pickle, dump_pickle, load_txt
+from model.preprocessing.preprocessing import get_wordID_from_vocab, write_label_pairs_into_file
+from model.utils.io_utils import load_pickle, dump_pickle, load_txt
 
 train_data_file = 'datasets/Wiki10/output/train_data.pkl'
 test_data_file = 'datasets/Wiki10/output/test_data.pkl'

@@ -240,7 +240,11 @@ about 9 seconds for 80 positive samples -> 8.24h/3.86h for one epoch.
 
 
 candidate label subset from SLEEC
-train/test epoch: 26510/12380
+one train/test epoch: 26510/12380
+
+candidate label subset from SLEEC plus real true label samples as training data
+candidate label subset from SLEEC as testing data
+one train/test epoch: 32230/
 
 #### unified processing
 train_data: {id: text, id: text, ...}

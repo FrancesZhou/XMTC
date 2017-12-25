@@ -10,8 +10,8 @@ import os
 import argparse
 import json
 import numpy as np
-from biLSTM.preprocessing.preprocessing import get_wordID_from_vocab, gen_word_emb_from_str, construct_train_test_corpus, generate_labels_from_file_and_error, generate_label_pair_from_file
-from biLSTM.utils.io_utils import load_pickle, dump_pickle, load_txt
+from model.preprocessing.preprocessing import get_wordID_from_vocab, gen_word_emb_from_str, construct_train_test_corpus, generate_labels_from_file_and_error, generate_label_pair_from_file
+from model.utils.io_utils import load_pickle, dump_pickle, load_txt
 
 def preprocessing_for_all_titles(args, vocab):
     train_corpus, test_corpus = construct_train_test_corpus(vocab, args.train_corpus_path, args.test_corpus_path, args.out_dir)
