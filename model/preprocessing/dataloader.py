@@ -225,7 +225,7 @@ class DataLoader3():
 
 # DataLoader4 is for loading candidate label subset from SLEEC
 class DataLoader4():
-    def __init__(self, doc_wordID_data, label_data, candidate_label_data, all_labels, label_embeddings, batch_size, vocab, word_embeddings, max_seq_len=None, if_use_all_true_label=False):
+    def __init__(self, doc_wordID_data, label_data, candidate_label_data, all_labels, label_embeddings, batch_size, vocab, word_embeddings, max_seq_len=None, if_use_all_true_label=0):
         self.doc_wordID_data = doc_wordID_data
         self.label_data = label_data
         self.pids = self.label_data.keys()
