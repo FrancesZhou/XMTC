@@ -210,8 +210,10 @@ def generate_embedding_from_vocabID(sequence, max_seq_len, word_embeddings):
     embeddings = np.array(embeddings)
     #print embeddings.shape
     if zero_len > 0:
-        zero_emb = np.zeros([zero_len, embeddings.shape[-1]])
+        zero_emb = np.zeros((zero_len, embeddings.shape[-1]))
         #print zero_emb.shape
+        print zero_emb.shape
+        print embeddings.shape
         embeddings = np.concatenate((embeddings, zero_emb), axis=0)
     return seq_len, embeddings
 

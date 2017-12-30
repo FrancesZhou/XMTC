@@ -13,7 +13,7 @@ import tensorflow as tf
 # from biLSTM.preprocessing.preprocessing import batch_data, get_max_seq_len, construct_train_test_corpus, \
 #     generate_labels_from_file, generate_label_pair_from_file
 # from biLSTM.utils.io_utils import load_pickle, write_file, load_txt
-from biLSTM.utils.op_utils import precision, precision_for_all
+from model.utils.op_utils import precision, precision_for_all
 
 
 class ModelSolver(object):

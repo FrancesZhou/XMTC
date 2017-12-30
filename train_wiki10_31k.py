@@ -77,7 +77,7 @@ def main():
                          batch_size=args.batch_size,
                          update_rule=args.update_rule,
                          learning_rate=args.learning_rate,
-                         pretrained_model=args.pretrained_model,
+                         pretrained_model=args.pretrained_model_path,
                          model_path=args.folder_path + args.model + '/',
                          test_path=args.folder_path + args.model + '/')
     print 'begin training...'
