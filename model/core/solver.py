@@ -56,15 +56,17 @@ class ModelSolver(object):
 
         tf.get_variable_scope().reuse_variables()
         # set upper limit of used gpu memory
-        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.5)
-        #gpu_options = tf.GPUOptions(allow_growth=True)
+        #gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.5)
+        gpu_options = tf.GPUOptions(allow_growth=True)
         with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
         #with tf.Session() as sess:
             tf.global_variables_initializer().run()
             saver = tf.train.Saver(tf.global_variables())
             if self.pretrained_model is not None:
                 print 'Start training with pretrained model...'
-                saver.restore(sess, self.pretrained_model)
+                #pretrained_model_path = self.pretrained_model
+                pretrained_model_path = self.model_path + self.pretrained_model
+                saver.restore(sess, pretrained_model_path)
             for e in range(self.n_epochs):
                 curr_loss = 0
                 i = 0
@@ -125,21 +127,17 @@ class ModelSolver(object):
                         test_loader.reset_data()
                     mean_metric = precision_for_all(test_loader.label_data, pre_pid_label, pre_pid_score)
                     print len(mean_metric)
-                    w_text =  'at epoch' + str(e) + ', test loss is ' + str(val_loss) + '\n'
+                    w_text = 'at epoch' + str(e) + ', test loss is ' + str(val_loss) + '\n'
                     print w_text
                     o_file.write(w_text)
-                    o_file.write('precision@1: ' + str(mean_metric[0]) + '\n')
-                    o_file.write('precision@3: ' + str(mean_metric[1]) + '\n')
-                    o_file.write('precision@5: ' + str(mean_metric[2]) + '\n')
-                    o_file.write('ndcg@1: ' + str(mean_metric[3]) + '\n')
-                    o_file.write('ndcg@3: ' + str(mean_metric[4]) + '\n')
-                    o_file.write('ndcg@5: ' + str(mean_metric[5]) + '\n')
-                    print 'precision@1: ' + str(mean_metric[0])
-                    print 'precision@3: ' + str(mean_metric[1])
-                    print 'precision@5: ' + str(mean_metric[2])
-                    print 'ndcg@1: ' + str(mean_metric[3])
-                    print 'ndcg@3: ' + str(mean_metric[4])
-                    print 'ndcg@5: ' + str(mean_metric[5])
+                    p1_txt = 'precision@1: ' + str(mean_metric[0]) + '\n'
+                    p3_txt = 'precision@3: ' + str(mean_metric[1]) + '\n'
+                    p5_txt = 'precision@5: ' + str(mean_metric[2]) + '\n'
+                    ndcg1_txt = 'ndcg@1: ' + str(mean_metric[3]) + '\n'
+                    ndcg3_txt = 'ndcg@3: ' + str(mean_metric[4]) + '\n'
+                    ndcg5_txt = 'ndcg@5: ' + str(mean_metric[5]) + '\n'
+                    o_file.write(p1_txt + p3_txt + p5_txt + ndcg1_txt + ndcg3_txt + ndcg5_txt)
+                    print p1_txt + p3_txt + p5_txt + ndcg1_txt + ndcg3_txt + ndcg5_txt
             # save model
             save_name = self.model_path + 'model_final'
             saver.save(sess, save_name)

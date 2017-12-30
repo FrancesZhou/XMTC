@@ -11,6 +11,7 @@
 		- Problem
 		- procedure
 	- Materials
+	- unified organizations
 
 <!-- /MarkdownTOC -->
 # Extreme Multi-label Text Classification
@@ -197,16 +198,16 @@ intersection between descriptions and titles: 5126052
 intersection between descriptions and categories: 5660786
 
 for AmazonCat-13K
-number of train_pids: 1186239
-number of test_pids: 306782
-intersection between train_pids and des_asin: 687130
-intersection between test_pids and des_asin: 178802
+number of train_pids: 1,186,239
+number of test_pids: 306,782
+intersection between train_pids and des_asin: 687,130
+intersection between test_pids and des_asin: 178,802
 
 for Amazon-670K
-number of train_pids: 490449
-number of test_pids: 153025
-intersection between train_pids and des_asin: 335814
-intersection between test_pids and des_asin: 84953
+number of train_pids: 490,449
+number of test_pids: 153,025
+intersection between train_pids and des_asin: 335,814
+intersection between test_pids and des_asin: 84,953
 
 #### Wiki10-31K
 train_titles(len-14146): [title1, title2, ..., titleN], which is Unicode.
@@ -254,7 +255,36 @@ test_label: {id: labels, id: labels, ...}
 1. get train_doc and test_doc (contain wordID from vocab)
 2. get label embeddings
 
+#### problem
+1. unbalanced pos/neg samples lead to bad results. Thus, the distribution in training data and testing data should be the same. This corresponds to the bad results when adding all true labels into training data but using only candidate labels in testing data.
+
+
 ## Materials
 string and encodings: [refrence](http://www.cnblogs.com/sislcb/archive/2008/11/26/1341455.html)
 BeautifulSoup: [refrence1](http://cuiqingcai.com/1319.html) and [refrence2](http://www.w3school.com.cn/tags/tag_p.asp)
 save and restore tensorflow models: [refrence1](http://stackabuse.com/tensorflow-save-and-restore-models/) and [refrence2](http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/)
+
+
+## unified organizations
+
+text:
+1. all words (contain all punctuations)
+2. words without punctuations
+
+labels:
+1. all_labels (contain separate labels)
+2. adjacent_labels (only those connected labels)
+
+model:
+1. LSTM
+2. biLSTM
+3. CNN
+4. global embedding + local embedding
+
+attention:
+1. normal soft attention
+2. sparse attention (competitive)
+
+
+============================= folder organizations =============================
+
