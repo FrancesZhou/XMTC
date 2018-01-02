@@ -13,7 +13,7 @@ import tensorflow as tf
 # from biLSTM.preprocessing.preprocessing import batch_data, get_max_seq_len, construct_train_test_corpus, \
 #     generate_labels_from_file, generate_label_pair_from_file
 # from biLSTM.utils.io_utils import load_pickle, write_file, load_txt
-from biLSTM.utils.op_utils import precision, precision_for_all
+from model.utils.op_utils import precision, precision_for_all
 
 
 class ModelSolver(object):
@@ -73,7 +73,7 @@ class ModelSolver(object):
                 #'''
                 #train_loader.pids_copy = train_loader.pids_copy[:5]
                 while not train_loader.end_of_data:
-                    if i % 100 == 0:
+                    if i % 20 == 0:
                         print i
                     _, _, x, y, seq_l, label_emb = train_loader.next_batch()
                     if len(x) < self.batch_size:

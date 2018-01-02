@@ -61,13 +61,14 @@ def main():
     test_loader = DataLoader4(test_doc, test_label, test_candidate_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, max_seq_len=max_seq_len)
     # ----------------------- train ------------------------
     # (self, max_seq_len, input_dim, num_label_embedding, num_hidden, num_classify_hidden)
+    num_label_embedding = len(label_embeddings[0])
     print 'build model ...'
     if args.model == 'biLSTM':
         print 'build biLSTM model ...'
-        model = biLSTM(max_seq_len, 300, 64, 64, 32, args.batch_size)
+        model = biLSTM(max_seq_len, 300, num_label_embedding, 64, 32, args.batch_size)
     elif args.model == 'LSTM':
         print 'build LSTM model ...'
-        model = LSTM(max_seq_len, 300, 64, 64, 32, args.batch_size)
+        model = LSTM(max_seq_len, 300, num_label_embedding, 64, 32, args.batch_size)
 
     print 'model solver ...'
     # def __init__(self, model, train_data, test_data, **kwargs):
@@ -76,11 +77,11 @@ def main():
                          batch_size=args.batch_size,
                          update_rule=args.update_rule,
                          learning_rate=args.learning_rate,
-                         pretrained_model=args.pretrained_model,
+                         pretrained_model=args.pretrained_model_path,
                          model_path=args.folder_path + args.model + '/',
                          test_path=args.folder_path + args.model + '/')
     print 'begin training...'
-    solver.train(args.folder_path + 'outcome.txt')
+    solver.train(args.folder_path + args.model + '/outcome.txt')
 
     # test
     # test_all = DataLoader3(test_doc, test_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, max_seq_len)

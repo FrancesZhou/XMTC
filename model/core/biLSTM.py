@@ -6,6 +6,7 @@ Created on Nov, 2017
 
 from __future__ import absolute_import
 
+import numpy as np
 import tensorflow as tf
 
 class biLSTM(object):
@@ -22,6 +23,7 @@ class biLSTM(object):
 
         self.weight_initializer = tf.contrib.layers.xavier_initializer()
         self.const_initializer = tf.constant_initializer()
+        self.neg_inf = tf.constant(value=-np.inf, name='numpy_neg_inf')
 
         self.x = tf.placeholder(tf.float32, [self.batch_size, self.max_seq_len, self.input_dim])
         self.y = tf.placeholder(tf.float32, [self.batch_size, 2])
@@ -36,50 +38,53 @@ class biLSTM(object):
             s = tf.expand_dim(tf.softmax(s))
             return tf.reduce_sum(tf.multiply(s, hidden_states), 0)
 
-    def attention_layer_all(self, hidden_states, label_embeddings, num_hidden, num_label_embedding, reuse):
-        # for one label, num_labels = 1
-        with tf.variable_scope('att_layer', reuse=reuse):
+    def attention_layer_all(self, hidden_states, label_embeddings, num_hidden, num_label_embedding, seqlen):
+        # hidden_states: [batch_size, max_seq_len, num_hidden]
+        # label_embeddings: [batch_size, num_label_embedding]
+        # seqlen: [batch_size]
+        with tf.variable_scope('att_layer'):
             w = tf.get_variable('w', [num_hidden, num_label_embedding], initializer=self.weight_initializer)
-            # hidden_states: [seq_len, num_hidden]
-            # label_embeddings: [num_labels, num_label_embedding]
+            # hidden_states: [batch_size, seq_len, num_hidden]
+            # label_embeddings: [batch_size, num_label_embedding]
             # score: h*W*l
-            #s = tf.matmul(tf.matmul(hidden_states, w), tf.transpose(label_embeddings))
             s = tf.matmul(tf.matmul(hidden_states, w), tf.expand_dims(label_embeddings, axis=-1))
-            #s: [seq_len, num_labels]
-            s = tf.nn.softmax(s, 0)
-            # s_expand: [num_labels, seq_len, 1]
-            s_expand = tf.expand_dims(tf.transpose(s), axis=-1)
-            # s_hidden: [num_labels, seq_len, num_hidden]
-            s_hidden = tf.multiply(s_expand, hidden_states)
+            # s: [batch_size, seq_len, 1]
+            #
+            mask = tf.where(tf.tile(tf.expand_dims(range(1, self.max_seq_len+1), axis=0), [self.batch_size, 1]) >
+                            tf.tile(tf.expand_dims(seqlen, axis=-1), [1, self.max_seq_len]),
+                            tf.ones([self.batch_size, self.max_seq_len])*self.neg_inf,
+                            tf.zeros([self.batch_size, self.max_seq_len]))
+            s_mod = tf.nn.softmax(s + tf.expand_dims(mask, axis=-1), 1)
+            # hidden_states: [batch_size, max_seq_len, num_hidden]
+            # s_hidden: [batch_size, max_seq_len, num_hidden]
+            s_hidden = tf.multiply(s_mod, hidden_states)
             return tf.reduce_sum(s_hidden, axis=1)
-            #s = tf.reduce_sum(tf.multiply(tf.matmul(hidden_states, w), label_embeddings), axis=-1)
-            # s: [seq_len]
-            #s = tf.nn.softmax(s)
-            #s_hidden = tf.multiply(tf.expand_dims(s, axis=-1), hidden_states)
-            #return tf.reduce_sum(s_hidden, axis=0)
 
-    def classification(self, hidden_states, label_embeddings, num_hidden, num_label_embedding, reuse):
-        # z: [num_labels, num_hidden] (num_z = num_hidden)
-        # label_embeddings: [num_labels, num_label_embedding]
+    def classification(self, hidden_states, label_embeddings, num_hidden, num_label_embedding, seq_len):
+        # hidden_states: [batch_size, max_seq_len, num_hidden]
+        # label_embeddings: [batch_size, num_label_embedding]
+        #
+        # z: [batch_size, num_hidden]
         # --------- attention -------------
-        z = self.attention_layer_all(hidden_states, label_embeddings, num_hidden, num_label_embedding, reuse=reuse)
+        z = self.attention_layer_all(hidden_states, label_embeddings, num_hidden, num_label_embedding, seq_len)
         # --------- classification --------
-        with tf.variable_scope('classify_layer', reuse=reuse):
+        with tf.variable_scope('classify_layer'):
             with tf.variable_scope('z'):
                 w = tf.get_variable('w', [num_hidden, self.num_classify_hidden], initializer=self.weight_initializer)
+                # z: [batch_size, num_hidden]
                 z_att = tf.matmul(z, w)
             with tf.variable_scope('label'):
                 w = tf.get_variable('w', [num_label_embedding, self.num_classify_hidden], initializer=self.weight_initializer)
-                #label_att = tf.matmul(label_embeddings, w)
-                label_att = tf.matmul(tf.expand_dims(label_embeddings, axis=0), w)
+                # label_embedding: [batch_size, num_label_embedding]
+                label_att = tf.matmul(label_embeddings, w)
             b = tf.get_variable('b', [self.num_classify_hidden], initializer=self.const_initializer)
             z_label_plus = tf.nn.relu(z_att + label_att) + b
-            # z_label_plus: [num_labels, num_classify_hidden]
+            # z_label_plus: [batch_size, num_classify_hidden]
             #
             w_classify = tf.get_variable('w_classify', [self.num_classify_hidden, 2], initializer=self.weight_initializer)
             b_classify = tf.get_variable('b_classify', [2], initializer=self.const_initializer)
             wz_b_plus = tf.matmul(z_label_plus, w_classify) + b_classify
-            # wz_b_plus: [num_labels, 2]
+            # wz_b_plus: [batch_size, 2]
             return tf.nn.softmax(tf.nn.relu(wz_b_plus), -1)
 
 
@@ -97,26 +102,11 @@ class biLSTM(object):
         bw_lstm = tf.contrib.rnn.BasicLSTMCell(self.num_hidden)
         outputs, _, _ = tf.contrib.rnn.stack_bidirectional_dynamic_rnn([fw_lstm], [bw_lstm], x, dtype=tf.float32, sequence_length=self.seqlen)
         outputs = tf.stack(outputs)
-        print('outputs_shape : ', outputs.get_shape().as_list())
-        # output: [batch_size, n_step, num_hidden)
-        # index = tf.range(0, batch_size)*self.max_seq_len + (self.seqlen - 1)
-        # Indexing
-        # outputs = tf.gather(tf.reshape(outputs, [-1, self.num_hidden]), index)
-        # print('after indexing, outputs_shape : ', outputs.get_shape().as_list())
+        #print('outputs_shape : ', outputs.get_shape().as_list())
         # ------------ attention and classification --------------
         #num_label_embedding = self.label_embeddings.shape[-1]
-        y_ = []
-        for i in range(self.batch_size):
-            #hidden_states = outputs[i, 0:self.seqlen[i], :]
-            #print i
-            y_i = self.classification(outputs[i, 0:self.seqlen[i], :],
-                                          self.label_embeddings[i],
-                                          2*self.num_hidden,
-                                          self.num_label_embedding,
-                                          reuse=(i!=0))
-            print tf.shape(tf.squeeze(y_i))
-            y_.append(tf.squeeze(y_i))
-        y_ = tf.stack(y_)
+        y_ = self.classification(outputs, self.label_embeddings, 2*self.num_hidden, self.num_label_embedding)
+        # y_ = tf.stack(y_)
         # predict labels
         # y_labels = tf.argmax(y_, axis=-1)
         # y_labels_prob = y_[:,:,-1]

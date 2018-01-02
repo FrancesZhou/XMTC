@@ -287,11 +287,19 @@ class DataLoader4():
         batch_y = []
         batch_length = []
         batch_label_embedding = []
-        for i in range(self.batch_size):
+        i = 0
+        #for i in range(self.batch_size):
+        while i < self.batch_size:
             pid, label = self.generate_sample()
+            seq_len, embeddings = generate_embedding_from_vocabID(self.doc_wordID_data[pid], self.max_seq_len, self.word_embeddings)
+            if seq_len == 0:
+                if not self.pids_copy:
+                    self.end_of_data = True
+                    break
+                else:
+                    continue
             batch_pid.append(pid)
             batch_label.append(label)
-            _, embeddings = generate_embedding_from_vocabID(self.doc_wordID_data[pid], self.max_seq_len, self.word_embeddings)
             batch_x.append(embeddings)
             if label in self.label_data[pid]:
                 batch_y.append([0, 1])
@@ -299,6 +307,8 @@ class DataLoader4():
                 batch_y.append([1, 0])
             batch_length.append(self.doc_length[pid])
             batch_label_embedding.append(self.label_embeddings[label])
+            i = i + 1
+
             if not self.pids_copy:
                 self.end_of_data = True
                 break
