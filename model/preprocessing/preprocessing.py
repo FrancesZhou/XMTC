@@ -206,14 +206,16 @@ def generate_embedding_from_vocabID(sequence, max_seq_len, word_embeddings):
         except Exception as e:
             raise e
     seq_len = len(embeddings)
+    if seq_len == 0:
+        return seq_len, embeddings
     zero_len = int(max_seq_len - seq_len)
     embeddings = np.array(embeddings)
     #print embeddings.shape
     if zero_len > 0:
         zero_emb = np.zeros((zero_len, embeddings.shape[-1]))
         #print zero_emb.shape
-        print zero_emb.shape
-        print embeddings.shape
+        #print zero_emb.shape
+        #print embeddings.shape
         embeddings = np.concatenate((embeddings, zero_emb), axis=0)
     return seq_len, embeddings
 

@@ -73,7 +73,7 @@ class ModelSolver(object):
                 #'''
                 #train_loader.pids_copy = train_loader.pids_copy[:5]
                 while not train_loader.end_of_data:
-                    if i % 100 == 0:
+                    if i % 20 == 0:
                         print i
                     _, _, x, y, seq_l, label_emb = train_loader.next_batch()
                     if len(x) < self.batch_size:
