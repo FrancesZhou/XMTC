@@ -47,7 +47,9 @@ class biLSTM(object):
             # hidden_states: [batch_size, seq_len, num_hidden]
             # label_embeddings: [batch_size, num_label_embedding]
             # score: h*W*l
-            s = tf.matmul(tf.matmul(hidden_states, w), tf.expand_dims(label_embeddings, axis=-1))
+            s = tf.reshape(tf.matmul(tf.reshape(hidden_states, [-1, num_hidden]), w), [-1, self.max_seq_len, num_hidden])
+            s = tf.matmul(s, tf.expand_dims(label_embeddings, axis=-1))
+            #s = tf.matmul(tf.matmul(hidden_states, w), tf.expand_dims(label_embeddings, axis=-1))
             # s: [batch_size, seq_len, 1]
             #
             mask = tf.where(tf.tile(tf.expand_dims(range(1, self.max_seq_len+1), axis=0), [self.batch_size, 1]) >
@@ -105,7 +107,7 @@ class biLSTM(object):
         #print('outputs_shape : ', outputs.get_shape().as_list())
         # ------------ attention and classification --------------
         #num_label_embedding = self.label_embeddings.shape[-1]
-        y_ = self.classification(outputs, self.label_embeddings, 2*self.num_hidden, self.num_label_embedding)
+        y_ = self.classification(outputs, self.label_embeddings, 2*self.num_hidden, self.num_label_embedding, self.seqlen)
         # y_ = tf.stack(y_)
         # predict labels
         # y_labels = tf.argmax(y_, axis=-1)
