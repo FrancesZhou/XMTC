@@ -225,7 +225,13 @@ class DataLoader3():
 
 # DataLoader4 is for loading candidate label subset from SLEEC
 class DataLoader4():
-    def __init__(self, doc_wordID_data, label_data, candidate_label_data, all_labels, label_embeddings, batch_size, vocab, word_embeddings, max_seq_len=None, if_use_all_true_label=0):
+    def __init__(self, doc_wordID_data, label_data,
+                 candidate_label_data,
+                 all_labels, label_embeddings,
+                 batch_size,
+                 vocab, word_embeddings,
+                 given_seq_len=False, max_seq_len=5000,
+                 if_use_all_true_label=0):
         self.doc_wordID_data = doc_wordID_data
         self.label_data = label_data
         self.pids = self.label_data.keys()
@@ -235,6 +241,7 @@ class DataLoader4():
         self.batch_size = batch_size
         self.vocab = vocab
         self.word_embeddings = word_embeddings
+        self.given_seq_len = given_seq_len
         self.max_seq_len = max_seq_len
         self.if_use_all_true_label = if_use_all_true_label
         self.initialize_dataloader()
@@ -253,19 +260,19 @@ class DataLoader4():
             all_length.append(len(seq))
             self.doc_length[pid] = len(seq)
         # assign max_seq_len if None
-        if self.max_seq_len is None:
-            self.max_seq_len = max(all_length)
+        if not self.given_seq_len:
+            self.max_seq_len = min(max(all_length), self.max_seq_len)
         # if_use_all_true_label
         if self.if_use_all_true_label:
             for pid, label in self.label_data.items():
-                candidate_label = filter(lambda x: x != 0, self.candidate_label_data[pid])
-                candidate_label = np.asarray(candidate_label) - 1
+                #candidate_label = filter(lambda x: x != 0, self.candidate_label_data[pid])
+                #candidate_label = np.asarray(candidate_label) - 1
                 candidate_label = list(set(candidate_label) & set(self.all_labels))
                 self.candidate_label_data[pid] = np.unique(np.concatenate((candidate_label, label))).tolist()
         else:
             for pid, candidate_label in self.candidate_label_data.items():
-                candidate_label = filter(lambda x: x != 0, self.candidate_label_data[pid])
-                candidate_label = np.asarray(candidate_label) - 1
+                #candidate_label = filter(lambda x: x != 0, self.candidate_label_data[pid])
+                #candidate_label = np.asarray(candidate_label) - 1
                 candidate_label = list(set(candidate_label) & set(self.all_labels))
                 self.candidate_label_data[pid] = candidate_label
         self.reset_data()

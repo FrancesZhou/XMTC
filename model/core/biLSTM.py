@@ -14,11 +14,8 @@ class biLSTM(object):
         self.num_hidden = num_hidden
         self.max_seq_len = max_seq_len
         self.input_dim = input_dim
-        #self.num_labels = num_labels
         self.num_label_embedding = num_label_embedding
         self.num_classify_hidden = num_classify_hidden
-        #self.label_embeddings = tf.cast(label_embeddings, tf.float32)
-        #self.label_embeddings = tf.Variable(tf.cast(label_embeddings, tf.float32))
         self.batch_size = batch_size
 
         self.weight_initializer = tf.contrib.layers.xavier_initializer()
@@ -93,9 +90,6 @@ class biLSTM(object):
         # y: [batch_size, 2]
         x = self.x
         y = self.y
-        #batch_size = tf.shape(x)[0]
-        #batch_size = x.get_shape().as_list()[0]
-
         # ----------- biLSTM ------------
         # activation: tanh(default)
         fw_lstm = tf.contrib.rnn.BasicLSTMCell(self.num_hidden)
@@ -104,16 +98,7 @@ class biLSTM(object):
         outputs = tf.stack(outputs)
         #print('outputs_shape : ', outputs.get_shape().as_list())
         # ------------ attention and classification --------------
-        #num_label_embedding = self.label_embeddings.shape[-1]
         y_ = self.classification(outputs, self.label_embeddings, 2*self.num_hidden, self.num_label_embedding)
-        # y_ = tf.stack(y_)
-        # predict labels
-        # y_labels = tf.argmax(y_, axis=-1)
-        # y_labels_prob = y_[:,:,-1]
-        # print y_labels_prob.get_shape().as_list()
-        # calculate loss
-        # y_tar = tf.reshape(y, [-1, 2])
-        # y_pre = tf.reshape(y_, [-1, 2])
         y_pre = y_
         y_tar = y
         loss = tf.losses.sigmoid_cross_entropy(y_tar, y_pre)

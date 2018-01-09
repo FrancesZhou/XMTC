@@ -42,6 +42,14 @@ def load_txt(file):
         raise e
     return data
 
+def get_titles_from_map_file(file):
+    titles = []
+    with open(file, 'r') as df:
+        for line in df:
+            #titles.append(unicode(line.strip(), 'utf-8'))
+            titles.append(line.strip())
+    return titles
+
 def not_empty(s):
     #return s.strip()
     return s and s.strip()
