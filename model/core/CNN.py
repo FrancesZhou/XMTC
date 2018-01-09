@@ -37,7 +37,7 @@ class CNN(object):
             # label_embeddings: [batch_size, label_embedding_dim]
             # score: h*W*l
             #s = tf.matmul(tf.matmul(hidden_states, w), tf.expand_dims(label_embeddings, axis=-1))
-            s = tf.matmul(tf.reshape(tf.matmul(tf.reshape(hidden_states, [-1, hidden_dim]), w), [self.batch_size, -1, hidden_dim]),
+            s = tf.matmul(tf.reshape(tf.matmul(tf.reshape(hidden_states, [-1, hidden_dim]), w), [self.batch_size, -1, label_embedding_dim]),
                           tf.expand_dims(label_embeddings, axis=-1))
             # s: [batch_size, num, 1]
             s = tf.nn.softmax(s, 1)

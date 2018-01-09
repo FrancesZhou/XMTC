@@ -18,6 +18,8 @@ from model.core.CNN import CNN
 from model.core.solver import ModelSolver
 from model.utils.io_utils import load_pickle, load_txt
 
+os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+
 def main():
     parse = argparse.ArgumentParser()
     parse.add_argument('-folder', '--folder_path', type=str,
