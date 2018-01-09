@@ -14,6 +14,7 @@ from model.preprocessing.preprocessing import generate_label_embedding_from_file
 from model.preprocessing.dataloader import DataLoader2, DataLoader4
 from model.core.biLSTM import biLSTM
 from model.core.LSTM import LSTM
+from model.core.CNN import CNN
 from model.core.solver import ModelSolver
 from model.utils.io_utils import load_pickle, load_txt
 
@@ -30,7 +31,14 @@ def main():
 
     parse.add_argument('-pretrained_model', '--pretrained_model_path', type=str,
                        default=None, help='path to the pretrained model')
-    #parse.add_argument('-o', '--out_dir', type=str, required=True, help='path to the output dir')
+    # =============== params for CNN ==================
+    parse.add_argument('-num_filters', '--num_filters', type=int,
+                       default=32, help='number of filters in CNN')
+    parse.add_argument('-pooling_units', '--pooling_units', type=int,
+                       default=64, help='number of pooling units')
+    parse.add_argument('-dropout_keep_prob', '--dropout_keep_prob', type=float,
+                       default=0.5, help='keep probability in dropout layer')
+    filter_sizes = [2, 4, 8]
     # -- default
     parse.add_argument('-model', '--model', type=str, default='biLSTM', help='model: LSTM, biLSTM, CNN')
     parse.add_argument('-if_all_true', '--if_all_true', type=int, default=0, help='if use all true labels for training')
@@ -69,6 +77,9 @@ def main():
     elif args.model == 'LSTM':
         print 'build LSTM model ...'
         model = LSTM(max_seq_len, 300, num_label_embedding, 64, 32, args.batch_size)
+    elif args.model == 'CNN':
+        print 'build CNN model ...'
+        model = CNN(max_seq_len, 300, filter_sizes, num_label_embedding, 32, args)
 
     print 'model solver ...'
     # def __init__(self, model, train_data, test_data, **kwargs):

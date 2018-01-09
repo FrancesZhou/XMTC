@@ -10,10 +10,10 @@ import numpy as np
 import tensorflow as tf
 
 class CNN(object):
-    def __init__(self, sequence_length, word_embedding_dim, label_embedding_dim, num_classify_hidden, args):
+    def __init__(self, sequence_length, word_embedding_dim, filter_sizes, label_embedding_dim, num_classify_hidden, args):
         self.sequence_length = sequence_length
         self.embedding_dim = word_embedding_dim
-        self.filter_sizes = args.filter_sizes
+        self.filter_sizes = filter_sizes
         self.num_filters = args.num_filters
         self.pooling_units = args.pooling_units
         self.num_classify_hidden = num_classify_hidden

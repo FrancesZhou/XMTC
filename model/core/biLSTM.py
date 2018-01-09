@@ -100,11 +100,9 @@ class biLSTM(object):
         outputs = tf.stack(outputs)
         #print('outputs_shape : ', outputs.get_shape().as_list())
         # ------------ attention and classification --------------
-<<<<<<< HEAD
         y_ = self.classification(outputs, self.label_embeddings, 2*self.num_hidden, self.num_label_embedding)
-=======
         #num_label_embedding = self.label_embeddings.shape[-1]
-        y_ = self.classification(outputs, self.label_embeddings, 2*self.num_hidden, self.num_label_embedding, self.seqlen)
+        #y_ = self.classification(outputs, self.label_embeddings, 2*self.num_hidden, self.num_label_embedding, self.seqlen)
         # y_ = tf.stack(y_)
         # predict labels
         # y_labels = tf.argmax(y_, axis=-1)
@@ -113,7 +111,6 @@ class biLSTM(object):
         # calculate loss
         # y_tar = tf.reshape(y, [-1, 2])
         # y_pre = tf.reshape(y_, [-1, 2])
->>>>>>> 75a5ec51fc0c3a30654422ad88922177705319c5
         y_pre = y_
         y_tar = y
         loss = tf.losses.sigmoid_cross_entropy(y_tar, y_pre)
