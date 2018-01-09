@@ -28,10 +28,10 @@ class CNN(object):
         self.y = tf.placeholder(tf.float32, [self.batch_size, 2])
         self.label_embeddings = tf.placeholder(tf.float32, [self.batch_size, self.label_embedding_dim])
 
-    def attention_layer(self, hidden_states, label_embeddings, hidden_dim, label_embedding_dim):
+    def attention_layer(self, hidden_states, label_embeddings, hidden_dim, label_embedding_dim, name_scope=None):
         # hidden_states: [batch_size, num, hidden_dim]
         # label_embeddings: [batch_size, label_embedding_dim]
-        with tf.variable_scope('att_layer'):
+        with tf.variable_scope(name_scope + 'att_layer'):
             w = tf.get_variable('w', [hidden_dim, label_embedding_dim], initializer=self.weight_initializer)
             # hidden_states: [batch_size, num, hidden_dim]
             # label_embeddings: [batch_size, label_embedding_dim]
@@ -81,7 +81,7 @@ class CNN(object):
         # TODO
         conv_atten_outputs = []
         for i, filter_size in enumerate(self.filter_sizes):
-            with tf.name_scope('convolution-pooling-{0}'.format(filter_size)):
+            with tf.name_scope('convolution-pooling-{0}'.format(filter_size)) as name_scope:
                 # ============= convolution ============
                 filter = tf.get_variable('filter-{0}'.format(filter_size),
                                          [filter_size, self.embedding_dim, 1, self.num_filters],
@@ -97,8 +97,10 @@ class CNN(object):
                 # ============= attention ===============
                 pool_squeeze = tf.squeeze(pool_out, [-2])
                 # pool_squeeze: [batch_size, pooling_units, num_filters]
-                tf.assert_equal(pool_squeeze.get_shape().as_list(), [self.batch_size, self.pooling_units, self.num_filters])
-                l_feature = self.attention_layer(pool_squeeze, self.label_embeddings, self.num_filters, self.label_embedding_dim)
+                print [self.batch_size, self.pooling_units, self.num_filters]
+                print pool_squeeze.get_shape().as_list()
+                #tf.assert_equal(pool_squeeze.get_shape().as_list(), [self.batch_size, self.pooling_units, self.num_filters])
+                l_feature = self.attention_layer(pool_squeeze, self.label_embeddings, self.num_filters, self.label_embedding_dim, name_scope=name_scope)
                 # l_feature: [batch_size, num_filters]
                 conv_atten_outputs.append(l_feature)
         all_features = tf.concat(conv_atten_outputs, -1)
