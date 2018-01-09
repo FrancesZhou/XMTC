@@ -21,6 +21,8 @@ class ModelSolver(object):
         self.model = model
         self.train_data = train_data
         self.test_data = test_data
+        self.if_use_seq_len = kwargs.pop('if_use_seq_len', 0)
+        self.show_batches = kwargs.pop('show_batches', 20)
         self.n_epochs = kwargs.pop('n_epochs', 10)
         self.batch_size = kwargs.pop('batch_size', 32)
         self.learning_rate = kwargs.pop('learning_rate', 0.000001)
@@ -59,7 +61,6 @@ class ModelSolver(object):
         #gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.5)
         gpu_options = tf.GPUOptions(allow_growth=True)
         with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
-        #with tf.Session() as sess:
             tf.global_variables_initializer().run()
             saver = tf.train.Saver(tf.global_variables())
             if self.pretrained_model is not None:
@@ -70,20 +71,23 @@ class ModelSolver(object):
             for e in range(self.n_epochs):
                 curr_loss = 0
                 i = 0
-                #'''
-                #train_loader.pids_copy = train_loader.pids_copy[:5]
+                # '''
+                # train_loader.pids_copy = train_loader.pids_copy[:5]
                 while not train_loader.end_of_data:
-                    if i % 20 == 0:
+                    if i % self.show_batches == 0:
                         print i
-                    #_, _, x, y, seq_l, label_emb = train_loader.next_batch()
-                    _, _, x, y, _, label_emb = train_loader.next_batch()
+                    #
+                    _, _, x, y, seq_l, label_emb = train_loader.next_batch()
                     if len(x) < self.batch_size:
                         train_loader.reset_data()
                         break
-                    # feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
-                    #              self.model.seqlen: np.array(seq_l), self.model.label_embeddings: label_emb}
-                    feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
-                                 self.model.label_embeddings: label_emb}
+                    if self.if_use_seq_len:
+                        feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
+                                     self.model.seqlen: np.array(seq_l),
+                                     self.model.label_embeddings: label_emb}
+                    else:
+                        feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
+                                     self.model.label_embeddings: label_emb}
                     _, l_ = sess.run([train_op, loss], feed_dict)
                     curr_loss += l_
                     i += 1
@@ -96,7 +100,7 @@ class ModelSolver(object):
                 save_name = self.model_path + 'model'
                 saver.save(sess, save_name, global_step=e+1)
                 print 'model-%s saved.' % (e+1)
-                #'''
+                # '''
 
                 # ----------------- test ---------------------
                 if e % 2 == 0:
@@ -107,17 +111,19 @@ class ModelSolver(object):
                     i = 0
                     #test_loader.pids_copy = test_loader.pids_copy[:5]
                     while not test_loader.end_of_data:
-                        if i % 100 == 0:
+                        if i % self.show_batches == 0:
                             print i
-                        #batch_pid, batch_label, x, y, seq_l, label_emb = test_loader.next_batch()
-                        batch_pid, batch_label, x, y, _, label_emb = test_loader.next_batch()
+                        batch_pid, batch_label, x, y, seq_l, label_emb = test_loader.next_batch()
                         if len(batch_pid) < self.batch_size:
                             test_loader.reset_data()
                             break
-                        # feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
-                        #              self.model.seqlen: np.array(seq_l), self.model.label_embeddings: label_emb}
-                        feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
-                                     self.model.label_embeddings: label_emb}
+                        if self.if_use_seq_len:
+                            feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
+                                         self.model.seqlen: np.array(seq_l),
+                                         self.model.label_embeddings: label_emb}
+                        else:
+                            feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
+                                         self.model.label_embeddings: label_emb}
                         y_p, l_ = sess.run([y_, loss], feed_dict)
                         val_loss += l_
                         i += 1

@@ -252,20 +252,17 @@ class DataLoader4():
         # doc_token_data consists of wordIDs in vocab.
         self.doc_length = {}
         all_length = []
-        #count = 0
         for pid, seq in self.doc_wordID_data.items():
-            # count += 1
-            # if count % 50 == 0:
-            #     print count
             all_length.append(len(seq))
             self.doc_length[pid] = len(seq)
-        # assign max_seq_len if None
+        # assign max_seq_len if not given_seq_len
         if not self.given_seq_len:
             self.max_seq_len = min(max(all_length), self.max_seq_len)
         # if_use_all_true_label
         if self.if_use_all_true_label:
             for pid, label in self.label_data.items():
-                #candidate_label = filter(lambda x: x != 0, self.candidate_label_data[pid])
+                candidate_label = self.candidate_label_data[pid]
+                #candidate_label = filter(lambda x: x != 0, candidate_label)
                 #candidate_label = np.asarray(candidate_label) - 1
                 candidate_label = list(set(candidate_label) & set(self.all_labels))
                 self.candidate_label_data[pid] = np.unique(np.concatenate((candidate_label, label))).tolist()
@@ -295,7 +292,6 @@ class DataLoader4():
         batch_length = []
         batch_label_embedding = []
         i = 0
-        #for i in range(self.batch_size):
         while i < self.batch_size:
             pid, label = self.generate_sample()
             seq_len, embeddings = generate_embedding_from_vocabID(self.doc_wordID_data[pid], self.max_seq_len, self.word_embeddings)
@@ -312,10 +308,10 @@ class DataLoader4():
                 batch_y.append([0, 1])
             else:
                 batch_y.append([1, 0])
-            batch_length.append(self.doc_length[pid])
+            #batch_length.append(self.doc_length[pid])
+            batch_length.append(seq_len)
             batch_label_embedding.append(self.label_embeddings[label])
             i = i + 1
-
             if not self.pids_copy:
                 self.end_of_data = True
                 break
