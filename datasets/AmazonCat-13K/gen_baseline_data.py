@@ -31,7 +31,7 @@ test_map_file = open(des_path + 'test_map.txt', 'w')
 
 labels = np.unique(np.concatenate(train_asin_label.values())).tolist()
 num_labels = len(labels)
-num_features = 135909
+num_features = 203882
 
 label_index = range(num_labels)
 label_dict = dict(zip(labels, label_index))
