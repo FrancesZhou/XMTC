@@ -9,7 +9,9 @@ from __future__ import absolute_import
 import os
 import time
 import numpy as np
+import copy
 import tensorflow as tf
+from sklearn.neighbors import NearestNeighbors
 # from biLSTM.preprocessing.preprocessing import batch_data, get_max_seq_len, construct_train_test_corpus, \
 #     generate_labels_from_file, generate_label_pair_from_file
 # from biLSTM.utils.io_utils import load_pickle, write_file, load_txt
@@ -21,6 +23,10 @@ class ModelSolver(object):
         self.model = model
         self.train_data = train_data
         self.test_data = test_data
+        self.train_x_emb = {}
+        self.test_x_emb = {}
+        self.test_unique_candidate_label = {}
+        self.test_all_candidate_label = {}
         self.if_use_seq_len = kwargs.pop('if_use_seq_len', 0)
         self.show_batches = kwargs.pop('show_batches', 20)
         self.n_epochs = kwargs.pop('n_epochs', 10)
@@ -48,7 +54,7 @@ class ModelSolver(object):
         train_loader = self.train_data
         test_loader = self.test_data
         # build_model
-        y_, loss = self.model.build_model()
+        _, y_, loss = self.model.build_model()
         # train op
         with tf.name_scope('optimizer'):
             optimizer = self.optimizer(learning_rate=self.learning_rate)
@@ -78,9 +84,18 @@ class ModelSolver(object):
                         print i
                     #
                     _, _, x, y, seq_l, label_emb = train_loader.next_batch()
-                    if len(x) < self.batch_size:
-                        train_loader.reset_data()
-                        break
+                    if len(batch_pid) < self.batch_size:
+                        x = np.concatenate(
+                            (np.array(x), np.zeros((self.batch_size - len(batch_pid), self.model.word_embedding_dim))),
+                            axis=0)
+                        y = np.concatenate((np.array(y), np.zeros((self.batch_size - len(batch_pid), 2))), axis=0)
+                        seq_l = np.concatenate((np.array(seq_l), np.zeros((self.batch_size - len(batch_pid)))))
+                        label_emb = np.concatenate((np.array(label_emb),
+                                                    np.zeros((self.batch_size - len(batch_pid),
+                                                              self.model.label_embedding_dim))), axis=0)
+                    # if len(x) < self.batch_size:
+                    #     train_loader.reset_data()
+                    #     break
                     if self.if_use_seq_len:
                         feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
                                      self.model.seqlen: np.array(seq_l),
@@ -115,8 +130,18 @@ class ModelSolver(object):
                             print i
                         batch_pid, batch_label, x, y, seq_l, label_emb = test_loader.next_batch()
                         if len(batch_pid) < self.batch_size:
-                            test_loader.reset_data()
-                            break
+                            x = np.concatenate(
+                                (np.array(x),
+                                 np.zeros((self.batch_size - len(batch_pid), self.model.word_embedding_dim))),
+                                axis=0)
+                            y = np.concatenate((np.array(y), np.zeros((self.batch_size - len(batch_pid), 2))), axis=0)
+                            seq_l = np.concatenate((np.array(seq_l), np.zeros((self.batch_size - len(batch_pid)))))
+                            label_emb = np.concatenate((np.array(label_emb),
+                                                        np.zeros((self.batch_size - len(batch_pid),
+                                                                  self.model.label_embedding_dim))), axis=0)
+                        # if len(batch_pid) < self.batch_size:
+                        #     test_loader.reset_data()
+                        #     break
                         if self.if_use_seq_len:
                             feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
                                          self.model.seqlen: np.array(seq_l),
@@ -156,55 +181,148 @@ class ModelSolver(object):
             print 'final model saved.'
             o_file.close()
 
-    def test(self, test_loader):
-        # build_model
-        y_, loss = self.model.build_model()
-        with tf.Session() as sess:
-            #imported_meta = tf.train.import_meta_graph('model_final.meta')
-            saver = tf.train.Saver()
-            print '=============== restore ============='
-            saver.restore(sess, tf.train.latest_checkpoint(self.test_path))
-            print '=============== test ================'
-            test_loss = 0
+    def test(self, trained_model, output_file_path, test_loader=None):
+        o_file = open(output_file_path, 'w')
+        if not test_loader:
+            test_loader = self.test_data
+        # restore trained_model
+        _, y_, loss = self.model.build_model()
+        gpu_options = tf.GPUOptions(allow_growth=True)
+        with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
+            tf.global_variables_initializer().run()
+            saver = tf.train.Saver(tf.global_variables())
+            print 'load trained model...'
+            trained_model_path = self.model_path + trained_model
+            saver.restore(sess, trained_model_path)
+            # -------------- test -------------
+            test_loss = []
             pre_pid_label = {}
             pre_pid_score = {}
             i = 0
-            test_loader.pids_copy = test_loader.pids_copy[:3]
-            while True:
-                #if i % 10 == 0:
-                print '---------- '+ str(i) + '----------'
-                pid, x, seq_l, all_labels, all_y_padding, all_label_emb_padding = test_loader.next_text()
-                if test_loader.end_of_data:
-                    test_loader.reset_data()
-                    break
-                prob_i = []
-                for ii in range(len(all_y_padding)):
-                    if ii % 10 == 0:
-                        print ii
-                    feed_dict = {self.model.x: np.array(x), self.model.y: np.array(all_y_padding[ii]),
-                             self.model.seqlen: np.array(seq_l), self.model.label_embeddings: all_label_emb_padding[ii]}
-                    y_p, l_ = sess.run([y_, loss], feed_dict)
-                    prob_i.append(y_p)
-                test_loss += l_
+            # test_loader.pids_copy = test_loader.pids_copy[:5]
+            while not test_loader.end_of_data:
+                if i % self.show_batches == 0:
+                    print i
+                batch_pid, batch_label, x, y, seq_l, label_emb = test_loader.next_batch()
+                if len(batch_pid) < self.batch_size:
+                    x = np.concatenate(
+                        (np.array(x), np.zeros((self.batch_size - len(batch_pid), self.model.word_embedding_dim))),
+                        axis=0)
+                    y = np.concatenate((np.array(y), np.zeros((self.batch_size - len(batch_pid), 2))), axis=0)
+                    seq_l = np.concatenate((np.array(seq_l), np.zeros((self.batch_size - len(batch_pid)))))
+                    label_emb = np.concatenate((np.array(label_emb),
+                                                np.zeros((self.batch_size - len(batch_pid),
+                                                          self.model.label_embedding_dim))), axis=0)
+                if self.if_use_seq_len:
+                    feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
+                                 self.model.seqlen: np.array(seq_l),
+                                 self.model.label_embeddings: label_emb}
+                else:
+                    feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
+                                 self.model.label_embeddings: label_emb}
+                y_p, l_ = sess.run([y_, loss], feed_dict)
+                test_loss.append(l_ / len(batch_pid))
                 i += 1
                 # get all predictions
-                pre_i = np.concatenate(prob_i)
-                pre_i = pre_i[:len(all_labels)]
-                try:
-                    pre_pid_label[pid].append(all_labels)
-                    pre_pid_score[pid].append(pre_i)
-                except KeyError:
-                    pre_pid_label[pid] = all_labels
-                    pre_pid_score[pid] = pre_i
+                for j in range(len(batch_pid)):
+                    try:
+                        pre_pid_label[batch_pid[j]].append(batch_label[j])
+                        pre_pid_score[batch_pid[j]].append(y_p[j])
+                    except KeyError:
+                        pre_pid_label[batch_pid[j]] = [batch_label[j]]
+                        pre_pid_score[batch_pid[j]] = [y_p[j]]
+            else:
+                test_loader.reset_data()
             mean_metric = precision_for_all(test_loader.label_data, pre_pid_label, pre_pid_score)
             print len(mean_metric)
-            print 'test loss is ' + str(test_loss)
-            print 'precision@1: ' + str(mean_metric[0])
-            print 'precision@3: ' + str(mean_metric[1])
-            print 'precision@5: ' + str(mean_metric[2])
-            print 'ndcg@1: ' + str(mean_metric[3])
-            print 'ndcg@3: ' + str(mean_metric[4])
-            print 'ndcg@5: ' + str(mean_metric[5])
+            w_text = 'test loss is ' + str(np.mean(test_loss)) + '\n'
+            print w_text
+            o_file.write(w_text)
+            p1_txt = 'precision@1: ' + str(mean_metric[0]) + '\n'
+            p3_txt = 'precision@3: ' + str(mean_metric[1]) + '\n'
+            p5_txt = 'precision@5: ' + str(mean_metric[2]) + '\n'
+            ndcg1_txt = 'ndcg@1: ' + str(mean_metric[3]) + '\n'
+            ndcg3_txt = 'ndcg@3: ' + str(mean_metric[4]) + '\n'
+            ndcg5_txt = 'ndcg@5: ' + str(mean_metric[5]) + '\n'
+            o_file.write(p1_txt + p3_txt + p5_txt + ndcg1_txt + ndcg3_txt + ndcg5_txt)
+            print p1_txt + p3_txt + p5_txt + ndcg1_txt + ndcg3_txt + ndcg5_txt
+            o_file.close()
+
+
+    def generate_x_embedding(self, trained_model):
+        # generate candidate label subset via KNN using X-embeddings.
+        # build model
+        x_emb, y_, loss = self.model.build_model()
+        gpu_options = tf.GPUOptions(allow_growth=True)
+        with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
+            tf.global_variables_initializer().run()
+            saver = tf.train.Saver(tf.global_variables())
+            print 'load trained model...'
+            trained_model_path = self.model_path + trained_model
+            saver.restore(sess, trained_model_path)
+            # -------------- get train_x_emb ------------
+            i = 0
+            zero_y = np.zeros((self.batch_size, 2))
+            zero_label_emb = np.zeros((self.batch_size, self.model.label_embedding_dim))
+            while i < len(self.train_data.pids):
+                batch_pid, batch_x, batch_len = self.train_data.get_pid_x(i, i + self.batch_size)
+                if self.if_use_seq_len:
+                    feed_dict = {self.model.x: np.array(batch_x), self.model.y: np.array(zero_y),
+                                 self.model.seqlen: np.array(batch_len),
+                                 self.model.label_embeddings: zero_label_emb}
+                else:
+                    feed_dict = {self.model.x: np.array(batch_x), self.model.y: np.array(zero_y),
+                                 self.model.label_embeddings: zero_label_emb}
+                x_emb_ = sess.run([x_emb], feed_dict)
+                for x_i in range(len(batch_pid)):
+                    self.train_x_emb[batch_pid[x_i]] = x_emb_[x_i]
+                i += self.batch_size
+            # -------------- get test_x_emb -------------
+            i = 0
+            while i < len(self.test_data.pids):
+                batch_pid, batch_x, batch_len = self.test_data.get_pid_x(i, i + self.batch_size)
+                if self.if_use_seq_len:
+                    feed_dict = {self.model.x: np.array(batch_x), self.model.y: np.array(zero_y),
+                                 self.model.seqlen: np.array(batch_len),
+                                 self.model.label_embeddings: zero_label_emb}
+                else:
+                    feed_dict = {self.model.x: np.array(batch_x), self.model.y: np.array(zero_y),
+                                 self.model.label_embeddings: zero_label_emb}
+                x_emb_ = sess.run([x_emb], feed_dict)
+                for x_i in range(len(batch_pid)):
+                    self.test_x_emb[batch_pid[x_i]] = x_emb_[x_i]
+                i += self.batch_size
+
+    def get_candidate_label_from_x_emb(self, k):
+        train_pid = self.train_x_emb.keys()
+        train_emb = self.train_x_emb.values()
+        test_pid = self.test_x_emb.keys()
+        test_emb = self.test_x_emb.values()
+        nbrs = NearestNeighbors(n_neighbors=k).fit(train_emb)
+        _, indices = nbrs.kneighbors(test_emb)
+        # get candidate label
+        test_unique_candidate_label = {}
+        test_all_candidate_label = {}
+        for i in range(len(indices)):
+            k_nbs = train_pid[indices[i]]
+            can_l = []
+            for pid in k_nbs:
+                can_l.append(self.train_data.label_data[pid])
+            all_can_l = np.concatenate(can_l)
+            unique_can_l = np.unique(all_can_l)
+            test_all_candidate_label[test_pid[i]] = all_can_l
+            test_unique_candidate_label[test_pid[i]] = unique_can_l
+        self.test_unique_candidate_label = test_unique_candidate_label
+        self.test_all_candidate_label = test_all_candidate_label
+
+    def predict(self, trained_model, output_file_path, k=10):
+        self.generate_x_embedding(trained_model)
+        self.get_candidate_label_from_x_emb(k)
+        test_loader = copy.deepcopy(self.test_data)
+        test_loader.candidate_label_data = self.test_unique_candidate_label
+        test_loader.reset_data()
+        self.test(trained_model, output_file_path, test_loader)
+
 
 
 

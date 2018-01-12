@@ -193,9 +193,9 @@ For training, about 56 seconds for 10 batches - all about 75 minutes for one epo
 For testing, about 27 seconds for 10 batches - all about 8 minutes for one epoch
 
 ===================== in metadata.json file =========================
-The big file contains: 9430088 asins, 9354832 categories data, 7997369 titles data (253544 titles have multiple asins), 5701344 descriptions data
-intersection between descriptions and titles: 5126052
-intersection between descriptions and categories: 5660786
+The big file contains: 9430088 asins, 9,354,832 categories data, 7,997,369 titles data (253,544 titles have multiple asins), 5,701,344 descriptions data
+intersection between descriptions and titles: 5,126,052
+intersection between descriptions and categories: 5,660,786
 
 for AmazonCat-13K
 number of train_pids: 1,186,239
@@ -268,23 +268,44 @@ save and restore tensorflow models: [refrence1](http://stackabuse.com/tensorflow
 ## unified organizations
 
 text:
-1. all words (contain all punctuations)
-2. words without punctuations
+1. all para (first_para is not necessary.)
 
 labels:
-1. all_labels (contain separate labels)
-2. adjacent_labels (only those connected labels)
+1. all_labels (contain separate labels - to use aggregate of word embeddings)
+2. adjacent_labels (only those connected labels - to use DeepWalk)
 
 model:
 1. LSTM
 2. biLSTM
 3. CNN
-4. global embedding + local embedding
+4. global embedding + local embedding (not usable)
 
 attention:
 1. normal soft attention
 2. sparse attention (competitive)
 
 
-============================= folder organizations =============================
+============================= code functions =============================
+sources/xml/
+	- *_train.txt, *_test.txt
+	- *_train_map.txt, *_test_map.txt
+	- *_feature_map.txt, *_label_map.txt [not used]
+
+1. extract_text file (e.g., extract_title_p.py)
+	sources/id_map.pkl (e.g., title_map.pkl) : [id1, id2, ...,idN], for instance, [title1, title2, ..., titleN] or [asin1, asin2, ..., asinN]
+	sources/text_data.pkl : {1: text1, 2: text2, ..., N: textN}
+	sources/cat_data.pkl : {1: cat1, 2: cat2, ..., N: catN}
+2. gen_usable_data file
+	- get_train_test_data -> (all_labels), train_doc_data, train_id_label, test_doc_data, test_id_label, train_id_feature, test_id_feature [data/deeplearning_data/docs/]
+	- generate_label_pair -> label_pairs, (all_adjacent_labels) -> write_label_pairs_into_file [data/deeplearning_data/adjacent_labels/]
+	- get_valid_train_test_data -> train_doc_data, test_doc_data, train_title_label, test_title_label, train_title_feature, test_title_feature
+	- get_train_test_wordID_from_vocab -> train_doc_wordID, test_doc_wordID 
+	- train_doc_wordID, test_doc_wordID, train_title_label, test_title_label, train_title_feature, test_title_feature [data/deeplearning_data/]
+3. gen_baseline_data file
+	- train_data.txt, test_data.txt, train_map.txt, test_map.txt [data/baseline_data/adjacent_labels/]
+4. MATLAB 
+	- get candidate_train.mat, candidate_test.mat [data/baseline_data/adjacent_labels/]
+5. gen_candidate_label file
+	- train_candidate_label, test_candidate_label [data/deeplearning_data/adjacent_labels/]
+
 

@@ -95,6 +95,17 @@ class biLSTM(object):
         outputs, _, _ = tf.contrib.rnn.stack_bidirectional_dynamic_rnn([fw_lstm], [bw_lstm], x, dtype=tf.float32, sequence_length=self.seqlen)
         outputs = tf.stack(outputs)
         # print('outputs_shape : ', outputs.get_shape().as_list())
+        # outputs: [batch_size, max_seq_len, 2*hidden_dim]
+        # ----------- get x-embedding ----------
+        # Indexing
+        first_index = tf.range(0, self.batch_size) * self.max_seq_len
+        last_index = first_index + (self.seqlen - 1)
+        # 1. x-embedding
+        x_emb_1 = tf.gather(tf.reshape(outputs, [-1, self.hidden_dim]), last_index)
+        print('after indexing, shape of x_emb_1 : ', x_emb_1.get_shape().as_list())
+        # 2. x-embedding
+        x_emb_2 = tf.concat([tf.gather(tf.reshape(outputs, [-1, self.hidden_dim]), first_index), x_emb_1], axis=-1)
+        print('after indexing, shape of x_emb_2 : ', x_emb_2.get_shape().as_list())
         # ------------ attention and classification --------------
         # outputs: [batch_size, max_seq_len, 2*hidden_dim]
         # label_embeddings: [batch_size, label_embedding_dim]
@@ -102,7 +113,7 @@ class biLSTM(object):
         y_pre = y_
         y_tar = y
         loss = tf.losses.sigmoid_cross_entropy(y_tar, y_pre)
-        return y_pre[:, 1], loss
+        return x_emb_2, y_pre[:, 1], loss
 
 
 

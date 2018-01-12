@@ -78,6 +78,7 @@ class CNN(object):
         y = self.y
         # dropout
         # TODO
+        conv_outputs = []
         conv_atten_outputs = []
         for i, filter_size in enumerate(self.filter_sizes):
             with tf.name_scope('convolution-pooling-{0}'.format(filter_size)) as name_scope:
@@ -89,9 +90,15 @@ class CNN(object):
                 b = tf.get_variable('b-{0}'.format(filter_size), [self.num_filters])
                 conv_b = tf.nn.relu(tf.nn.bias_add(conv, b), 'relu')
                 # conv_b: [batch_size, seqence_length-filter_size+1, 1, num_filters]
-                # ============= pooling =================
+                # ============= max pooling for x-embedding =========
+                pool_emb = tf.nn.max_pool(conv_b, ksize=[1, self.sequence_length-filter_size+1, 1, 1],
+                                          strides=[1, 1, 1, 1], padding='VALID', name='max-pooling')
+                # pool_emb: [batch_size, 1, 1, num_filters]
+                conv_outputs.append(tf.squeeze(pool_emb, [1, 2]))
+                # ============= dynamic max pooling =================
                 pool_size = (self.sequence_length - filter_size + 1) // self.pooling_units
-                pool_out = tf.nn.max_pool(conv_b, ksize=[1, pool_size, 1, 1], strides=[1,pool_size,1,1], padding='VALID', name='pool')
+                pool_out = tf.nn.max_pool(conv_b, ksize=[1, pool_size, 1, 1],
+                                          strides=[1, pool_size, 1, 1], padding='VALID', name='dynamic-max-pooling')
                 # pool_out: [batch_size, pooling_units, 1, num_filters]
                 # ============= attention ===============
                 pool_squeeze = tf.squeeze(pool_out, [-2])
@@ -102,6 +109,7 @@ class CNN(object):
                 l_feature = self.attention_layer(pool_squeeze, self.label_embeddings, self.num_filters, self.label_embedding_dim, name_scope=name_scope)
                 # l_feature: [batch_size, num_filters]
                 conv_atten_outputs.append(l_feature)
+        x_emb = tf.concat(conv_outputs, -1)
         all_features = tf.concat(conv_atten_outputs, -1)
         # dropout
         with tf.name_scope('dropout'):
@@ -111,7 +119,7 @@ class CNN(object):
             y_ = self.classification_layer(fea_dropout, self.label_embeddings, fea_dim, self.label_embedding_dim)
         # loss
         loss = tf.losses.sigmoid_cross_entropy(y, y_)
-        return y_[:, 1], loss
+        return x_emb, y_[:, 1], loss
 
 
 

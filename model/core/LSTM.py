@@ -93,6 +93,12 @@ class LSTM(object):
                                        sequence_length=self.seqlen)
         outputs = tf.stack(outputs)
         print('outputs_shape : ', outputs.get_shape().as_list())
+        # outputs: [batch_size, max_seq_len, hidden_dim]
+        # ----------- get x-embedding ----------
+        # Indexing
+        index = tf.range(0, self.batch_size)*self.max_seq_len + (self.seqlen - 1)
+        x_emb = tf.gather(tf.reshape(outputs, [-1, self.hidden_dim]), index)
+        print('after indexing, shape of x_emb : ', x_emb.get_shape().as_list())
         # ------------ attention and classification --------------
         # outputs: [batch_size, max_seq_len, hidden_dim]
         # label_embeddings: [batch_size, label_embedding_dim]
@@ -100,7 +106,7 @@ class LSTM(object):
         y_pre = y_
         y_tar = y
         loss = tf.losses.sigmoid_cross_entropy(y_tar, y_pre)
-        return y_pre[:, 1], loss
+        return x_emb, y_pre[:, 1], loss
 
 
 

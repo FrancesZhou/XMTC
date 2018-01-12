@@ -274,6 +274,22 @@ class DataLoader4():
                 self.candidate_label_data[pid] = candidate_label
         self.reset_data()
 
+    def get_pid_x(self, i, j):
+        batch_pid = []
+        batch_x = []
+        batch_length = []
+        end = min(j, len(self.pids))
+        for pid in self.pids[i:end]:
+            batch_pid.append(pid)
+            seq_len, seq_emb = generate_embedding_from_vocabID(self.doc_wordID_data[pid], self.max_seq_len, self.word_embeddings)
+            batch_length.append(seq_len)
+            batch_x.append(seq_emb)
+        while end < j:
+            batch_length.append([int(0)])
+            batch_x.append(np.zeros((self.max_seq_len, self.word_embeddings.shape[-1])))
+            end += 1
+        return batch_pid, batch_x, batch_length
+
     def generate_sample(self):
         pid = np.random.choice(self.pids_copy)
         label = np.random.choice(self.candidate_label_data_copy[pid])
