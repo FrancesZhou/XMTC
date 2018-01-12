@@ -85,12 +85,12 @@ def main():
     if args.model == 'biLSTM':
         print 'build biLSTM model ...'
         # biLSTM: max_seq_len, word_embedding_dim, hidden_dim, label_embedding_dim, num_classify_hidden, args.batch_size
-        model = biLSTM(max_seq_len, 300, 64, label_embedding_dim, 32, args.batch_size)
+        model = biLSTM(max_seq_len, 300, 64, label_embedding_dim, 32, args)
         args.if_use_seq_len = 1
     elif args.model == 'LSTM':
         print 'build LSTM model ...'
         # LSTM: max_seq_len, word_embedding_dim, hidden_dim, label_embedding_dim, num_classify_hidden, args.batch_size
-        model = LSTM(max_seq_len, 300, 64, label_embedding_dim, 32, args.batch_size)
+        model = LSTM(max_seq_len, 300, 64, label_embedding_dim, 32, args)
         args.if_use_seq_len = 1
     elif args.model == 'CNN':
         print 'build CNN model ...'

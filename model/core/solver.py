@@ -83,7 +83,7 @@ class ModelSolver(object):
                     if i % self.show_batches == 0:
                         print i
                     #
-                    _, _, x, y, seq_l, label_emb = train_loader.next_batch()
+                    batch_pid, _, x, y, seq_l, label_emb = train_loader.next_batch()
                     if len(batch_pid) < self.batch_size:
                         x = np.concatenate(
                             (np.array(x), np.zeros((self.batch_size - len(batch_pid), self.model.word_embedding_dim))),
