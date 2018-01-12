@@ -50,6 +50,14 @@ def get_titles_from_map_file(file):
             titles.append(line.strip())
     return titles
 
+def get_asin_from_map_file(file):
+    asin = []
+    with open(file, 'r') as df:
+        for line in df:
+            asin_str = line.split('->', 1)[0]
+            asin.append(asin_str)
+    return asin
+
 def not_empty(s):
     #return s.strip()
     return s and s.strip()
