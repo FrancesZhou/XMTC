@@ -67,6 +67,7 @@ def get_train_test_data(asin_map_file, text_data_file,
     train_asin = list(train_asin)
     test_asin = list(test_asin)
     # train
+    print 'get train data'
     all_labels = []
     train_data = {}
     train_label = {}
@@ -84,6 +85,7 @@ def get_train_test_data(asin_map_file, text_data_file,
         train_label[ind] = labels
         train_feature[ind] = feature_str
     # test
+    print 'get test data'
     test_data = {}
     test_label = {}
     test_feature = {}
@@ -99,6 +101,7 @@ def get_train_test_data(asin_map_file, text_data_file,
         test_label[ind] = labels
         test_feature[ind] = feature_str
     all_labels = np.unique(np.concatenate(all_labels)).tolist()
+    print 'dump train/test data'
     dump_pickle(train_feature, data_source_path + 'train_feature.pkl')
     dump_pickle(test_feature, data_source_path + 'test_feature.pkl')
     dump_pickle(train_data, data_source_path + 'train_data.pkl')
@@ -117,10 +120,12 @@ def get_train_test_wordID_from_vocab(train_doc_data, test_doc_data):
     train_doc_wordID = {}
     test_doc_wordID = {}
 
+    print 'get train wordID data'
     for id, text in train_data.items():
         #text = id + '. ' + text
         wordID = get_wordID_from_vocab(text, vocab)
         train_doc_wordID[id] = wordID
+    print 'get test wordID data'
     for id, text in test_data.items():
         #text = id + '. ' + text
         wordID = get_wordID_from_vocab(text, vocab)
@@ -184,6 +189,7 @@ def main():
                        help='adjacent labels or all labels')
     args = parse.parse_args()
 
+    print 'get train and test data-------------------'
     all_labels, train_doc_data, train_asin_label, test_doc_data, test_asin_label, train_asin_feature, test_asin_feature = \
         get_train_test_data(asin_map_file, text_data_file,
                             train_asin_map_file, test_asin_map_file,
@@ -191,11 +197,14 @@ def main():
 
     if args.which_labels == 'adjacent':
         # 1. label embedding
+        print 'get label pair------------------'
         label_pairs, all_adjacent_labels = generate_label_pair(train_asin_label)
         print len(set(all_labels) - set(all_adjacent_labels))
         # 2. write label_pairs to txt file
+        print 'write label pair into file ----------'
         write_label_pairs_into_file(label_pairs, data_des_path + 'labels.edgelist')
         # 3. get valid train/test doc_data and asin_label
+        print 'get valid train and test data ----------------'
         train_doc_data, test_doc_data, train_asin_label, test_asin_label, train_asin_feature, test_asin_feature = \
             get_valid_train_test_data(
                 all_adjacent_labels,
@@ -204,9 +213,11 @@ def main():
                 train_asin_feature, test_asin_feature
         )
         # 4. get train/test doc_wordID
+        print 'get train and test wordID data ----------------------'
         train_doc_wordID, test_doc_wordID = get_train_test_wordID_from_vocab(
             train_doc_data, test_doc_data
         )
+        print 'dump data -------------------------------'
         dump_pickle(train_doc_wordID, data_des_path + 'train_doc_wordID.pkl')
         dump_pickle(test_doc_wordID, data_des_path + 'test_doc_wordID.pkl')
         dump_pickle(train_asin_label, data_des_path + 'train_asin_label.pkl')
