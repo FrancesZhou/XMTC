@@ -12,7 +12,7 @@ import tensorflow as tf
 class CNN(object):
     def __init__(self, sequence_length, word_embedding_dim, filter_sizes, label_embedding_dim, num_classify_hidden, args):
         self.sequence_length = sequence_length
-        self.embedding_dim = word_embedding_dim
+        self.word_embedding_dim = word_embedding_dim
         self.filter_sizes = filter_sizes
         self.num_filters = args.num_filters
         self.pooling_units = args.pooling_units
@@ -24,7 +24,7 @@ class CNN(object):
         self.weight_initializer = tf.contrib.layers.xavier_initializer()
         self.const_initializer = tf.constant_initializer()
 
-        self.x = tf.placeholder(tf.float32, [self.batch_size, self.sequence_length, self.embedding_dim])
+        self.x = tf.placeholder(tf.float32, [self.batch_size, self.sequence_length, self.word_embedding_dim])
         self.y = tf.placeholder(tf.float32, [self.batch_size, 2])
         self.label_embeddings = tf.placeholder(tf.float32, [self.batch_size, self.label_embedding_dim])
 
@@ -84,7 +84,7 @@ class CNN(object):
             with tf.name_scope('convolution-pooling-{0}'.format(filter_size)) as name_scope:
                 # ============= convolution ============
                 filter = tf.get_variable('filter-{0}'.format(filter_size),
-                                         [filter_size, self.embedding_dim, 1, self.num_filters],
+                                         [filter_size, self.word_embedding_dim, 1, self.num_filters],
                                          initializer=self.weight_initializer)
                 conv = tf.nn.conv2d(x_expand, filter, strides=[1,1,1,1], padding='VALID', name='conv')
                 b = tf.get_variable('b-{0}'.format(filter_size), [self.num_filters])
