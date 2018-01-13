@@ -96,7 +96,9 @@ class ModelSolver(object):
                     batch_pid, _, x, y, seq_l, label_emb = train_loader.next_batch()
                     if len(batch_pid) < self.batch_size:
                         x = np.concatenate(
-                            (np.array(x), np.zeros((self.batch_size - len(batch_pid), self.model.word_embedding_dim))),
+                            (np.array(x), np.zeros(
+                                (self.batch_size - len(batch_pid), self.model.max_seq_len, self.model.word_embedding_dim)
+                            )),
                             axis=0)
                         y = np.concatenate((np.array(y), np.zeros((self.batch_size - len(batch_pid), 2))), axis=0)
                         seq_l = np.concatenate((np.array(seq_l), np.zeros((self.batch_size - len(batch_pid)))))
@@ -145,8 +147,10 @@ class ModelSolver(object):
                         batch_pid, batch_label, x, y, seq_l, label_emb = test_loader.next_batch()
                         if len(batch_pid) < self.batch_size:
                             x = np.concatenate(
-                                (np.array(x),
-                                 np.zeros((self.batch_size - len(batch_pid), self.model.word_embedding_dim))),
+                                (np.array(x), np.zeros(
+                                    (self.batch_size - len(batch_pid), self.model.max_seq_len,
+                                     self.model.word_embedding_dim)
+                                )),
                                 axis=0)
                             y = np.concatenate((np.array(y), np.zeros((self.batch_size - len(batch_pid), 2))), axis=0)
                             seq_l = np.concatenate((np.array(seq_l), np.zeros((self.batch_size - len(batch_pid)))))

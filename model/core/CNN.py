@@ -10,8 +10,8 @@ import numpy as np
 import tensorflow as tf
 
 class CNN(object):
-    def __init__(self, sequence_length, word_embedding_dim, filter_sizes, label_embedding_dim, num_classify_hidden, args):
-        self.sequence_length = sequence_length
+    def __init__(self, max_seq_len, word_embedding_dim, filter_sizes, label_embedding_dim, num_classify_hidden, args):
+        self.max_seq_len = max_seq_len
         self.word_embedding_dim = word_embedding_dim
         self.filter_sizes = filter_sizes
         self.num_filters = args.num_filters
@@ -24,7 +24,7 @@ class CNN(object):
         self.weight_initializer = tf.contrib.layers.xavier_initializer()
         self.const_initializer = tf.constant_initializer()
 
-        self.x = tf.placeholder(tf.float32, [self.batch_size, self.sequence_length, self.word_embedding_dim])
+        self.x = tf.placeholder(tf.float32, [self.batch_size, self.max_seq_len, self.word_embedding_dim])
         self.y = tf.placeholder(tf.float32, [self.batch_size, 2])
         self.label_embeddings = tf.placeholder(tf.float32, [self.batch_size, self.label_embedding_dim])
 
@@ -71,7 +71,7 @@ class CNN(object):
             return tf.nn.softmax(tf.nn.relu(wz_b_plus), -1)
 
     def build_model(self):
-        # x: [batch_size, self.sequence_length, self.embedding_dim]
+        # x: [batch_size, self.max_seq_len, self.embedding_dim]
         # y: [batch_size, 2]
         x = self.x
         x_expand = tf.expand_dims(x, axis=-1)
@@ -91,12 +91,12 @@ class CNN(object):
                 conv_b = tf.nn.relu(tf.nn.bias_add(conv, b), 'relu')
                 # conv_b: [batch_size, seqence_length-filter_size+1, 1, num_filters]
                 # ============= max pooling for x-embedding =========
-                pool_emb = tf.nn.max_pool(conv_b, ksize=[1, self.sequence_length-filter_size+1, 1, 1],
+                pool_emb = tf.nn.max_pool(conv_b, ksize=[1, self.max_seq_len-filter_size+1, 1, 1],
                                           strides=[1, 1, 1, 1], padding='VALID', name='max-pooling')
                 # pool_emb: [batch_size, 1, 1, num_filters]
                 conv_outputs.append(tf.squeeze(pool_emb, [1, 2]))
                 # ============= dynamic max pooling =================
-                pool_size = (self.sequence_length - filter_size + 1) // self.pooling_units
+                pool_size = (self.max_seq_len - filter_size + 1) // self.pooling_units
                 pool_out = tf.nn.max_pool(conv_b, ksize=[1, pool_size, 1, 1],
                                           strides=[1, pool_size, 1, 1], padding='VALID', name='dynamic-max-pooling')
                 # pool_out: [batch_size, pooling_units, 1, num_filters]
