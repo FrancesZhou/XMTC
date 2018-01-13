@@ -72,7 +72,11 @@ def get_train_test_data(asin_map_file, text_data_file,
     train_data = {}
     train_label = {}
     train_feature = {}
+    k = 0
     for t in train_asin:
+        k = k + 1
+        if k % 1000 == 0:
+            print k
         try:
             ind = asin_map.index(t)
         except:
@@ -89,7 +93,11 @@ def get_train_test_data(asin_map_file, text_data_file,
     test_data = {}
     test_label = {}
     test_feature = {}
+    k = 0
     for t in test_asin:
+        k = k + 1
+        if k % 1000 == 0:
+            print k
         try:
             ind = asin_map.index(t)
         except:
@@ -121,12 +129,20 @@ def get_train_test_wordID_from_vocab(train_doc_data, test_doc_data):
     test_doc_wordID = {}
 
     print 'get train wordID data'
+    k = 0
     for id, text in train_data.items():
+        k = k + 1
+        if k % 100 == 0:
+            print k
         #text = id + '. ' + text
         wordID = get_wordID_from_vocab(text, vocab)
         train_doc_wordID[id] = wordID
     print 'get test wordID data'
+    k = 0
     for id, text in test_data.items():
+        k = k + 1
+        if k % 100 == 0:
+            print k
         #text = id + '. ' + text
         wordID = get_wordID_from_vocab(text, vocab)
         test_doc_wordID[id] = wordID
@@ -157,7 +173,12 @@ def get_valid_train_test_data(all_adjacent_labels,
                               train_asin_feature=None, test_asin_feature=None
                               ):
     train_pids = train_doc_data.keys()
+    print 'get valid train data'
+    k = 0
     for pid in train_pids:
+        k = k + 1
+        if k % 1000 == 0:
+            print k
         #l = train_asin_label[pid]
         l2 = list(set(train_asin_label[pid]) & set(all_adjacent_labels))
         if len(l2):
@@ -167,7 +188,12 @@ def get_valid_train_test_data(all_adjacent_labels,
             del train_doc_data[pid]
             del train_asin_feature[pid]
     test_pids = test_doc_data.keys()
+    print 'get valid test data'
+    k = 0
     for pid in test_pids:
+        k = k + 1
+        if k % 1000 == 0:
+            print k
         l2 = list(set(test_asin_label[pid]) & set(all_adjacent_labels))
         if len(l2):
             test_asin_label[pid] = l2
@@ -197,11 +223,11 @@ def main():
 
     if args.which_labels == 'adjacent':
         # 1. label embedding
-        print 'get label pair------------------'
+        print 'get label pair-----------------------'
         label_pairs, all_adjacent_labels = generate_label_pair(train_asin_label)
         print len(set(all_labels) - set(all_adjacent_labels))
         # 2. write label_pairs to txt file
-        print 'write label pair into file ----------'
+        print 'write label pair into file --------------'
         write_label_pairs_into_file(label_pairs, data_des_path + 'labels.edgelist')
         # 3. get valid train/test doc_data and asin_label
         print 'get valid train and test data ----------------'
