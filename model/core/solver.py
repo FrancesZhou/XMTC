@@ -77,8 +77,8 @@ class ModelSolver(object):
             for e in range(self.n_epochs):
                 print '========== begin epoch ' + str(e) + '==========='
                 # time
-                time1 = []
-                time2 = []
+                #time1 = []
+                #time2 = []
                 #
                 curr_loss = 0
                 i = 0
@@ -87,12 +87,12 @@ class ModelSolver(object):
                 while not train_loader.end_of_data:
                     if i % self.show_batches == 0:
                         print 'batch ' + str(i)
-                        print 'time for loading batch: ' + str(np.mean(time1))
-                        print 'time for updating params: ' + str(np.mean(time2))
-                        time1 = []
-                        time2 = []
+                        #print 'time for loading batch: ' + str(np.mean(time1))
+                        #print 'time for updating params: ' + str(np.mean(time2))
+                        #time1 = []
+                        #time2 = []
                     #
-                    t1 = time.time()
+                    #t1 = time.time()
                     batch_pid, _, x, y, seq_l, label_emb = train_loader.next_batch()
                     if len(batch_pid) < self.batch_size:
                         x = np.concatenate(
@@ -106,7 +106,7 @@ class ModelSolver(object):
                     # if len(x) < self.batch_size:
                     #     train_loader.reset_data()
                     #     break
-                    t2 = time.time()
+                    #t2 = time.time()
                     if self.if_use_seq_len:
                         feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
                                      self.model.seqlen: np.array(seq_l),
@@ -115,9 +115,9 @@ class ModelSolver(object):
                         feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
                                      self.model.label_embeddings: label_emb}
                     _, l_ = sess.run([train_op, loss], feed_dict)
-                    t3 = time.time()
-                    time1.append(t2-t1)
-                    time2.append(t3-t2)
+                    #t3 = time.time()
+                    #time1.append(t2-t1)
+                    #time2.append(t3-t2)
                     curr_loss += l_
                     i += 1
                 else:
