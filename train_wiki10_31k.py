@@ -29,7 +29,7 @@ def main():
                        default='datasets/Wiki10/data/deeplearning_data/adjacent_labels/all_para/',
                        help='path to train/test data')
     # ---------- vocab and word embeddings --------
-    parse.add_argument('-vocab', '--vocab_path', type=str, default='datasets/material/vocab', help='path to the vocab')
+    parse.add_argument('-vocab', '--vocab_path', type=str, default='vocab.6B.300d.pkl', help='path to the vocab')
     parse.add_argument('-word_embeddings', '--word_embedding_path', type=str,
                        default='word_emb.6B.300d.npy',
                        help='path to the word embeddings')
@@ -61,7 +61,7 @@ def main():
 
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
     print 'load vocab and word embeddings'
-    vocab = load_pickle(args.vocab_path)
+    vocab = load_pickle('datasets/material/' + args.vocab_path)
     word_embeddings = np.load('datasets/material/' + args.word_embedding_path)
     print 'load label embeddings'
     label_embeddings = generate_label_embedding_from_file(args.folder_path + 'label.embeddings')
