@@ -78,6 +78,19 @@ def get_wordID_from_vocab(text, vocab):
             continue
     return token_indices
 
+def get_wordID_from_vocab_dict(text, vocab_dict):
+    all_tokens = re.split('([A-Za-z]+)|([0-9]+)|(\W)', text)
+    all_tokens = filter(not_empty, all_tokens)
+    all_tokens = [e.strip() for e in all_tokens]
+    # check if tokens are in the vocab
+    token_indices = []
+    for t in all_tokens:
+        try:
+            ind = vocab_dict[t]
+            token_indices.append(ind)
+        except:
+            continue
+    return token_indices
 
 def write_label_pairs_into_file(label_pairs, output_file):
     txtfile = open(output_file, 'w')

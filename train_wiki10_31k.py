@@ -31,7 +31,7 @@ def main():
     # ---------- vocab and word embeddings --------
     parse.add_argument('-vocab', '--vocab_path', type=str, default='datasets/material/vocab', help='path to the vocab')
     parse.add_argument('-word_embeddings', '--word_embedding_path', type=str,
-                       default='datasets/material/word_embeddings.npy',
+                       default='word_emb.6B.300d.npy',
                        help='path to the word embeddings')
     # ---------- model ----------
     parse.add_argument('-max_seq_len', '--max_seq_len', type=int, default=500,
@@ -62,7 +62,7 @@ def main():
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
     print 'load vocab and word embeddings'
     vocab = load_pickle(args.vocab_path)
-    word_embeddings = np.load(args.word_embedding_path)
+    word_embeddings = np.load('datasets/material/' + args.word_embedding_path)
     print 'load label embeddings'
     label_embeddings = generate_label_embedding_from_file(args.folder_path + 'label.embeddings')
     all_labels = label_embeddings.keys()
@@ -81,22 +81,23 @@ def main():
     test_loader = DataLoader4(test_doc, test_label, test_candidate_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, given_seq_len=True, max_seq_len=max_seq_len)
     # ----------------------- train ------------------------
     label_embedding_dim = len(label_embeddings[0])
+    word_embedding_dim = len(word_embeddings[0])
     print 'build model ...'
     if args.model == 'biLSTM':
         print 'build biLSTM model ...'
         # biLSTM: max_seq_len, word_embedding_dim, hidden_dim, label_embedding_dim, num_classify_hidden, args.batch_size
-        model = biLSTM(max_seq_len, 300, 64, label_embedding_dim, 32, args)
+        model = biLSTM(max_seq_len, word_embedding_dim, 64, label_embedding_dim, 32, args)
         args.if_use_seq_len = 1
     elif args.model == 'LSTM':
         print 'build LSTM model ...'
         # LSTM: max_seq_len, word_embedding_dim, hidden_dim, label_embedding_dim, num_classify_hidden, args.batch_size
-        model = LSTM(max_seq_len, 300, 64, label_embedding_dim, 32, args)
+        model = LSTM(max_seq_len, word_embedding_dim, 64, label_embedding_dim, 32, args)
         args.if_use_seq_len = 1
     elif args.model == 'CNN':
         print 'build CNN model ...'
         # CNN: sequence_length, word_embedding_dim, filter_sizes, label_embedding_dim, num_classify_hidden, args
         # args.num_filters, args.pooling_units, args.batch_size, args.dropout_keep_prob
-        model = CNN(max_seq_len, 300, filter_sizes, label_embedding_dim, 32, args)
+        model = CNN(max_seq_len, word_embedding_dim, filter_sizes, label_embedding_dim, 32, args)
         args.if_use_seq_len = 0
 
     print 'model solver ...'
