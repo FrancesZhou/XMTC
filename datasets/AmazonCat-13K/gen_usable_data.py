@@ -132,7 +132,7 @@ def get_train_test_wordID_from_vocab(vocab, train_doc_data, test_doc_data):
     k = 0
     for id, text in train_data.items():
         k = k + 1
-        if k % 100 == 0:
+        if k % 1000 == 0:
             print k
         #text = id + '. ' + text
         wordID = get_wordID_from_vocab_dict(text, vocab_dict)
@@ -141,7 +141,7 @@ def get_train_test_wordID_from_vocab(vocab, train_doc_data, test_doc_data):
     k = 0
     for id, text in test_data.items():
         k = k + 1
-        if k % 100 == 0:
+        if k % 1000 == 0:
             print k
         #text = id + '. ' + text
         wordID = get_wordID_from_vocab_dict(text, vocab_dict)
@@ -177,7 +177,7 @@ def get_valid_train_test_data(all_adjacent_labels,
     k = 0
     for pid in train_pids:
         k = k + 1
-        if k % 1000 == 0:
+        if k % 10000 == 0:
             print k
         #l = train_asin_label[pid]
         l2 = list(set(train_asin_label[pid]) & set(all_adjacent_labels))
@@ -192,7 +192,7 @@ def get_valid_train_test_data(all_adjacent_labels,
     k = 0
     for pid in test_pids:
         k = k + 1
-        if k % 1000 == 0:
+        if k % 10000 == 0:
             print k
         l2 = list(set(test_asin_label[pid]) & set(all_adjacent_labels))
         if len(l2):
@@ -221,12 +221,12 @@ def main():
     print 'get train and test data-------------------'
     if args.if_split_train_test:
         train_doc_data = load_pickle(data_source_path + 'train_data.pkl')
-        train_title_label = load_pickle(data_source_path + 'train_label.pkl')
+        train_asin_label = load_pickle(data_source_path + 'train_label.pkl')
         test_doc_data = load_pickle(data_source_path + 'test_data.pkl')
         test_asin_label = load_pickle(data_source_path + 'test_label.pkl')
         train_asin_feature = load_pickle(data_source_path + 'train_feature.pkl')
         test_asin_feature = load_pickle(data_source_path + 'test_feature.pkl')
-        all_labels = np.unique(np.concatenate(train_title_label.values())).tolist()
+        all_labels = np.unique(np.concatenate(train_asin_label.values())).tolist()
     else:
         all_labels, train_doc_data, train_asin_label, test_doc_data, test_asin_label, train_asin_feature, test_asin_feature = \
             get_train_test_data(asin_map_file, text_data_file,
