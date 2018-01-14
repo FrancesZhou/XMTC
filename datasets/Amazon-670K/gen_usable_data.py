@@ -13,7 +13,7 @@ import sys
 import collections
 sys.path.append('../material')
 #from ..material.utils import load_pickle, dump_pickle, load_txt, get_wordID_from_vocab
-from utils import load_pickle, dump_pickle, load_txt, get_wordID_from_vocab, write_label_pairs_into_file, get_asin_from_map_file
+from utils import load_pickle, dump_pickle, load_txt, get_wordID_from_vocab, get_wordID_from_vocab_dict, write_label_pairs_into_file, get_asin_from_map_file
 
 def clean_str(string):
     # remove stopwords
@@ -119,15 +119,15 @@ def get_train_test_data(asin_map_file, text_data_file,
     return all_labels, train_data, train_label, test_data, test_label, train_feature, test_feature
 
 
-def get_train_test_wordID_from_vocab(train_doc_data, test_doc_data):
-    vocab = load_pickle('../material/vocab')
+def get_train_test_wordID_from_vocab(vocab, train_doc_data, test_doc_data):
+    vocab = load_pickle('../material/' + vocab)
     # train_data = load_pickle(train_doc_data)
     # test_data = load_pickle(test_doc_data)
     train_data = train_doc_data
     test_data = test_doc_data
     train_doc_wordID = {}
     test_doc_wordID = {}
-
+    vocab_dict = dict(zip(vocab, range(len(vocab))))
     print 'get train wordID data'
     k = 0
     for id, text in train_data.items():
@@ -135,7 +135,7 @@ def get_train_test_wordID_from_vocab(train_doc_data, test_doc_data):
         if k % 100 == 0:
             print k
         #text = id + '. ' + text
-        wordID = get_wordID_from_vocab(text, vocab)
+        wordID = get_wordID_from_vocab_dict(text, vocab_dict)
         train_doc_wordID[id] = wordID
     print 'get test wordID data'
     k = 0
@@ -144,7 +144,7 @@ def get_train_test_wordID_from_vocab(train_doc_data, test_doc_data):
         if k % 100 == 0:
             print k
         #text = id + '. ' + text
-        wordID = get_wordID_from_vocab(text, vocab)
+        wordID = get_wordID_from_vocab_dict(text, vocab_dict)
         test_doc_wordID[id] = wordID
     return train_doc_wordID, test_doc_wordID
     #dump_pickle(train_doc_wordID, train_doc_wordID_final)
@@ -203,13 +203,25 @@ def main():
     parse.add_argument('-which_labels', '--which_labels', type=str,
                        default='adjacent',
                        help='adjacent labels or all labels')
+    parse.add_argument('-if_split_train_test', '--if_split_train_test', type=int,
+                       default=1,
+                       help='if have split train and test data: 0 for not, 1 for have split')
     args = parse.parse_args()
 
     print 'get train and test data-------------------'
-    all_labels, train_doc_data, train_asin_label, test_doc_data, test_asin_label, train_asin_feature, test_asin_feature = \
-        get_train_test_data(asin_map_file, text_data_file,
-                            train_asin_map_file, test_asin_map_file,
-                            train_asin_label_fea_file, test_asin_label_fea_file)
+    if args.if_split_train_test:
+        train_doc_data = load_pickle(data_source_path + 'train_data.pkl')
+        train_title_label = load_pickle(data_source_path + 'train_label.pkl')
+        test_doc_data = load_pickle(data_source_path + 'test_data.pkl')
+        test_asin_label = load_pickle(data_source_path + 'test_label.pkl')
+        train_asin_feature = load_pickle(data_source_path + 'train_feature.pkl')
+        test_asin_feature = load_pickle(data_source_path + 'test_feature.pkl')
+        all_labels = np.unique(np.concatenate(train_title_label.values())).tolist()
+    else:
+        all_labels, train_doc_data, train_asin_label, test_doc_data, test_asin_label, train_asin_feature, test_asin_feature = \
+            get_train_test_data(asin_map_file, text_data_file,
+                                train_asin_map_file, test_asin_map_file,
+                                train_asin_label_fea_file, test_asin_label_fea_file)
 
     if args.which_labels == 'adjacent':
         # 1. label embedding
@@ -218,7 +230,7 @@ def main():
         print len(set(all_labels) - set(all_adjacent_labels))
         # 2. write label_pairs to txt file
         print 'write label pair into file ----------'
-        write_label_pairs_into_file(label_pairs, data_des_path + 'labels.edgelist')
+        # write_label_pairs_into_file(label_pairs, data_des_path + 'labels.edgelist')
         # 3. get valid train/test doc_data and asin_label
         print 'get valid train and test data ----------------'
         train_doc_data, test_doc_data, train_asin_label, test_asin_label, train_asin_feature, test_asin_feature = \
@@ -230,7 +242,7 @@ def main():
         )
         # 4. get train/test doc_wordID
         print 'get train and test wordID data ----------------------'
-        train_doc_wordID, test_doc_wordID = get_train_test_wordID_from_vocab(
+        train_doc_wordID, test_doc_wordID = get_train_test_wordID_from_vocab('vocab.6B.300d.pkl',
             train_doc_data, test_doc_data
         )
         print 'dump data -------------------------------'
