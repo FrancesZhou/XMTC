@@ -85,7 +85,7 @@ class ModelSolver(object):
                     np.random.shuffle(batches)
                     for i in batches:
                         if k % self.show_batches == 0:
-                            print 'batch ' + str(i)
+                            print 'batch ' + str(k)
                         batch_pid, batch_x, batch_y = train_loader.get_pid_x(int(i*self.batch_size), int((i+1)*self.batch_size))
                         feed_dict = {self.model.x: np.array(batch_x), self.model.y: np.array(batch_y)}
                         _, l_ = sess.run([train_op, loss], feed_dict)

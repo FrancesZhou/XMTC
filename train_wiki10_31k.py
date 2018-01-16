@@ -77,10 +77,11 @@ def main():
     test_candidate_label = load_pickle(args.folder_path + 'test_candidate_label.pkl')
     print 'number of labels: ' + str(len(all_labels))
     print 'create train/test data loader...'
-    train_loader = DataLoader4(train_doc, train_label, train_candidate_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, given_seq_len=False, max_seq_len=args.max_seq_len)
-    max_seq_len = train_loader.max_seq_len
-    print 'max_seq_len: ' + str(max_seq_len)
-    test_loader = DataLoader4(test_doc, test_label, test_candidate_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, given_seq_len=True, max_seq_len=max_seq_len)
+    if args.model != 'XML_CNN':
+        train_loader = DataLoader4(train_doc, train_label, train_candidate_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, given_seq_len=False, max_seq_len=args.max_seq_len)
+        max_seq_len = train_loader.max_seq_len
+        print 'max_seq_len: ' + str(max_seq_len)
+        test_loader = DataLoader4(test_doc, test_label, test_candidate_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, given_seq_len=True, max_seq_len=max_seq_len)
     # ----------------------- train ------------------------
     label_embedding_dim = len(label_embeddings[all_labels[0]])
     word_embedding_dim = len(word_embeddings[0])
@@ -103,8 +104,8 @@ def main():
         args.if_use_seq_len = 0
     elif args.model == 'XML_CNN':
         print 'build XML-CNN model ...'
-        del train_loader
-        del test_loader
+        #del train_loader
+        #del test_loader
         train_loader = DataLoader5(train_doc, train_label, all_labels,
                                    args.batch_size, vocab, word_embeddings,
                                    given_seq_len=False, max_seq_len=args.max_seq_len)
