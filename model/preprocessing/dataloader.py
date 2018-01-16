@@ -338,3 +338,57 @@ class DataLoader4():
         self.candidate_label_data_copy = copy.deepcopy(self.candidate_label_data)
         self.pids_copy = copy.deepcopy(self.pids)
         self.end_of_data = False
+
+class DataLoader5():
+    def __init__(self, doc_wordID_data, label_data,
+                 all_labels,
+                 batch_size,
+                 vocab, word_embeddings,
+                 given_seq_len=False, max_seq_len=5000):
+        self.doc_wordID_data = doc_wordID_data
+        self.label_data = label_data
+        self.pids = self.label_data.keys()
+        self.all_labels = all_labels
+        self.batch_size = batch_size
+        self.vocab = vocab
+        self.word_embeddings = word_embeddings
+        self.given_seq_len = given_seq_len
+        self.max_seq_len = max_seq_len
+        self.doc_length = {}
+        self.label_dict = {}
+        self.initialize_dataloader()
+
+    def initialize_dataloader(self):
+        print 'num of doc: ' + str(len(self.doc_wordID_data))
+        print 'num of y: ' + str(len(self.label_data))
+        # create label_dict
+        self.label_dict = dict(zip(self.all_labels, range(len(self.all_labels))))
+        # doc_token_data consists of wordIDs in vocab.
+        self.doc_length = {}
+        all_length = []
+        for pid, seq in self.doc_wordID_data.items():
+            all_length.append(len(seq))
+            self.doc_length[pid] = len(seq)
+        # assign max_seq_len if not given_seq_len
+        if not self.given_seq_len:
+            self.max_seq_len = min(max(all_length), self.max_seq_len)
+
+    def get_pid_x(self, i, j):
+        batch_pid = []
+        batch_x = []
+        batch_y = []
+        end = min(j, len(self.pids))
+        for pid in self.pids[i:end]:
+            batch_pid.append(pid)
+            _, seq_emb = generate_embedding_from_vocabID(self.doc_wordID_data[pid], self.max_seq_len,
+                                                               self.word_embeddings)
+            y = np.zeros(len(self.all_labels))
+            for l in self.label_data[pid]:
+                y += np.eye(len(self.all_labels))[self.label_dict[l]]
+            batch_x.append(seq_emb)
+            batch_y.append(y)
+        while end < j:
+            batch_x.append(np.zeros((self.max_seq_len, self.word_embeddings.shape[-1])))
+            batch_y.append(np.zeros((len(self.all_labels))))
+            end += 1
+        return batch_pid, batch_x, batch_y

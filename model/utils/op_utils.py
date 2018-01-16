@@ -82,3 +82,30 @@ def precision_for_all(tar_pid_label, pred_pid_label, pred_pid_score):
         ndcg_3.append(ndcg_at_k(r, 3))
         ndcg_5.append(ndcg_at_k(r, 5))
     return np.mean([p_1, p_3, p_5, ndcg_1, ndcg_3, ndcg_5], axis=1)
+
+def precision_for_label_vector(tar_pid_label, pred_pid_score):
+    p_1 = []
+    p_3 = []
+    p_5 = []
+    ndcg_1 = []
+    ndcg_3 = []
+    ndcg_5 = []
+    for pid, label in tar_pid_label.items():
+        #sorted_idx = np.argpartition(-pred_pid_score, 5)[:5]
+        pre_labels = np.argsort(-pred_pid_score[pid])[:5]
+        true_labels = np.squeeze(np.nonzero(tar_pid_label[pid]))
+        r = []
+        for p_ in pre_labels:
+            if p_ in true_labels:
+                r.append(1)
+            else:
+                r.append(0)
+        p_1.append(np.mean(r[:1]))
+        p_3.append(np.mean(r[:3]))
+        p_5.append(np.mean(r[:5]))
+        ndcg_1.append(ndcg_at_k(r, 1))
+        ndcg_3.append(ndcg_at_k(r, 3))
+        ndcg_5.append(ndcg_at_k(r, 5))
+    return np.mean([p_1, p_3, p_5, ndcg_1, ndcg_3, ndcg_5], axis=1)
+
+
