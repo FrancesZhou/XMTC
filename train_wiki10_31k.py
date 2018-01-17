@@ -29,6 +29,8 @@ def main():
     parse.add_argument('-folder', '--folder_path', type=str,
                        default='datasets/Wiki10/data/deeplearning_data/adjacent_labels/all_para/',
                        help='path to train/test data')
+    parse.add_argument('-can_type', '--candidate_type', type=str,
+                       default='sleec')
     # ---------- vocab and word embeddings --------
     parse.add_argument('-vocab', '--vocab_path', type=str, default='vocab.6B.300d.pkl', help='path to the vocab')
     parse.add_argument('-word_embeddings', '--word_embedding_path', type=str,
@@ -77,7 +79,7 @@ def main():
     test_candidate_label = load_pickle(args.folder_path + 'test_candidate_label.pkl')
     print 'number of labels: ' + str(len(all_labels))
     print 'create train/test data loader...'
-    if args.model != 'XML_CNN':
+    if 'XML' not in args.model:
         train_loader = DataLoader4(train_doc, train_label, train_candidate_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, given_seq_len=False, max_seq_len=args.max_seq_len)
         max_seq_len = train_loader.max_seq_len
         print 'max_seq_len: ' + str(max_seq_len)
@@ -86,26 +88,24 @@ def main():
     label_embedding_dim = len(label_embeddings[all_labels[0]])
     word_embedding_dim = len(word_embeddings[0])
     print 'build model ...'
-    if args.model == 'biLSTM':
+    if 'biLSTM' in args.model:
         print 'build biLSTM model ...'
         # biLSTM: max_seq_len, word_embedding_dim, hidden_dim, label_embedding_dim, num_classify_hidden, args.batch_size
         model = biLSTM(max_seq_len, word_embedding_dim, 64, label_embedding_dim, 32, args)
         args.if_use_seq_len = 1
-    elif args.model == 'LSTM':
+    elif 'LSTM' in args.model:
         print 'build LSTM model ...'
         # LSTM: max_seq_len, word_embedding_dim, hidden_dim, label_embedding_dim, num_classify_hidden, args.batch_size
         model = LSTM(max_seq_len, word_embedding_dim, 64, label_embedding_dim, 32, args)
         args.if_use_seq_len = 1
-    elif args.model == 'CNN':
+    elif 'CNN' in args.model:
         print 'build CNN model ...'
         # CNN: sequence_length, word_embedding_dim, filter_sizes, label_embedding_dim, num_classify_hidden, args
         # args.num_filters, args.pooling_units, args.batch_size, args.dropout_keep_prob
         model = CNN(max_seq_len, word_embedding_dim, filter_sizes, label_embedding_dim, 32, args)
         args.if_use_seq_len = 0
-    elif args.model == 'XML_CNN':
+    elif 'XML' in args.model:
         print 'build XML-CNN model ...'
-        #del train_loader
-        #del test_loader
         train_loader = DataLoader5(train_doc, train_label, all_labels,
                                    args.batch_size, vocab, word_embeddings,
                                    given_seq_len=False, max_seq_len=args.max_seq_len)
