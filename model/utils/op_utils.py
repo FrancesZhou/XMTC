@@ -90,10 +90,10 @@ def precision_for_label_vector(tar_pid_label, pred_pid_score):
     ndcg_1 = []
     ndcg_3 = []
     ndcg_5 = []
-    for pid, label in tar_pid_label.items():
-        #sorted_idx = np.argpartition(-pred_pid_score, 5)[:5]
-        pre_labels = np.argsort(-pred_pid_score[pid])[:5]
-        true_labels = np.squeeze(np.nonzero(tar_pid_label[pid]))
+    for pid, true_labels in tar_pid_label.items():
+        # pre_labels = np.argsort(-pred_pid_score[pid])[:5]
+        # true_labels = np.squeeze(np.nonzero(tar_pid_label[pid]))
+        pre_labels = pred_pid_score[pid]
         r = []
         for p_ in pre_labels:
             if p_ in true_labels:
