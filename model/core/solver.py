@@ -81,14 +81,22 @@ class ModelSolver(object):
                 curr_loss = 0
                 if self.if_output_all_labels:
                     k = 0
-                    batches = np.arange(math.ceil(len(train_loader.pids)/self.batch_size))
+                    batches = np.arange(math.ceil(len(train_loader.pids)*1.0/self.batch_size), dtype=int)
+                    print len(batches)
                     np.random.shuffle(batches)
                     for i in batches:
                         if k % self.show_batches == 0:
                             print 'batch ' + str(k)
-                        batch_pid, batch_x, batch_y = train_loader.get_pid_x(int(i*self.batch_size), int((i+1)*self.batch_size))
+                        batch_pid, batch_x, batch_y = train_loader.get_pid_x(i*self.batch_size, (i+1)*self.batch_size)
+                        #print np.array(batch_x).shape
+                        #print np.array(batch_y).shape
                         feed_dict = {self.model.x: np.array(batch_x), self.model.y: np.array(batch_y)}
-                        _, l_ = sess.run([train_op, loss], feed_dict)
+                        try:
+                            _, l_ = sess.run([train_op, loss], feed_dict)
+                        except:
+                            print i
+                            print np.array(batch_x).shape
+                            print np.array(batch_y).shape
                         curr_loss += l_
                         k += 1
                 else:
@@ -140,15 +148,15 @@ class ModelSolver(object):
                         pre_pid_score = {}
                         tar_pid_label = {}
                         k = 0
-                        batches = np.arange(math.ceil(len(train_loader.pids) / self.batch_size), dtype=int)
-                        np.random.shuffle(batches)
+                        batches = np.arange(math.ceil(len(train_loader.pids)*1.0 / self.batch_size), dtype=int)
+                        #np.random.shuffle(batches)
                         for i in batches:
                             if k % self.show_batches == 0:
                                 print 'batch ' + str(i)
                             batch_pid, batch_x, batch_y = train_loader.get_pid_x(int(i * self.batch_size),
                                                                                  int((i + 1) * self.batch_size))
                             feed_dict = {self.model.x: np.array(batch_x), self.model.y: np.array(batch_y)}
-                            y_p, l_ = sess.run([train_op, loss], feed_dict)
+                            y_p, l_ = sess.run([y_, loss], feed_dict)
                             curr_loss += l_
                             k += 1
                             # get all predictions

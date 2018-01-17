@@ -366,10 +366,19 @@ class DataLoader5():
         # doc_token_data consists of wordIDs in vocab.
         self.doc_length = {}
         all_length = []
-        for pid, seq in self.doc_wordID_data.items():
-            all_length.append(len(seq))
-            self.doc_length[pid] = len(seq)
+        for pid in self.pids:
+            seq_len = len(self.doc_wordID_data[pid])
+            if seq_len:
+                all_length.append(seq_len)
+                self.doc_length[pid] = seq_len
+            else:
+                del self.doc_wordID_data[pid]
+                del self.label_data[pid]
+        self.pids = self.label_data.keys()
         # assign max_seq_len if not given_seq_len
+        print 'after removing zero-length data'
+        print 'num of doc: ' + str(len(self.doc_wordID_data))
+        print 'num of y: ' + str(len(self.label_data))
         if not self.given_seq_len:
             self.max_seq_len = min(max(all_length), self.max_seq_len)
 
@@ -384,11 +393,14 @@ class DataLoader5():
                                                                self.word_embeddings)
             y = np.zeros(len(self.all_labels))
             for l in self.label_data[pid]:
-                y += np.eye(len(self.all_labels))[self.label_dict[l]]
+                #y += np.eye(len(self.all_labels))[self.label_dict[l]]
+                y[self.label_dict[l]] = 1
+            #print seq_emb.shape
             batch_x.append(seq_emb)
             batch_y.append(y)
         while end < j:
             batch_x.append(np.zeros((self.max_seq_len, self.word_embeddings.shape[-1])))
             batch_y.append(np.zeros((len(self.all_labels))))
+            print len(batch_x)
             end += 1
         return batch_pid, batch_x, batch_y
