@@ -157,6 +157,7 @@ class ModelSolver(object):
                                                                                  int((i + 1) * self.batch_size))
                             feed_dict = {self.model.x: np.array(batch_x), self.model.y: np.array(batch_y)}
                             y_p, l_ = sess.run([y_, loss], feed_dict)
+                            print l_
                             curr_loss += l_
                             k += 1
                             # get all predictions

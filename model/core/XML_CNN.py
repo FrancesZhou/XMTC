@@ -72,6 +72,7 @@ class XML_CNN(object):
 
         # loss
         loss = tf.losses.sigmoid_cross_entropy(y, y_)
+        print loss.get_shape().as_list()
         return y_, y_, loss
 
 
