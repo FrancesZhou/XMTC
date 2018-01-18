@@ -336,7 +336,7 @@ class ModelSolver(object):
                 else:
                     feed_dict = {self.model.x: np.array(batch_x), self.model.y: np.array(zero_y),
                                  self.model.label_embeddings: zero_label_emb}
-                x_emb_ = sess.run([x_emb], feed_dict)
+                x_emb_ = sess.run(x_emb, feed_dict)
                 for x_i in range(len(batch_pid)):
                     self.train_x_emb[batch_pid[x_i]] = x_emb_[x_i]
                 i += self.batch_size
@@ -358,7 +358,7 @@ class ModelSolver(object):
                 else:
                     feed_dict = {self.model.x: np.array(batch_x), self.model.y: np.array(zero_y),
                                  self.model.label_embeddings: zero_label_emb}
-                x_emb_ = sess.run([x_emb], feed_dict)
+                x_emb_ = sess.run(x_emb, feed_dict)
                 for x_i in range(len(batch_pid)):
                     self.test_x_emb[batch_pid[x_i]] = x_emb_[x_i]
                 i += self.batch_size
