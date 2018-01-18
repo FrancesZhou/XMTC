@@ -17,6 +17,7 @@ from sklearn.neighbors import NearestNeighbors
 #     generate_labels_from_file, generate_label_pair_from_file
 # from biLSTM.utils.io_utils import load_pickle, write_file, load_txt
 from model.utils.op_utils import precision_for_label_vector, precision_for_all
+from model.utils.io_utils import load_pickle, dump_pickle
 
 
 class ModelSolver(object):
@@ -55,6 +56,8 @@ class ModelSolver(object):
         o_file = open(output_file_path, 'w')
         train_loader = self.train_data
         test_loader = self.test_data
+        train_loader.reset_data()
+        test_loader.reset_data()
         # build_model
         _, y_, loss = self.model.build_model()
         # train op
@@ -229,10 +232,11 @@ class ModelSolver(object):
             print 'final model saved.'
             o_file.close()
 
-    def test(self, trained_model, output_file_path, test_loader=None):
+    def test(self, trained_model_path, output_file_path, test_loader=None):
         o_file = open(output_file_path, 'w')
         if not test_loader:
             test_loader = self.test_data
+        test_loader.reset_data()
         # restore trained_model
         _, y_, loss = self.model.build_model()
         gpu_options = tf.GPUOptions(allow_growth=True)
@@ -240,9 +244,10 @@ class ModelSolver(object):
             tf.global_variables_initializer().run()
             saver = tf.train.Saver(tf.global_variables())
             print 'load trained model...'
-            trained_model_path = self.model_path + trained_model
-            saver.restore(sess, trained_model_path)
+            model_name = trained_model_path + 'model_final'
+            saver.restore(sess, model_name)
             # -------------- test -------------
+            print 'begin testing...'
             test_loss = []
             pre_pid_label = {}
             pre_pid_score = {}
@@ -252,9 +257,14 @@ class ModelSolver(object):
                 if i % self.show_batches == 0:
                     print i
                 batch_pid, batch_label, x, y, seq_l, label_emb = test_loader.next_batch()
+                if len(batch_pid) == 0:
+                    continue
                 if len(batch_pid) < self.batch_size:
                     x = np.concatenate(
-                        (np.array(x), np.zeros((self.batch_size - len(batch_pid), self.model.word_embedding_dim))),
+                        (np.array(x), np.zeros(
+                            (self.batch_size - len(batch_pid), self.model.max_seq_len,
+                             self.model.word_embedding_dim)
+                        )),
                         axis=0)
                     y = np.concatenate((np.array(y), np.zeros((self.batch_size - len(batch_pid), 2))), axis=0)
                     seq_l = np.concatenate((np.array(seq_l), np.zeros((self.batch_size - len(batch_pid)))))
@@ -269,7 +279,7 @@ class ModelSolver(object):
                     feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
                                  self.model.label_embeddings: label_emb}
                 y_p, l_ = sess.run([y_, loss], feed_dict)
-                test_loss.append(l_ / len(batch_pid))
+                test_loss += l_
                 i += 1
                 # get all predictions
                 for j in range(len(batch_pid)):
@@ -297,7 +307,7 @@ class ModelSolver(object):
             o_file.close()
 
 
-    def generate_x_embedding(self, trained_model):
+    def generate_x_embedding(self, trained_model_path):
         # generate candidate label subset via KNN using X-embeddings.
         # build model
         x_emb, y_, loss = self.model.build_model()
@@ -306,13 +316,18 @@ class ModelSolver(object):
             tf.global_variables_initializer().run()
             saver = tf.train.Saver(tf.global_variables())
             print 'load trained model...'
-            trained_model_path = self.model_path + trained_model
-            saver.restore(sess, trained_model_path)
+            model_name = trained_model_path + 'model_final'
+            saver.restore(sess, model_name)
             # -------------- get train_x_emb ------------
+            print 'get train_x_emb'
             i = 0
+            k = 0
             zero_y = np.zeros((self.batch_size, 2))
             zero_label_emb = np.zeros((self.batch_size, self.model.label_embedding_dim))
             while i < len(self.train_data.pids):
+                k += 1
+                if k % self.show_batches == 0:
+                    print 'batch ' + str(k)
                 batch_pid, batch_x, batch_len = self.train_data.get_pid_x(i, i + self.batch_size)
                 if self.if_use_seq_len:
                     feed_dict = {self.model.x: np.array(batch_x), self.model.y: np.array(zero_y),
@@ -325,9 +340,16 @@ class ModelSolver(object):
                 for x_i in range(len(batch_pid)):
                     self.train_x_emb[batch_pid[x_i]] = x_emb_[x_i]
                 i += self.batch_size
+            print 'dump train_x_emb'
+            dump_pickle(self.train_x_emb, trained_model_path+'train_x_emb.pkl')
             # -------------- get test_x_emb -------------
+            print 'get test_x_emb'
             i = 0
+            k = 0
             while i < len(self.test_data.pids):
+                k += 1
+                if k % self.show_batches == 0:
+                    print 'batch ' + str(k)
                 batch_pid, batch_x, batch_len = self.test_data.get_pid_x(i, i + self.batch_size)
                 if self.if_use_seq_len:
                     feed_dict = {self.model.x: np.array(batch_x), self.model.y: np.array(zero_y),
@@ -340,13 +362,17 @@ class ModelSolver(object):
                 for x_i in range(len(batch_pid)):
                     self.test_x_emb[batch_pid[x_i]] = x_emb_[x_i]
                 i += self.batch_size
+            print 'dump test_x_emb'
+            dump_pickle(self.test_x_emb, trained_model_path+'test_x_emb.pkl')
 
-    def get_candidate_label_from_x_emb(self, k):
+    def get_candidate_label_from_x_emb(self, trained_model_path, k):
         train_pid = self.train_x_emb.keys()
         train_emb = self.train_x_emb.values()
         test_pid = self.test_x_emb.keys()
         test_emb = self.test_x_emb.values()
+        print 'begin KNN '
         nbrs = NearestNeighbors(n_neighbors=k).fit(train_emb)
+        print 'end KNN'
         _, indices = nbrs.kneighbors(test_emb)
         # get candidate label
         test_unique_candidate_label = {}
@@ -362,14 +388,25 @@ class ModelSolver(object):
             test_unique_candidate_label[test_pid[i]] = unique_can_l
         self.test_unique_candidate_label = test_unique_candidate_label
         self.test_all_candidate_label = test_all_candidate_label
+        dump_pickle(self.test_unique_candidate_label, trained_model_path+'test_candidate_label.pkl')
 
-    def predict(self, trained_model, output_file_path, k=10):
-        self.generate_x_embedding(trained_model)
-        self.get_candidate_label_from_x_emb(k)
+    def predict(self, trained_model_path, output_file_path, k=10, emb_saved=0, can_saved=0):
+        print 'generate X-embedding'
+        if emb_saved:
+            self.train_x_emb = load_pickle(trained_model_path+'train_x_emb.pkl')
+            self.test_x_emb = load_pickle(trained_model_path+'test_x_emb.pkl')
+        else:
+            self.generate_x_embedding(trained_model_path)
+        print 'get candidate label from X-embedding'
+        if can_saved:
+            self.test_unique_candidate_label = load_pickle(trained_model_path+'test_candidate_label.pkl')
+        else:
+            self.get_candidate_label_from_x_emb(trained_model_path, k)
         test_loader = copy.deepcopy(self.test_data)
         test_loader.candidate_label_data = self.test_unique_candidate_label
         test_loader.reset_data()
-        self.test(trained_model, output_file_path, test_loader)
+        print 'begin predict'
+        self.test(trained_model_path, output_file_path, test_loader)
 
 
 

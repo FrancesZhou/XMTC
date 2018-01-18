@@ -61,6 +61,9 @@ def main():
                        default=20, help='show how many batches have been processed.')
     parse.add_argument('-lr', '--learning_rate', type=float, default=0.0002, help='learning rate')
     parse.add_argument('-update_rule', '--update_rule', type=str, default='adam', help='update rule')
+    # ------ train or predict -------
+    parse.add_argument('-train', '--train', type=int, default=1, help='if training')
+    parse.add_argument('-predict', '--predict', type=int, default=1, help='if predicting')
     args = parse.parse_args()
 
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
@@ -134,12 +137,17 @@ def main():
                          pretrained_model=args.pretrained_model_path,
                          model_path=args.folder_path + args.model + '/',
                          test_path=args.folder_path + args.model + '/')
-    print 'begin training...'
-    solver.train(args.folder_path + args.model + '/outcome.txt')
+    # train
+    if args.train:
+        print 'begin training...'
+        solver.train(args.folder_path + args.model + '/outcome.txt')
 
-    # test
-    # test_all = DataLoader3(test_doc, test_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, max_seq_len)
-    # solver.test(test_all)
+    # predict
+    if args.predict:
+        print 'begin predicting...'
+        predict_path = args.folder_path+'model_save/'+args.model+'/'
+        solver.predict(trained_model_path=predict_path, output_file_path=predict_path+'predict_outcome.txt', k=10)
+
 
 
 if __name__ == "__main__":
