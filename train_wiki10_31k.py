@@ -85,10 +85,10 @@ def main():
     print 'number of labels: ' + str(len(all_labels))
     print 'create train/test data loader...'
     if 'XML' not in args.model:
-        train_loader = DataLoader4(train_doc, train_label, train_candidate_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, given_seq_len=False, max_seq_len=args.max_seq_len)
+        train_loader = DataLoader3(train_doc, train_label, train_candidate_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, given_seq_len=False, max_seq_len=args.max_seq_len)
         max_seq_len = train_loader.max_seq_len
         print 'max_seq_len: ' + str(max_seq_len)
-        test_loader = DataLoader4(test_doc, test_label, test_candidate_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, given_seq_len=True, max_seq_len=max_seq_len)
+        test_loader = DataLoader3(test_doc, test_label, test_candidate_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, given_seq_len=True, max_seq_len=max_seq_len)
     # ----------------------- train ------------------------
     label_embedding_dim = len(label_embeddings[all_labels[0]])
     word_embedding_dim = len(word_embeddings[0])
@@ -146,7 +146,7 @@ def main():
     if args.predict:
         print 'begin predicting...'
         predict_path = args.folder_path+'model_save/'+args.model+'/'
-        solver.predict(trained_model_path=predict_path, output_file_path=predict_path+'predict_outcome.txt', k=10)
+        solver.predict(trained_model_path=predict_path, output_file_path=predict_path+'predict_outcome.txt', k=10, emb_saved=1)
 
 
 

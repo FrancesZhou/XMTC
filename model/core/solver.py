@@ -378,7 +378,7 @@ class ModelSolver(object):
         test_unique_candidate_label = {}
         test_all_candidate_label = {}
         for i in range(len(indices)):
-            k_nbs = train_pid[indices[i]]
+            k_nbs = np.array(train_pid)[indices[i]]
             can_l = []
             for pid in k_nbs:
                 can_l.append(self.train_data.label_data[pid])

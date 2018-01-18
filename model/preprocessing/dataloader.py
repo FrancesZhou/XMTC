@@ -269,7 +269,7 @@ class DataLoader4():
                  if_use_all_true_label=0):
         self.doc_wordID_data = doc_wordID_data
         self.label_data = label_data
-        self.pids = []
+        self.pids = self.label_data.keys()
         self.all_labels = all_labels
         self.candidate_label_data = candidate_label_data
         self.label_embeddings = label_embeddings
