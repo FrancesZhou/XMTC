@@ -11,7 +11,7 @@ import argparse
 import numpy as np
 import scipy.io as sio
 from model.preprocessing.preprocessing import generate_label_embedding_from_file, get_train_test_doc_label_data
-from model.preprocessing.dataloader import DataLoader4, DataLoader5
+from model.preprocessing.dataloader import DataLoader4, DataLoader5, DataLoader3
 from model.core.biLSTM import biLSTM
 from model.core.LSTM import LSTM
 from model.core.CNN import CNN
@@ -146,7 +146,9 @@ def main():
     if args.predict:
         print 'begin predicting...'
         predict_path = args.folder_path+'model_save/'+args.model+'/'
-        solver.predict(trained_model_path=predict_path, output_file_path=predict_path+'predict_outcome.txt', k=10, emb_saved=1)
+        solver.predict(trained_model_path=predict_path,
+                       output_file_path=predict_path+'predict_outcome.txt',
+                       k=10, emb_saved=1, can_saved=1)
 
 
 

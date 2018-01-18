@@ -305,10 +305,10 @@ class DataLoader4():
                 del self.doc_wordID_data[pid]
                 del self.label_data[pid]
         self.pids = self.label_data.keys()
-        # assign max_seq_len if not given_seq_len
         print 'after removing zero-length data'
         print 'num of doc: ' + str(len(self.doc_wordID_data))
         print 'num of y: ' + str(len(self.label_data))
+        # assign max_seq_len if not given_seq_len
         if not self.given_seq_len:
             self.max_seq_len = min(max(all_length), self.max_seq_len)
         # if_use_all_true_label
