@@ -107,6 +107,8 @@ class ModelSolver(object):
                         if i % self.show_batches == 0:
                             print 'batch ' + str(i)
                         batch_pid, _, x, y, seq_l, label_emb = train_loader.next_batch()
+                        if len(batch_pid) == 0:
+                            continue
                         if len(batch_pid) < self.batch_size:
                             x = np.concatenate(
                                 (np.array(x), np.zeros(
@@ -174,6 +176,8 @@ class ModelSolver(object):
                             if i % self.show_batches == 0:
                                 print i
                             batch_pid, batch_label, x, y, seq_l, label_emb = test_loader.next_batch()
+                            if len(batch_pid) == 0:
+                                continue
                             if len(batch_pid) < self.batch_size:
                                 x = np.concatenate(
                                     (np.array(x), np.zeros(

@@ -7,6 +7,7 @@ Created on Nov, 2017
 from __future__ import absolute_import
 
 import numpy as np
+import math
 import re
 import copy
 from .preprocessing import generate_embedding_from_vocabID, generate_label_vector_of_fixed_length, get_wordID_from_vocab
@@ -152,78 +153,111 @@ class DataLoader2():
         self.pids_copy = copy.deepcopy(self.pids)
         self.end_of_data = False
 
-# DataLoader3 is for testing all texts for all labels
-# produce each text and all labels per next_text()
+# DataLoader3 is for loading candidate label subset from SLEEC without pop but with indexing
 class DataLoader3():
-    def __init__(self, doc_wordID_data, label_data, all_labels, label_embeddings, batch_size, vocab, word_embeddings, max_seq_len=None):
+    def __init__(self, doc_wordID_data, label_data,
+                 candidate_label_data,
+                 all_labels, label_embeddings,
+                 batch_size,
+                 vocab, word_embeddings,
+                 given_seq_len=False, max_seq_len=5000,
+                 if_use_all_true_label=0):
         self.doc_wordID_data = doc_wordID_data
         self.label_data = label_data
         self.pids = self.label_data.keys()
+        self.pid_label = []
+        self.batch_num = 0
         self.all_labels = all_labels
+        self.candidate_label_data = candidate_label_data
         self.label_embeddings = label_embeddings
         self.batch_size = batch_size
         self.vocab = vocab
         self.word_embeddings = word_embeddings
+        self.given_seq_len = given_seq_len
         self.max_seq_len = max_seq_len
+        self.if_use_all_true_label = if_use_all_true_label
         self.initialize_dataloader()
 
     def initialize_dataloader(self):
         print 'num of doc: ' + str(len(self.doc_wordID_data))
         print 'num of y: ' + str(len(self.label_data))
-        self.num_batch_for_each_text = len(self.all_labels)/self.batch_size + 1
-        self.samples_of_last_batch_for_each_text = len(self.all_labels) % self.batch_size
-        # set all_label_embeddings for all_labels
-        self.all_label_embedding = []
-        for label in self.all_labels:
-            self.all_label_embedding.append(self.label_embeddings[label])
-        # set doc_length according to doc_wordID_data
-        # doc_wordID_data consists of wordIDs in vocab.
+        # doc_token_data consists of wordIDs in vocab.
         self.doc_length = {}
-        count = 0
+        all_length = []
         for pid, seq in self.doc_wordID_data.items():
-            count += 1
-            if count % 50 == 0:
-                print count
+            all_length.append(len(seq))
             self.doc_length[pid] = len(seq)
-        # assign max_seq_len if None
-        if self.max_seq_len is None:
-            self.max_seq_len = max(self.doc_length.values())
+        # assign max_seq_len if not given_seq_len
+        if not self.given_seq_len:
+            self.max_seq_len = min(max(all_length), self.max_seq_len)
+        # if_use_all_true_label
+        if self.if_use_all_true_label:
+            for pid, label in self.label_data.items():
+                candidate_label = self.candidate_label_data[pid]
+                candidate_label = list(set(candidate_label) & set(self.all_labels))
+                self.candidate_label_data[pid] = np.unique(np.concatenate((candidate_label, label))).tolist()
+        # generate self.pid_label
+        for pid, label in self.candidate_label_data.items():
+            stack_pid = pid*len(label)
+            self.pid_label.append(np.concatenate(
+                (np.expand_dims(stack_pid, -1), np.expand_dims(label, -1)), axis=-1))
+        self.pid_label = np.concatenate(self.pid_label, axis=0)
+        self.batch_num = math.ceil(len(self.pid_label) / float(self.batch_size))
+        print 'pid_label shape: ' + str(self.pid_label.shape)
         self.reset_data()
 
-    def next_text(self):
-        all_label_embedding = np.array(self.all_label_embedding)
-        try:
-            pid = self.pids_copy.pop()
-            _, x = generate_embedding_from_vocabID(self.doc_wordID_data[pid], self.max_seq_len, self.word_embeddings)
-            x = np.tile(x, (self.batch_size, 1, 1))
-            #print x.shape
-            seq_len = np.repeat(self.doc_length[pid], self.batch_size)
-            #print seq_len.shape
-            all_y = []
-            for label in self.all_labels:
-                if label in self.label_data[pid]:
-                    all_y.append(1)
-                else:
-                    all_y.append(0)
-            if self.samples_of_last_batch_for_each_text:
-                all_y = np.concatenate((all_y, np.zeros(self.batch_size-self.samples_of_last_batch_for_each_text)))
-                all_label_embedding = np.concatenate((all_label_embedding,
-                                                      np.zeros((self.batch_size-self.samples_of_last_batch_for_each_text, all_label_embedding.shape[-1]))), axis=0)
-        except IndexError:
+    def get_pid_x(self, i, j):
+        batch_pid = []
+        batch_x = []
+        batch_length = []
+        end = min(j, len(self.pids))
+        for pid in self.pids[i:end]:
+            batch_pid.append(pid)
+            seq_len, seq_emb = generate_embedding_from_vocabID(self.doc_wordID_data[pid], self.max_seq_len, self.word_embeddings)
+            batch_length.append(seq_len)
+            batch_x.append(seq_emb)
+        while end < j:
+            batch_length.append([int(0)])
+            batch_x.append(np.zeros((self.max_seq_len, self.word_embeddings.shape[-1])))
+            end += 1
+        return batch_pid, batch_x, batch_length
+
+    def next_batch(self):
+        batch_pid = []
+        batch_label = []
+        batch_x = []
+        batch_y = []
+        batch_length = []
+        batch_label_embedding = []
+        if self.batch_id == self.batch_num-1:
+            index = np.arange(self.batch_id*self.batch_size, len(self.pid_label))
+            self.batch_id = 0
             self.end_of_data = True
-            return 0, 0, 0, 0, 0, 0
-        all_y = np.expand_dims(np.array(all_y), axis=-1)
-        all_y = np.concatenate((all_y, 1-all_y), axis=-1)
-        all_y = np.stack(np.split(np.array(all_y), self.num_batch_for_each_text, axis=0))
-        all_label_embedding = np.stack(np.split(np.array(all_label_embedding), self.num_batch_for_each_text, axis=0))
-        return pid, x, seq_len, self.all_labels, all_y, all_label_embedding
+        else:
+            index = np.arange(self.batch_id*self.batch_size, (self.batch_id+1)*self.batch_size)
+            self.batch_id += 1
+        for i in index:
+            pid, label = self.pid_label[i]
+            seq_len, embeddings = generate_embedding_from_vocabID(self.doc_wordID_data[pid], self.max_seq_len, self.word_embeddings)
+            if seq_len == 0:
+                continue
+            batch_pid.append(pid)
+            batch_label.append(label)
+            batch_x.append(embeddings)
+            if label in self.label_data[pid]:
+                batch_y.append([0, 1])
+            else:
+                batch_y.append([1, 0])
+            batch_length.append(seq_len)
+            batch_label_embedding.append(self.label_embeddings[label])
+        return batch_pid, batch_label, batch_x, batch_y, batch_length, batch_label_embedding
 
     def reset_data(self):
-        #self.label_data_copy = copy.deepcopy(self.label_data)
-        self.pids_copy = copy.deepcopy(self.pids)
+        np.random.shuffle(self.pid_label)
+        self.batch_id = 0
         self.end_of_data = False
 
-# DataLoader4 is for loading candidate label subset from SLEEC
+# DataLoader4 is for loading candidate label subset from SLEEC with pop operator
 class DataLoader4():
     def __init__(self, doc_wordID_data, label_data,
                  candidate_label_data,
@@ -339,6 +373,8 @@ class DataLoader4():
         self.pids_copy = copy.deepcopy(self.pids)
         self.end_of_data = False
 
+
+# DataLoader5 is for XML-CNN to output all labels
 class DataLoader5():
     def __init__(self, doc_wordID_data, label_data,
                  all_labels,

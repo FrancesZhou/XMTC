@@ -11,7 +11,7 @@ import argparse
 import numpy as np
 import scipy.io as sio
 from model.preprocessing.preprocessing import generate_label_embedding_from_file, get_train_test_doc_label_data
-from model.preprocessing.dataloader import DataLoader4, DataLoader5
+from model.preprocessing.dataloader import DataLoader4, DataLoader5, DataLoader3
 from model.core.biLSTM import biLSTM
 from model.core.LSTM import LSTM
 from model.core.CNN import CNN
@@ -80,10 +80,10 @@ def main():
     print 'number of labels: ' + str(len(all_labels))
     print 'create train/test data loader...'
     if 'XML' not in args.model:
-        train_loader = DataLoader4(train_doc, train_label, train_candidate_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, given_seq_len=False, max_seq_len=args.max_seq_len)
+        train_loader = DataLoader3(train_doc, train_label, train_candidate_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, given_seq_len=False, max_seq_len=args.max_seq_len)
         max_seq_len = train_loader.max_seq_len
         print 'max_seq_len: ' + str(max_seq_len)
-        test_loader = DataLoader4(test_doc, test_label, test_candidate_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, given_seq_len=True, max_seq_len=max_seq_len)
+        test_loader = DataLoader3(test_doc, test_label, test_candidate_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, given_seq_len=True, max_seq_len=max_seq_len)
     # ----------------------- train ------------------------
     label_embedding_dim = len(label_embeddings[all_labels[0]])
     word_embedding_dim = len(word_embeddings[0])
@@ -136,7 +136,6 @@ def main():
     solver.train(args.folder_path + args.model + '/outcome.txt')
 
     # test
-    # test_all = DataLoader3(test_doc, test_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, max_seq_len)
     # solver.test(test_all)
 
 
