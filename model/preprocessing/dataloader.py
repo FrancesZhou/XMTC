@@ -181,6 +181,7 @@ class DataLoader3():
     def initialize_dataloader(self):
         print 'num of doc: ' + str(len(self.doc_wordID_data))
         print 'num of y: ' + str(len(self.label_data))
+        print 'num of candidate_label: ' + str(len(self.candidate_label_data))
         # doc_token_data consists of wordIDs in vocab.
         self.doc_length = {}
         all_length = []
@@ -192,10 +193,12 @@ class DataLoader3():
             else:
                 del self.doc_wordID_data[pid]
                 del self.label_data[pid]
+                del self.candidate_label_data[pid]
         self.pids = self.label_data.keys()
         print 'after removing zero-length data'
         print 'num of doc: ' + str(len(self.doc_wordID_data))
         print 'num of y: ' + str(len(self.label_data))
+        print 'num of candidate_label: ' + str(len(self.candidate_label_data))
         # assign max_seq_len if not given_seq_len
         if not self.given_seq_len:
             self.max_seq_len = min(max(all_length), self.max_seq_len)
@@ -248,7 +251,11 @@ class DataLoader3():
             self.batch_id += 1
         for i in index:
             pid, label = self.pid_label[i]
-            seq_len, embeddings = generate_embedding_from_vocabID(self.doc_wordID_data[pid], self.max_seq_len, self.word_embeddings)
+            pid = int(pid)
+            try:
+                seq_len, embeddings = generate_embedding_from_vocabID(self.doc_wordID_data[pid], self.max_seq_len, self.word_embeddings)
+            except:
+                print 'exception: pid ' + str(pid)
             if seq_len == 0:
                 continue
             batch_pid.append(pid)
