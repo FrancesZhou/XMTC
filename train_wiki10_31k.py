@@ -75,8 +75,10 @@ def main():
     test_doc = load_pickle(args.folder_path + 'test_doc_wordID.pkl')
     train_label = load_pickle(args.folder_path + 'train_title_label.pkl')
     test_label = load_pickle(args.folder_path + 'test_title_label.pkl')
-    train_candidate_label = load_pickle(args.folder_path + 'train_candidate_label.pkl')
-    test_candidate_label = load_pickle(args.folder_path + 'test_candidate_label.pkl')
+    print 'candidate from: ' + args.candidate_type
+    candidate_folder_path = args.folder_path + args.candidate_type + '_candidate/'
+    train_candidate_label = load_pickle(candidate_folder_path + 'train_candidate_label.pkl')
+    test_candidate_label = load_pickle(candidate_folder_path + 'test_candidate_label.pkl')
     print 'number of labels: ' + str(len(all_labels))
     print 'create train/test data loader...'
     if 'XML' not in args.model:
