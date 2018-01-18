@@ -61,6 +61,9 @@ def main():
                        default=20, help='show how many batches have been processed.')
     parse.add_argument('-lr', '--learning_rate', type=float, default=0.0002, help='learning rate')
     parse.add_argument('-update_rule', '--update_rule', type=str, default='adam', help='update rule')
+    # loss
+    parse.add_argument('-use_propensity', '--use_propensity', type=int,
+                       default=0, help='if use propensity binary cross entropy loss')
     # ------ train or predict -------
     parse.add_argument('-train', '--train', type=int, default=1, help='if training')
     parse.add_argument('-predict', '--predict', type=int, default=1, help='if predicting')
@@ -73,6 +76,8 @@ def main():
     print 'load label embeddings'
     label_embeddings = generate_label_embedding_from_file(args.folder_path + 'label.embeddings')
     all_labels = label_embeddings.keys()
+    print 'load label propensity'
+    label_prop = load_pickle(args.folder_path + 'inv_prop.pkl')
     print 'load train/test data'
     train_doc = load_pickle(args.folder_path + 'train_doc_wordID.pkl')
     test_doc = load_pickle(args.folder_path + 'test_doc_wordID.pkl')

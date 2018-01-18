@@ -157,19 +157,20 @@ class DataLoader2():
 class DataLoader3():
     def __init__(self, doc_wordID_data, label_data,
                  candidate_label_data,
-                 all_labels, label_embeddings,
+                 all_labels, label_embeddings, label_prop,
                  batch_size,
                  vocab, word_embeddings,
                  given_seq_len=False, max_seq_len=5000,
                  if_use_all_true_label=0):
         self.doc_wordID_data = doc_wordID_data
         self.label_data = label_data
+        self.candidate_label_data = candidate_label_data
         self.pids = self.label_data.keys()
         self.pid_label = []
         self.batch_num = 0
         self.all_labels = all_labels
-        self.candidate_label_data = candidate_label_data
         self.label_embeddings = label_embeddings
+        self.label_prop = label_prop
         self.batch_size = batch_size
         self.vocab = vocab
         self.word_embeddings = word_embeddings
@@ -179,8 +180,8 @@ class DataLoader3():
         self.initialize_dataloader()
 
     def initialize_dataloader(self):
-        print 'num of doc: ' + str(len(self.doc_wordID_data))
-        print 'num of y: ' + str(len(self.label_data))
+        print 'num of doc:             ' + str(len(self.doc_wordID_data))
+        print 'num of y:               ' + str(len(self.label_data))
         print 'num of candidate_label: ' + str(len(self.candidate_label_data))
         # doc_token_data consists of wordIDs in vocab.
         self.doc_length = {}
@@ -196,8 +197,8 @@ class DataLoader3():
                 del self.candidate_label_data[pid]
         self.pids = self.label_data.keys()
         print 'after removing zero-length data'
-        print 'num of doc: ' + str(len(self.doc_wordID_data))
-        print 'num of y: ' + str(len(self.label_data))
+        print 'num of doc:             ' + str(len(self.doc_wordID_data))
+        print 'num of y:               ' + str(len(self.label_data))
         print 'num of candidate_label: ' + str(len(self.candidate_label_data))
         # assign max_seq_len if not given_seq_len
         if not self.given_seq_len:
@@ -242,6 +243,7 @@ class DataLoader3():
         batch_y = []
         batch_length = []
         batch_label_embedding = []
+        batch_label_prop = []
         if self.batch_id == self.batch_num-1:
             index = np.arange(self.batch_id*self.batch_size, len(self.pid_label))
             self.batch_id = 0
@@ -260,6 +262,7 @@ class DataLoader3():
                 continue
             batch_pid.append(pid)
             batch_label.append(label)
+            batch_label_prop.append(self.label_prop[label])
             batch_x.append(embeddings)
             if label in self.label_data[pid]:
                 batch_y.append([0, 1])
@@ -267,13 +270,14 @@ class DataLoader3():
                 batch_y.append([1, 0])
             batch_length.append(seq_len)
             batch_label_embedding.append(self.label_embeddings[label])
-        return batch_pid, batch_label, batch_x, batch_y, batch_length, batch_label_embedding
+        return batch_pid, batch_label, batch_x, batch_y, batch_length, batch_label_embedding, batch_label_prop
 
     def reset_data(self):
         np.random.shuffle(self.pid_label)
         self.batch_id = 0
         self.end_of_data = False
 
+# NOT GOOD!
 # DataLoader4 is for loading candidate label subset from SLEEC with pop operator
 class DataLoader4():
     def __init__(self, doc_wordID_data, label_data,
@@ -298,8 +302,9 @@ class DataLoader4():
         self.initialize_dataloader()
 
     def initialize_dataloader(self):
-        print 'num of doc: ' + str(len(self.doc_wordID_data))
-        print 'num of y: ' + str(len(self.label_data))
+        print 'num of doc:             ' + str(len(self.doc_wordID_data))
+        print 'num of y:               ' + str(len(self.label_data))
+        print 'num of candidate_label: ' + str(len(self.candidate_label_data))
         # doc_token_data consists of wordIDs in vocab.
         self.doc_length = {}
         all_length = []
@@ -311,10 +316,12 @@ class DataLoader4():
             else:
                 del self.doc_wordID_data[pid]
                 del self.label_data[pid]
+                del self.candidate_label_data[pid]
         self.pids = self.label_data.keys()
         print 'after removing zero-length data'
-        print 'num of doc: ' + str(len(self.doc_wordID_data))
-        print 'num of y: ' + str(len(self.label_data))
+        print 'num of doc:             ' + str(len(self.doc_wordID_data))
+        print 'num of y:               ' + str(len(self.label_data))
+        print 'num of candidate_label: ' + str(len(self.candidate_label_data))
         # assign max_seq_len if not given_seq_len
         if not self.given_seq_len:
             self.max_seq_len = min(max(all_length), self.max_seq_len)

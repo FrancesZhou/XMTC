@@ -109,7 +109,7 @@ class ModelSolver(object):
                     while not train_loader.end_of_data:
                         if i % self.show_batches == 0:
                             print 'batch ' + str(i)
-                        batch_pid, _, x, y, seq_l, label_emb = train_loader.next_batch()
+                        batch_pid, _, x, y, seq_l, label_emb, label_prop = train_loader.next_batch()
                         if len(batch_pid) == 0:
                             continue
                         if len(batch_pid) < self.batch_size:
@@ -123,13 +123,16 @@ class ModelSolver(object):
                             label_emb = np.concatenate((np.array(label_emb),
                                                         np.zeros((self.batch_size - len(batch_pid),
                                                                   self.model.label_embedding_dim))), axis=0)
+                            label_prop = np.concatenate((np.array(label_prop), np.zeros((self.batch_size - len(batch_pid)))))
                         if self.if_use_seq_len:
                             feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
                                          self.model.seqlen: np.array(seq_l),
-                                         self.model.label_embeddings: label_emb}
+                                         self.model.label_embeddings: label_emb,
+                                         self.model.label_prop: label_prop}
                         else:
                             feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
-                                         self.model.label_embeddings: label_emb}
+                                         self.model.label_embeddings: label_emb,
+                                         self.model.label_prop: label_prop}
                         _, l_ = sess.run([train_op, loss], feed_dict)
                         curr_loss += l_
                         i += 1
@@ -178,7 +181,7 @@ class ModelSolver(object):
                         while not test_loader.end_of_data:
                             if i % self.show_batches == 0:
                                 print i
-                            batch_pid, batch_label, x, y, seq_l, label_emb = test_loader.next_batch()
+                            batch_pid, batch_label, x, y, seq_l, label_emb, label_prop = test_loader.next_batch()
                             if len(batch_pid) == 0:
                                 continue
                             if len(batch_pid) < self.batch_size:
@@ -193,13 +196,16 @@ class ModelSolver(object):
                                 label_emb = np.concatenate((np.array(label_emb),
                                                             np.zeros((self.batch_size - len(batch_pid),
                                                                       self.model.label_embedding_dim))), axis=0)
+                                label_prop = np.concatenate((np.array(label_prop), np.zeros((self.batch_size - len(batch_pid)))))
                             if self.if_use_seq_len:
                                 feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
                                              self.model.seqlen: np.array(seq_l),
-                                             self.model.label_embeddings: label_emb}
+                                             self.model.label_embeddings: label_emb,
+                                             self.model.label_prop: label_prop}
                             else:
                                 feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
-                                             self.model.label_embeddings: label_emb}
+                                             self.model.label_embeddings: label_emb,
+                                             self.model.label_prop: label_prop}
                             y_p, l_ = sess.run([y_, loss], feed_dict)
                             val_loss += l_
                             i += 1
@@ -248,7 +254,6 @@ class ModelSolver(object):
             saver.restore(sess, model_name)
             # -------------- test -------------
             print 'begin testing...'
-            test_loss = []
             pre_pid_label = {}
             pre_pid_score = {}
             i = 0
@@ -256,7 +261,7 @@ class ModelSolver(object):
             while not test_loader.end_of_data:
                 if i % self.show_batches == 0:
                     print i
-                batch_pid, batch_label, x, y, seq_l, label_emb = test_loader.next_batch()
+                batch_pid, batch_label, x, y, seq_l, label_emb, label_prop = test_loader.next_batch()
                 if len(batch_pid) == 0:
                     continue
                 if len(batch_pid) < self.batch_size:
@@ -271,15 +276,17 @@ class ModelSolver(object):
                     label_emb = np.concatenate((np.array(label_emb),
                                                 np.zeros((self.batch_size - len(batch_pid),
                                                           self.model.label_embedding_dim))), axis=0)
+                    label_prop = np.concatenate((np.array(label_prop), np.zeros((self.batch_size - len(batch_pid)))))
                 if self.if_use_seq_len:
                     feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
                                  self.model.seqlen: np.array(seq_l),
-                                 self.model.label_embeddings: label_emb}
+                                 self.model.label_embeddings: label_emb,
+                                 self.model.label_prop: label_prop}
                 else:
                     feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
-                                 self.model.label_embeddings: label_emb}
-                y_p, l_ = sess.run([y_, loss], feed_dict)
-                test_loss += l_
+                                 self.model.label_embeddings: label_emb,
+                                 self.model.label_prop: label_prop}
+                y_p = sess.run(y_, feed_dict)
                 i += 1
                 # get all predictions
                 for j in range(len(batch_pid)):
@@ -293,9 +300,9 @@ class ModelSolver(object):
                 test_loader.reset_data()
             mean_metric = precision_for_all(test_loader.label_data, pre_pid_label, pre_pid_score)
             print len(mean_metric)
-            w_text = 'test loss is ' + str(np.mean(test_loss)) + '\n'
-            print w_text
-            o_file.write(w_text)
+            #w_text = 'test loss is ' + str(np.mean(test_loss)) + '\n'
+            #print w_text
+            #o_file.write(w_text)
             p1_txt = 'precision@1: ' + str(mean_metric[0]) + '\n'
             p3_txt = 'precision@3: ' + str(mean_metric[1]) + '\n'
             p5_txt = 'precision@5: ' + str(mean_metric[2]) + '\n'
@@ -324,6 +331,7 @@ class ModelSolver(object):
             k = 0
             zero_y = np.zeros((self.batch_size, 2))
             zero_label_emb = np.zeros((self.batch_size, self.model.label_embedding_dim))
+            zero_label_prop = np.zeros(self.batch_size)
             while i < len(self.train_data.pids):
                 k += 1
                 if k % self.show_batches == 0:
@@ -332,10 +340,12 @@ class ModelSolver(object):
                 if self.if_use_seq_len:
                     feed_dict = {self.model.x: np.array(batch_x), self.model.y: np.array(zero_y),
                                  self.model.seqlen: np.array(batch_len),
-                                 self.model.label_embeddings: zero_label_emb}
+                                 self.model.label_embeddings: zero_label_emb,
+                                 self.model.label_prop: zero_label_prop}
                 else:
                     feed_dict = {self.model.x: np.array(batch_x), self.model.y: np.array(zero_y),
-                                 self.model.label_embeddings: zero_label_emb}
+                                 self.model.label_embeddings: zero_label_emb,
+                                 self.model.label_prop: zero_label_prop}
                 x_emb_ = sess.run(x_emb, feed_dict)
                 for x_i in range(len(batch_pid)):
                     self.train_x_emb[batch_pid[x_i]] = x_emb_[x_i]
@@ -354,10 +364,12 @@ class ModelSolver(object):
                 if self.if_use_seq_len:
                     feed_dict = {self.model.x: np.array(batch_x), self.model.y: np.array(zero_y),
                                  self.model.seqlen: np.array(batch_len),
-                                 self.model.label_embeddings: zero_label_emb}
+                                 self.model.label_embeddings: zero_label_emb,
+                                 self.model.label_prop: zero_label_prop}
                 else:
                     feed_dict = {self.model.x: np.array(batch_x), self.model.y: np.array(zero_y),
-                                 self.model.label_embeddings: zero_label_emb}
+                                 self.model.label_embeddings: zero_label_emb,
+                                 self.model.label_prop: zero_label_prop}
                 x_emb_ = sess.run(x_emb, feed_dict)
                 for x_i in range(len(batch_pid)):
                     self.test_x_emb[batch_pid[x_i]] = x_emb_[x_i]

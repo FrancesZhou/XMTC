@@ -24,8 +24,11 @@ class CNN(object):
         self.weight_initializer = tf.contrib.layers.xavier_initializer()
         self.const_initializer = tf.constant_initializer()
 
+        self.use_propensity = args.use_propensity
+
         self.x = tf.placeholder(tf.float32, [self.batch_size, self.max_seq_len, self.word_embedding_dim])
         self.y = tf.placeholder(tf.float32, [self.batch_size, 2])
+        self.label_prop = tf.placeholder(tf.float32, [self.batch_size])
         self.label_embeddings = tf.placeholder(tf.float32, [self.batch_size, self.label_embedding_dim])
 
     def attention_layer(self, hidden_states, label_embeddings, hidden_dim, label_embedding_dim, name_scope=None):
@@ -68,7 +71,8 @@ class CNN(object):
                 b_classify = tf.get_variable('b_classify', [2], initializer=self.const_initializer)
                 wz_b_plus = tf.matmul(fea_label_plus, w_classify) + b_classify
             # wz_b_plus: [batch_size, 2]
-            return tf.nn.softmax(tf.nn.relu(wz_b_plus), -1)
+            return tf.nn.relu(wz_b_plus)
+            #return tf.nn.softmax(tf.nn.relu(wz_b_plus), -1)
 
     def build_model(self):
         # x: [batch_size, self.max_seq_len, self.embedding_dim]
@@ -118,7 +122,11 @@ class CNN(object):
             fea_dim = fea_dropout.get_shape().as_list()[-1]
             y_ = self.classification_layer(fea_dropout, self.label_embeddings, fea_dim, self.label_embedding_dim)
         # loss
-        loss = tf.losses.sigmoid_cross_entropy(y, y_)
+        #loss = tf.losses.sigmoid_cross_entropy(y, y_)
+        if self.use_propensity:
+            loss = tf.losses.softmax_cross_entropy(y, y_, weights=self.label_prop)
+        else:
+            loss = tf.losses.softmax_cross_entropy(y, y_)
         return x_emb, y_[:, 1], loss
 
 
