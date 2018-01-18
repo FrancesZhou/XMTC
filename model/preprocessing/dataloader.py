@@ -198,7 +198,8 @@ class DataLoader3():
                 self.candidate_label_data[pid] = np.unique(np.concatenate((candidate_label, label))).tolist()
         # generate self.pid_label
         for pid, label in self.candidate_label_data.items():
-            stack_pid = pid*len(label)
+            stack_pid = [pid]*len(label)
+            #print len(stack_pid)
             self.pid_label.append(np.concatenate(
                 (np.expand_dims(stack_pid, -1), np.expand_dims(label, -1)), axis=-1))
         self.pid_label = np.concatenate(self.pid_label, axis=0)
