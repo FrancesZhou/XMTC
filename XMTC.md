@@ -309,3 +309,7 @@ sources/xml/
 	- train_candidate_label, test_candidate_label [data/deeplearning_data/adjacent_labels/]
 
 
+===================== datasets ===========================
+wiki: all_labels(len-29944), train/test data: 14142/6604
+Amazon-670K: all_labels(len-589140), train/test data: 331949/83301
+
