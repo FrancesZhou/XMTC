@@ -73,8 +73,8 @@ def main():
     print 'load train/test data'
     train_doc = load_pickle(args.folder_path + 'train_doc_wordID.pkl')
     test_doc = load_pickle(args.folder_path + 'test_doc_wordID.pkl')
-    train_label = load_pickle(args.folder_path + 'train_title_label.pkl')
-    test_label = load_pickle(args.folder_path + 'test_title_label.pkl')
+    train_label = load_pickle(args.folder_path + 'train_asin_label.pkl')
+    test_label = load_pickle(args.folder_path + 'test_asin_label.pkl')
     train_candidate_label = load_pickle(args.folder_path + args.candidate_type + '_candidate/train_candidate_label.pkl')
     test_candidate_label = load_pickle(args.folder_path + args.candidate_type + '_candidate/test_candidate_label.pkl')
     print 'number of labels: ' + str(len(all_labels))
