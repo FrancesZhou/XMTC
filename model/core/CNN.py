@@ -124,9 +124,9 @@ class CNN(object):
         # loss
         #loss = tf.losses.sigmoid_cross_entropy(y, y_)
         if self.use_propensity:
-            loss = tf.losses.softmax_cross_entropy(y, y_, weights=self.label_prop)
+            loss = tf.losses.sigmoid_cross_entropy(y, y_, weights=tf.expand_dims(self.label_prop, -1))
         else:
-            loss = tf.losses.softmax_cross_entropy(y, y_)
+            loss = tf.losses.sigmoid_cross_entropy(y, y_)
         return x_emb, y_[:, 1], loss
 
 
