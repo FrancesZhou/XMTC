@@ -61,6 +61,12 @@ def main():
                        default=20, help='show how many batches have been processed.')
     parse.add_argument('-lr', '--learning_rate', type=float, default=0.0002, help='learning rate')
     parse.add_argument('-update_rule', '--update_rule', type=str, default='adam', help='update rule')
+    # loss
+    parse.add_argument('-use_propensity', '--use_propensity', type=int,
+                       default=0, help='if use propensity binary cross entropy loss')
+    # ------ train or predict -------
+    parse.add_argument('-train', '--train', type=int, default=1, help='if training')
+    parse.add_argument('-predict', '--predict', type=int, default=0, help='if predicting')
     args = parse.parse_args()
 
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
@@ -70,20 +76,24 @@ def main():
     print 'load label embeddings'
     label_embeddings = generate_label_embedding_from_file(args.folder_path + 'label.embeddings')
     all_labels = label_embeddings.keys()
+    print 'load label propensity'
+    label_prop = load_pickle(args.folder_path + 'inv_prop.pkl')
     print 'load train/test data'
     train_doc = load_pickle(args.folder_path + 'train_doc_wordID.pkl')
     test_doc = load_pickle(args.folder_path + 'test_doc_wordID.pkl')
     train_label = load_pickle(args.folder_path + 'train_asin_label.pkl')
     test_label = load_pickle(args.folder_path + 'test_asin_label.pkl')
-    train_candidate_label = load_pickle(args.folder_path + args.candidate_type + '_candidate/train_candidate_label.pkl')
-    test_candidate_label = load_pickle(args.folder_path + args.candidate_type + '_candidate/test_candidate_label.pkl')
+    print 'candidate from: ' + args.candidate_type
+    candidate_folder_path = args.folder_path + args.candidate_type + '_candidate/'
+    train_candidate_label = load_pickle(candidate_folder_path + 'train_candidate_label.pkl')
+    test_candidate_label = load_pickle(candidate_folder_path + 'test_candidate_label.pkl')
     print 'number of labels: ' + str(len(all_labels))
     print 'create train/test data loader...'
     if 'XML' not in args.model:
-        train_loader = DataLoader3(train_doc, train_label, train_candidate_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, given_seq_len=False, max_seq_len=args.max_seq_len)
+        train_loader = DataLoader3(train_doc, train_label, train_candidate_label, all_labels, label_embeddings, label_prop, args.batch_size, vocab, word_embeddings, given_seq_len=False, max_seq_len=args.max_seq_len)
         max_seq_len = train_loader.max_seq_len
         print 'max_seq_len: ' + str(max_seq_len)
-        test_loader = DataLoader3(test_doc, test_label, test_candidate_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, given_seq_len=True, max_seq_len=max_seq_len)
+        test_loader = DataLoader3(test_doc, test_label, test_candidate_label, all_labels, label_embeddings, label_prop, args.batch_size, vocab, word_embeddings, given_seq_len=True, max_seq_len=max_seq_len)
     # ----------------------- train ------------------------
     label_embedding_dim = len(label_embeddings[all_labels[0]])
     word_embedding_dim = len(word_embeddings[0])
@@ -132,11 +142,19 @@ def main():
                          pretrained_model=args.pretrained_model_path,
                          model_path=args.folder_path + args.model + '/',
                          test_path=args.folder_path + args.model + '/')
-    print 'begin training...'
-    solver.train(args.folder_path + args.model + '/outcome.txt')
+    # train
+    if args.train:
+        print 'begin training...'
+        solver.train(args.folder_path + args.model + '/outcome.txt')
 
-    # test
-    # solver.test(test_all)
+    # predict
+    if args.predict:
+        print 'begin predicting...'
+        predict_path = args.folder_path + 'model_save/' + args.model + '/'
+        solver.predict(trained_model_path=predict_path,
+                       output_file_path=predict_path + 'predict_outcome.txt',
+                       k=10, emb_saved=1, can_saved=1)
+
 
 
 if __name__ == "__main__":
