@@ -71,8 +71,8 @@ class CNN(object):
                 b_classify = tf.get_variable('b_classify', [2], initializer=self.const_initializer)
                 wz_b_plus = tf.matmul(fea_label_plus, w_classify) + b_classify
             # wz_b_plus: [batch_size, 2]
-            return tf.nn.relu(wz_b_plus)
-            #return tf.nn.softmax(tf.nn.relu(wz_b_plus), -1)
+            #return tf.nn.relu(wz_b_plus)
+            return tf.nn.softmax(tf.nn.relu(wz_b_plus), -1)
 
     def build_model(self):
         # x: [batch_size, self.max_seq_len, self.embedding_dim]
@@ -124,9 +124,9 @@ class CNN(object):
         # loss
         #loss = tf.losses.sigmoid_cross_entropy(y, y_)
         if self.use_propensity:
-            loss = tf.losses.softmax_cross_entropy(y, y_, weights=self.label_prop)
+            loss = tf.losses.sigmoid_cross_entropy(y, y_, weights=tf.expand_dims(self.label_prop, -1))
         else:
-            loss = tf.losses.softmax_cross_entropy(y, y_)
+            loss = tf.losses.sigmoid_cross_entropy(y, y_)
         return x_emb, y_[:, 1], loss
 
 

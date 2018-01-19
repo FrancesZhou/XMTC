@@ -66,7 +66,7 @@ def main():
                        default=0, help='if use propensity binary cross entropy loss')
     # ------ train or predict -------
     parse.add_argument('-train', '--train', type=int, default=1, help='if training')
-    parse.add_argument('-predict', '--predict', type=int, default=1, help='if predicting')
+    parse.add_argument('-predict', '--predict', type=int, default=0, help='if predicting')
     args = parse.parse_args()
 
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
@@ -90,10 +90,10 @@ def main():
     print 'number of labels: ' + str(len(all_labels))
     print 'create train/test data loader...'
     if 'XML' not in args.model:
-        train_loader = DataLoader3(train_doc, train_label, train_candidate_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, given_seq_len=False, max_seq_len=args.max_seq_len)
+        train_loader = DataLoader3(train_doc, train_label, train_candidate_label, all_labels, label_embeddings, label_prop, args.batch_size, vocab, word_embeddings, given_seq_len=False, max_seq_len=args.max_seq_len)
         max_seq_len = train_loader.max_seq_len
         print 'max_seq_len: ' + str(max_seq_len)
-        test_loader = DataLoader3(test_doc, test_label, test_candidate_label, all_labels, label_embeddings, args.batch_size, vocab, word_embeddings, given_seq_len=True, max_seq_len=max_seq_len)
+        test_loader = DataLoader3(test_doc, test_label, test_candidate_label, all_labels, label_embeddings, label_prop, args.batch_size, vocab, word_embeddings, given_seq_len=True, max_seq_len=max_seq_len)
     # ----------------------- train ------------------------
     label_embedding_dim = len(label_embeddings[all_labels[0]])
     word_embedding_dim = len(word_embeddings[0])
