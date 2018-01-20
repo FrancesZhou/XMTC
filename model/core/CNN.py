@@ -32,7 +32,7 @@ class CNN(object):
         self.x = tf.placeholder(tf.int32, [self.batch_size, self.max_seq_len])
         self.y = tf.placeholder(tf.float32, [self.batch_size, 2])
         #self.label_prop = tf.placeholder(tf.float32, [self.batch_size])
-        self.label_embedding_id = tf.placeholder(tf.float32, [self.batch_size])
+        self.label_embedding_id = tf.placeholder(tf.int32, [self.batch_size])
 
     def attention_layer(self, hidden_states, label_embeddings, hidden_dim, label_embedding_dim, name_scope=None):
         # hidden_states: [batch_size, num, hidden_dim]

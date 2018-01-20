@@ -64,7 +64,7 @@ def main():
 
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
     print '-------------- load vocab and word embeddings ---------------'
-    vocab = load_pickle('datasets/material/' + args.vocab_path)
+    #vocab = load_pickle('datasets/material/' + args.vocab_path)
     word_embeddings = np.load('datasets/material/' + args.word_embedding_path)
     # word_embedding_dim
     word_embedding_dim = word_embeddings.shape[-1]

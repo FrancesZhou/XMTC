@@ -269,7 +269,7 @@ class DataLoader3():
             else:
                 batch_y.append([1, 0])
             batch_length.append(seq_len)
-            batch_label_embedding_id.append(self.label_dict[label])
+            batch_label_embedding_id.append(int(self.label_dict[label]))
         return batch_pid, batch_label, batch_x, batch_y, batch_length, batch_label_embedding_id
 
     def reset_data(self):
