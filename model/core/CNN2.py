@@ -9,7 +9,7 @@ from __future__ import absolute_import
 import numpy as np
 import tensorflow as tf
 
-class CNN(object):
+class CNN2(object):
     def __init__(self, max_seq_len, word_embedding, filter_sizes, label_embedding, num_classify_hidden, args):
         self.max_seq_len = max_seq_len
         self.word_embedding_dim = word_embedding.shape[-1]
@@ -129,7 +129,7 @@ class CNN(object):
             fea_dim = fea_dropout.get_shape().as_list()[-1]
             y_ = self.classification_layer(fea_dropout, label_embeddings, fea_dim, self.label_embedding_dim)
         # loss
-        loss = tf.losses.sigmoid_cross_entropy(y, y_)
+        loss = tf.losses.sigmoid_cross_entropy(y, tf.squeeze(y_))
         return x_emb, y_, loss
         #return x_emb, y_[:, 1], loss
 

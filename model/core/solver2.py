@@ -20,7 +20,7 @@ from model.utils.op_utils import precision_for_label_vector, precision_for_all
 from model.utils.io_utils import load_pickle, dump_pickle
 
 
-class ModelSolver(object):
+class ModelSolver2(object):
     def __init__(self, model, train_data, test_data, **kwargs):
         self.model = model
         self.train_data = train_data

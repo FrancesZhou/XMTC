@@ -17,6 +17,8 @@ from model.core.LSTM import LSTM
 from model.core.CNN import CNN
 from model.core.XML_CNN import XML_CNN
 from model.core.solver import ModelSolver
+from model.core.CNN2 import CNN2
+from model.core.solver2 import ModelSolver2
 from model.utils.io_utils import load_pickle, load_txt
 
 
@@ -96,10 +98,10 @@ def main():
     test_candidate_label = load_pickle(candidate_folder_path + 'test_candidate_label.pkl')
     print '============== create train/test data loader ...'
     if 'XML' not in args.model:
-        train_loader = DataLoader3(train_doc, train_label, train_candidate_label, label_dict, args.batch_size, given_seq_len=False, max_seq_len=args.max_seq_len)
+        train_loader = DataLoader4(train_doc, train_label, train_candidate_label, label_dict, args.batch_size, given_seq_len=False, max_seq_len=args.max_seq_len)
         max_seq_len = train_loader.max_seq_len
         print 'max_seq_len: ' + str(max_seq_len)
-        test_loader = DataLoader3(test_doc, test_label, test_candidate_label, label_dict, args.batch_size, given_seq_len=True, max_seq_len=max_seq_len)
+        test_loader = DataLoader4(test_doc, test_label, test_candidate_label, label_dict, args.batch_size, given_seq_len=True, max_seq_len=max_seq_len)
     # ----------------------- train ------------------------
     print '============== build model ...'
     if 'biLSTM' in args.model:
@@ -116,7 +118,7 @@ def main():
         print 'build CNN model ...'
         # CNN: sequence_length, word_embeddings, filter_sizes, label_embeddings, num_classify_hidden, args
         # args.num_filters, args.pooling_units, args.batch_size, args.dropout_keep_prob
-        model = CNN(max_seq_len, word_embeddings, filter_sizes, label_embeddings, 32, args)
+        model = CNN2(max_seq_len, word_embeddings, filter_sizes, label_embeddings, 32, args)
         args.if_use_seq_len = 0
     elif 'XML' in args.model:
         print 'build XML-CNN model ...'
@@ -135,7 +137,7 @@ def main():
 
     print '================= model solver ...'
     # solver: __init__(self, model, train_data, test_data, **kwargs):
-    solver = ModelSolver(model, train_loader, test_loader,
+    solver = ModelSolver2(model, train_loader, test_loader,
                          if_use_seq_len=args.if_use_seq_len,
                          if_output_all_labels=args.if_output_all_labels,
                          show_batches=args.show_batches,
