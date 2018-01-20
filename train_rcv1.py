@@ -25,7 +25,7 @@ def main():
     parse.add_argument('-gpu', '--gpu', type=str, default='0', help='which gpu to use: 0 or 1')
     # ---------- foler path of train/test data -------
     parse.add_argument('-folder', '--folder_path', type=str,
-                       default='datasets/Amazon-670K/data/deeplearning_data/adjacent_labels/',
+                       default='datasets/RCV1/data/deeplearning_data/adjacent_labels/',
                        help='path to train/test data')
     # ---------- vocab and word embeddings --------
     #parse.add_argument('-vocab', '--vocab_path', type=str, default='vocab.6B.300d.pkl', help='path to the vocab')
@@ -80,8 +80,8 @@ def main():
     print '-------------- load train/test data -------------------------'
     train_doc = load_pickle(args.folder_path + 'train_doc_wordID.pkl')
     test_doc = load_pickle(args.folder_path + 'test_doc_wordID.pkl')
-    train_label = load_pickle(args.folder_path + 'train_asin_label.pkl')
-    test_label = load_pickle(args.folder_path + 'test_asin_label.pkl')
+    train_label = load_pickle(args.folder_path + 'train_label.pkl')
+    test_label = load_pickle(args.folder_path + 'test_label.pkl')
     print '-------------- load candidate labels ------------------------'
     if 'sleec' in args.model:
         candidate_type = 'sleec'
