@@ -49,7 +49,7 @@ def main():
     filter_sizes = [2, 4, 8]
     # ---------- training parameters --------
     parse.add_argument('-if_all_true', '--if_all_true', type=int, default=0, help='if use all true labels for training')
-    #parse.add_argument('-if_output_all_labels', '--if_output_all_labels', type=int, default=0, help='if output all labels')
+    parse.add_argument('-if_output_all_labels', '--if_output_all_labels', type=int, default=0, help='if output all labels')
     parse.add_argument('-n_epochs', '--n_epochs', type=int, default=10, help='number of epochs')
     parse.add_argument('-batch_size', '--batch_size', type=int, default=16, help='batch size')
     parse.add_argument('-show_batches', '--show_batches', type=int,

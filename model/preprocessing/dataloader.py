@@ -260,9 +260,12 @@ class DataLoader3():
             pid = int(pid)
             seq_len = min(self.doc_length[pid], self.max_seq_len)
             padding_len = self.max_seq_len - seq_len
-            x = np.array(self.doc_wordID_data[pid]) + 1
+            x = np.array(self.doc_wordID_data[pid], dtype=int) + 1
+            x = x.tolist()
             if padding_len:
-                x = np.concatenate((x, np.zeros(padding_len, dtype=int)))
+                x = x + [0]*padding_len
+            x = x[:self.max_seq_len]
+                #x = np.concatenate((x, np.zeros(padding_len, dtype=int)))
             # try:
             #     seq_len, embeddings = generate_embedding_from_vocabID(self.doc_wordID_data[pid], self.max_seq_len, self.word_embeddings)
             # except:
@@ -270,6 +273,7 @@ class DataLoader3():
             batch_pid.append(pid)
             batch_label.append(label)
             #batch_x.append(embeddings)
+            #batch_x.append(x.tolist())
             batch_x.append(x)
             if label in self.label_data[pid]:
                 batch_y.append([0, 1])
@@ -469,6 +473,6 @@ class DataLoader5():
         while end < j:
             batch_x.append(np.zeros((self.max_seq_len, self.word_embeddings.shape[-1])))
             batch_y.append(np.zeros((len(self.all_labels))))
-            print len(batch_x)
+            #print len(batch_x)
             end += 1
         return batch_pid, batch_x, batch_y

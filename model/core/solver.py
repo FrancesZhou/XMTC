@@ -56,8 +56,8 @@ class ModelSolver(object):
         o_file = open(output_file_path, 'w')
         train_loader = self.train_data
         test_loader = self.test_data
-        train_loader.reset_data()
-        test_loader.reset_data()
+        #train_loader.reset_data()
+        #test_loader.reset_data()
         # build_model
         _, y_, loss = self.model.build_model()
         # train op
@@ -123,6 +123,9 @@ class ModelSolver(object):
                             label_emb = np.concatenate((np.array(label_emb),
                                                         np.zeros((self.batch_size - len(batch_pid),
                                                                   self.model.label_embedding_dim))), axis=0)
+                        #for ii in range(len(x)):
+                        #    print len(x[ii])
+                        #print np.array(x).shape
                         if self.if_use_seq_len:
                             feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
                                          self.model.seqlen: np.array(seq_l),
@@ -155,16 +158,16 @@ class ModelSolver(object):
                         pre_pid_score = {}
                         tar_pid_label = {}
                         k = 0
-                        batches = np.arange(math.ceil(len(train_loader.pids)*1.0 / self.batch_size), dtype=int)
+                        batches = np.arange(math.ceil(len(test_loader.pids)*1.0 / self.batch_size), dtype=int)
                         #np.random.shuffle(batches)
                         for i in batches:
                             if k % self.show_batches == 0:
                                 print 'batch ' + str(i)
-                            batch_pid, batch_x, batch_y = train_loader.get_pid_x(int(i * self.batch_size),
+                            batch_pid, batch_x, batch_y = test_loader.get_pid_x(int(i * self.batch_size),
                                                                                  int((i + 1) * self.batch_size))
                             feed_dict = {self.model.x: np.array(batch_x), self.model.y: np.array(batch_y)}
                             y_p, l_ = sess.run([y_, loss], feed_dict)
-                            print l_
+                            #print l_
                             curr_loss += l_
                             k += 1
                             # get all predictions

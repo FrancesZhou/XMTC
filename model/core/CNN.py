@@ -76,7 +76,8 @@ class CNN(object):
                 wz_b_plus = tf.matmul(fea_label_plus, w_classify) + b_classify
             # wz_b_plus: [batch_size, 2]
             #return tf.nn.relu(wz_b_plus)
-            return tf.nn.softmax(tf.nn.relu(wz_b_plus), -1)
+            return wz_b_plus
+            #return tf.nn.softmax(tf.nn.relu(wz_b_plus), -1)
 
     def build_model(self):
         # ori --- x: [batch_size, self.max_seq_len, self.embedding_dim]

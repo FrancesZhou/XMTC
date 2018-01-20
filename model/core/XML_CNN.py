@@ -35,8 +35,8 @@ class XML_CNN(object):
         x_expand = tf.expand_dims(x, axis=-1)
         y = self.y
         # dropout
-        with tf.name_scope('dropout'):
-            x_expand = tf.nn.dropout(x_expand, keep_prob=0.25)
+        #with tf.name_scope('dropout'):
+        #    x_expand = tf.nn.dropout(x_expand, keep_prob=0.25)
         conv_outputs = []
         for i, filter_size in enumerate(self.filter_sizes):
             with tf.name_scope('convolution-pooling-{0}'.format(filter_size)):
@@ -68,11 +68,12 @@ class XML_CNN(object):
             l_hidden_dropout = tf.nn.dropout(l_hidden, keep_prob=self.dropout_keep_prob)
             # output layer
             w_o = tf.get_variable('output_w', [self.hidden_dim, self.label_output_dim], initializer=self.weight_initializer)
-            y_ = tf.nn.relu(tf.matmul(l_hidden_dropout, w_o), 'relu')
+            #y_ = tf.nn.relu(tf.matmul(l_hidden_dropout, w_o), 'relu')
+            y_ = tf.matmul(l_hidden_dropout, w_o)
 
         # loss
         loss = tf.losses.sigmoid_cross_entropy(y, y_)
-        print loss.get_shape().as_list()
+        #print loss.get_shape().as_list()
         return y_, y_, loss
 
 
