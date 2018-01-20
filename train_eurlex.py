@@ -27,7 +27,7 @@ def main():
     parse.add_argument('-gpu', '--gpu', type=str, default='0', help='which gpu to use: 0 or 1')
     # ---------- foler path of train/test data -------
     parse.add_argument('-folder', '--folder_path', type=str,
-                       default='datasets/Amazon-670K/data/deeplearning_data/adjacent_labels/',
+                       default='datasets/EUR-Lex/data/deeplearning_data/adjacent_labels/',
                        help='path to train/test data')
     parse.add_argument('-can_type', '--candidate_type', type=str,
                        default='sleec')
@@ -37,9 +37,9 @@ def main():
                        default='word_emb.6B.300d.npy',
                        help='path to the word embeddings')
     # ---------- model ----------
-    parse.add_argument('-max_seq_len', '--max_seq_len', type=int, default=500,
+    parse.add_argument('-max_seq_len', '--max_seq_len', type=int, default=3000,
                        help='maximum sequence length')
-    parse.add_argument('-model', '--model', type=str, default='biLSTM', help='model: LSTM, biLSTM, CNN')
+    parse.add_argument('-model', '--model', type=str, default='CNN', help='model: LSTM, biLSTM, CNN')
     parse.add_argument('-pretrained_model', '--pretrained_model_path', type=str,
                        default=None, help='path to the pretrained model')
     # parse.add_argument('-if_use_seq_len', '--if_use_seq_len', type=int,
@@ -55,11 +55,11 @@ def main():
     # ---------- training parameters --------
     parse.add_argument('-if_all_true', '--if_all_true', type=int, default=0, help='if use all true labels for training')
     parse.add_argument('-if_output_all_labels', '--if_output_all_labels', type=int, default=0, help='if output all labels')
-    parse.add_argument('-n_epochs', '--n_epochs', type=int, default=10, help='number of epochs')
-    parse.add_argument('-batch_size', '--batch_size', type=int, default=16, help='batch size')
+    parse.add_argument('-n_epochs', '--n_epochs', type=int, default=7, help='number of epochs')
+    parse.add_argument('-batch_size', '--batch_size', type=int, default=32, help='batch size')
     parse.add_argument('-show_batches', '--show_batches', type=int,
-                       default=20, help='show how many batches have been processed.')
-    parse.add_argument('-lr', '--learning_rate', type=float, default=0.0002, help='learning rate')
+                       default=100, help='show how many batches have been processed.')
+    parse.add_argument('-lr', '--learning_rate', type=float, default=0.0001, help='learning rate')
     parse.add_argument('-update_rule', '--update_rule', type=str, default='adam', help='update rule')
     # loss
     parse.add_argument('-use_propensity', '--use_propensity', type=int,
@@ -81,8 +81,8 @@ def main():
     print 'load train/test data'
     train_doc = load_pickle(args.folder_path + 'train_doc_wordID.pkl')
     test_doc = load_pickle(args.folder_path + 'test_doc_wordID.pkl')
-    train_label = load_pickle(args.folder_path + 'train_asin_label.pkl')
-    test_label = load_pickle(args.folder_path + 'test_asin_label.pkl')
+    train_label = load_pickle(args.folder_path + 'train_label.pkl')
+    test_label = load_pickle(args.folder_path + 'test_label.pkl')
     print 'candidate from: ' + args.candidate_type
     candidate_folder_path = args.folder_path + args.candidate_type + '_candidate/'
     train_candidate_label = load_pickle(candidate_folder_path + 'train_candidate_label.pkl')
