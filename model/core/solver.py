@@ -159,9 +159,10 @@ class ModelSolver(object):
                             k += 1
                             # get all predictions
                             for j in range(len(batch_pid)):
-                                tar_pid_label[batch_pid[j]] = np.squeeze(np.nonzero(batch_y[j]))
-                                pre_pid_score[batch_pid[j]] = np.argsort(-y_p[j])[:5]
-                        mean_metric = precision_for_label_vector(tar_pid_label, pre_pid_score)
+                                #tar_pid_label[batch_pid[j]] = np.squeeze(np.nonzero(batch_y[j]))
+                                pre_pid_score[batch_pid[j]] = np.argpartition(-y_p[j], 5)[:5]
+                                #pre_pid_score[batch_pid[j]] = heapq.nlargest
+                        mean_metric = precision_for_label_vector(test_loader.label_data, pre_pid_score)
                     else:
                         pre_pid_label = {}
                         pre_pid_score = {}
