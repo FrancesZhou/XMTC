@@ -10,9 +10,9 @@ import numpy as np
 import tensorflow as tf
 
 class XML_CNN(object):
-    def __init__(self, max_seq_len, word_embedding_dim, filter_sizes, label_output_dim, hidden_dim, args):
+    def __init__(self, max_seq_len, word_embedding, filter_sizes, label_output_dim, hidden_dim, args):
         self.max_seq_len = max_seq_len
-        self.word_embedding_dim = word_embedding_dim
+        self.word_embedding_dim = word_embedding.shape[-1]
         self.filter_sizes = filter_sizes
         self.label_output_dim = label_output_dim
         self.num_filters = args.num_filters
@@ -24,14 +24,17 @@ class XML_CNN(object):
         self.weight_initializer = tf.contrib.layers.xavier_initializer()
         self.const_initializer = tf.constant_initializer()
 
-        self.x = tf.placeholder(tf.float32, [self.batch_size, self.max_seq_len, self.word_embedding_dim])
+        self.word_embedding = tf.constant(word_embedding, dtype=tf.float32)
+
+        #self.x = tf.placeholder(tf.float32, [self.batch_size, self.max_seq_len, self.word_embedding_dim])
+        self.x = tf.placeholder(tf.int32, [self.batch_size, self.max_seq_len])
         self.y = tf.placeholder(tf.float32, [self.batch_size, self.label_output_dim])
 
 
     def build_model(self):
         # x: [batch_size, self.max_seq_len, self.embedding_dim]
         # y: [batch_size, self.label_output_dim]
-        x = self.x
+        x = tf.nn.embedding_lookup(self.word_embedding, self.x)
         x_expand = tf.expand_dims(x, axis=-1)
         y = self.y
         # dropout

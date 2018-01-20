@@ -10,7 +10,7 @@ import os
 import argparse
 import numpy as np
 import scipy.io as sio
-from model.preprocessing.preprocessing import generate_label_embedding_from_file, get_train_test_doc_label_data
+from model.preprocessing.preprocessing import generate_label_embedding_from_file_2, get_train_test_doc_label_data
 from model.preprocessing.dataloader import DataLoader4, DataLoader5, DataLoader3
 from model.core.biLSTM import biLSTM
 from model.core.LSTM import LSTM
@@ -29,7 +29,7 @@ def main():
                        default='datasets/Wiki10/data/deeplearning_data/adjacent_labels/all_para/',
                        help='path to train/test data')
     # ---------- vocab and word embeddings --------
-    parse.add_argument('-vocab', '--vocab_path', type=str, default='vocab.6B.300d.pkl', help='path to the vocab')
+    #parse.add_argument('-vocab', '--vocab_path', type=str, default='vocab.6B.300d.pkl', help='path to the vocab')
     parse.add_argument('-word_embeddings', '--word_embedding_path', type=str,
                        default='word_emb.6B.300d.npy',
                        help='path to the word embeddings')
@@ -73,8 +73,9 @@ def main():
     word_embeddings = np.concatenate((np.zeros((1, word_embedding_dim)), word_embeddings), axis=0)
     print 'add PADDING embedding, word_embeddings shape:' + str(word_embeddings.shape)
     print '-------------- load label embeddings ------------------------'
-    label_embeddings = generate_label_embedding_from_file(args.folder_path + 'label.embeddings')
-    all_labels = label_embeddings.keys()
+    all_labels, label_embeddings = generate_label_embedding_from_file_2(args.folder_path + 'label.embeddings')
+    label_embeddings = np.array(label_embeddings)
+    label_dict = dict(zip(all_labels, range(len(all_labels))))
     print 'number of labels: ' + str(len(all_labels))
     # label_embedding_dim
     label_embedding_dim = len(label_embeddings[all_labels[0]])
@@ -96,10 +97,10 @@ def main():
     test_candidate_label = load_pickle(candidate_folder_path + 'test_candidate_label.pkl')
     print '============== create train/test data loader ...'
     if 'XML' not in args.model:
-        train_loader = DataLoader3(train_doc, train_label, train_candidate_label, all_labels, label_embeddings, args.batch_size, given_seq_len=False, max_seq_len=args.max_seq_len)
+        train_loader = DataLoader3(train_doc, train_label, train_candidate_label, label_dict, args.batch_size, given_seq_len=False, max_seq_len=args.max_seq_len)
         max_seq_len = train_loader.max_seq_len
         print 'max_seq_len: ' + str(max_seq_len)
-        test_loader = DataLoader3(test_doc, test_label, test_candidate_label, all_labels, label_embeddings, args.batch_size, given_seq_len=True, max_seq_len=max_seq_len)
+        test_loader = DataLoader3(test_doc, test_label, test_candidate_label, label_dict, args.batch_size, given_seq_len=True, max_seq_len=max_seq_len)
     # ----------------------- train ------------------------
     print '============== build model ...'
     if 'biLSTM' in args.model:
@@ -116,20 +117,20 @@ def main():
         print 'build CNN model ...'
         # CNN: sequence_length, word_embedding, filter_sizes, label_embedding_dim, num_classify_hidden, args
         # args.num_filters, args.pooling_units, args.batch_size, args.dropout_keep_prob
-        model = CNN(max_seq_len, word_embeddings, filter_sizes, label_embedding_dim, 32, args)
+        model = CNN(max_seq_len, word_embeddings, filter_sizes, label_embeddings, 32, args)
         args.if_use_seq_len = 0
     elif 'XML' in args.model:
         print 'build XML-CNN model ...'
         train_loader = DataLoader5(train_doc, train_label, all_labels,
-                                   args.batch_size, vocab, word_embeddings,
+                                   args.batch_size,
                                    given_seq_len=False, max_seq_len=args.max_seq_len)
         max_seq_len = train_loader.max_seq_len
         test_loader = DataLoader5(test_doc, test_label, all_labels,
-                                  args.batch_size, vocab, word_embeddings,
+                                  args.batch_size,
                                   given_seq_len=True, max_seq_len=max_seq_len)
         # max_seq_len, word_embedding_dim, filter_sizes, label_output_dim, hidden_dim, args
         # args.num_filters, args.pooling_units, args.batch_size, args.dropout_keep_prob
-        model = XML_CNN(max_seq_len, word_embedding_dim, filter_sizes, len(all_labels), 128, args)
+        model = XML_CNN(max_seq_len, word_embeddings, filter_sizes, len(all_labels), 128, args)
         args.if_output_all_labels = 1
         args.if_use_seq_len = 0
 

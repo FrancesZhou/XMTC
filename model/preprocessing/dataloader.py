@@ -157,9 +157,8 @@ class DataLoader2():
 class DataLoader3():
     def __init__(self, doc_wordID_data, label_data,
                  candidate_label_data,
-                 all_labels, label_embeddings,
+                 label_dict,
                  batch_size,
-                 #vocab, word_embeddings,
                  given_seq_len=False, max_seq_len=5000,
                  if_use_all_true_label=0):
         self.doc_wordID_data = doc_wordID_data
@@ -168,11 +167,9 @@ class DataLoader3():
         self.pids = self.label_data.keys()
         self.pid_label = []
         self.batch_num = 0
-        self.all_labels = all_labels
-        self.label_embeddings = label_embeddings
+        self.label_dict = label_dict
+        self.all_labels = label_dict.keys()
         self.batch_size = batch_size
-        #self.vocab = vocab
-        #self.word_embeddings = word_embeddings
         self.given_seq_len = given_seq_len
         self.max_seq_len = max_seq_len
         self.if_use_all_true_label = if_use_all_true_label
@@ -211,7 +208,6 @@ class DataLoader3():
         # generate self.pid_label
         for pid, label in self.candidate_label_data.items():
             stack_pid = [pid]*len(label)
-            #print len(stack_pid)
             self.pid_label.append(np.concatenate(
                 (np.expand_dims(stack_pid, -1), np.expand_dims(label, -1)), axis=-1))
         self.pid_label = np.concatenate(self.pid_label, axis=0)
@@ -247,7 +243,7 @@ class DataLoader3():
         batch_x = []
         batch_y = []
         batch_length = []
-        batch_label_embedding = []
+        batch_label_embedding_id = []
         if self.batch_id == self.batch_num-1:
             index = np.arange(self.batch_id*self.batch_size, len(self.pid_label))
             self.batch_id = 0
@@ -265,23 +261,16 @@ class DataLoader3():
             if padding_len:
                 x = x + [0]*padding_len
             x = x[:self.max_seq_len]
-                #x = np.concatenate((x, np.zeros(padding_len, dtype=int)))
-            # try:
-            #     seq_len, embeddings = generate_embedding_from_vocabID(self.doc_wordID_data[pid], self.max_seq_len, self.word_embeddings)
-            # except:
-            #     print 'exception: pid ' + str(pid)
             batch_pid.append(pid)
             batch_label.append(label)
-            #batch_x.append(embeddings)
-            #batch_x.append(x.tolist())
             batch_x.append(x)
             if label in self.label_data[pid]:
                 batch_y.append([0, 1])
             else:
                 batch_y.append([1, 0])
             batch_length.append(seq_len)
-            batch_label_embedding.append(self.label_embeddings[label])
-        return batch_pid, batch_label, batch_x, batch_y, batch_length, batch_label_embedding
+            batch_label_embedding_id.append(self.label_dict[label])
+        return batch_pid, batch_label, batch_x, batch_y, batch_length, batch_label_embedding_id
 
     def reset_data(self):
         np.random.shuffle(self.pid_label)
@@ -415,15 +404,12 @@ class DataLoader5():
     def __init__(self, doc_wordID_data, label_data,
                  all_labels,
                  batch_size,
-                 vocab, word_embeddings,
                  given_seq_len=False, max_seq_len=5000):
         self.doc_wordID_data = doc_wordID_data
         self.label_data = label_data
         self.pids = self.label_data.keys()
         self.all_labels = all_labels
         self.batch_size = batch_size
-        self.vocab = vocab
-        self.word_embeddings = word_embeddings
         self.given_seq_len = given_seq_len
         self.max_seq_len = max_seq_len
         self.doc_length = {}
@@ -461,18 +447,26 @@ class DataLoader5():
         end = min(j, len(self.pids))
         for pid in self.pids[i:end]:
             batch_pid.append(pid)
-            _, seq_emb = generate_embedding_from_vocabID(self.doc_wordID_data[pid], self.max_seq_len,
-                                                               self.word_embeddings)
+            #_, seq_emb = generate_embedding_from_vocabID(self.doc_wordID_data[pid], self.max_seq_len, self.word_embeddings)
+            #seq_len = min(self.doc_length[pid], self.max_seq_len)
+            padding_len = self.max_seq_len - min(self.doc_length[pid], self.max_seq_len)
+            x = np.array(self.doc_wordID_data[pid], dtype=int) + 1
+            x = x.tolist()
+            if padding_len:
+                x = x + [0] * padding_len
+            x = x[:self.max_seq_len]
+            #
             y = np.zeros(len(self.all_labels))
             for l in self.label_data[pid]:
-                #y += np.eye(len(self.all_labels))[self.label_dict[l]]
                 y[self.label_dict[l]] = 1
-            #print seq_emb.shape
-            batch_x.append(seq_emb)
+            batch_x.append(x)
             batch_y.append(y)
-        while end < j:
-            batch_x.append(np.zeros((self.max_seq_len, self.word_embeddings.shape[-1])))
-            batch_y.append(np.zeros((len(self.all_labels))))
-            #print len(batch_x)
-            end += 1
+        if end < j:
+            batch_x = np.concatenate((batch_x, np.zeros((j-end, self.max_seq_len), dtype=int)), axis=0)
+            batch_y = np.concatenate((batch_y, np.zeros((j-end, len(self.all_labels)))), axis=0)
+        # while end < j:
+        #     batch_x.append(np.zeros((self.max_seq_len, self.word_embeddings.shape[-1])))
+        #     batch_y.append(np.zeros((len(self.all_labels))))
+        #     #print len(batch_x)
+        #     end += 1
         return batch_pid, batch_x, batch_y

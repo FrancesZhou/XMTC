@@ -303,6 +303,19 @@ def generate_label_embedding_from_file(file):
             label_embeddings[int(label)] = v
     return label_embeddings
 
+def generate_label_embedding_from_file_2(file):
+    labels = []
+    label_embeddings = []
+    with open(file, 'r') as df:
+        lines = df.readlines()
+        for line in lines[1:]:
+            label, v_str = line.split(' ', 1)
+            v = [float(e) for e in v_str.split()]
+            labels.append(int(label))
+            label_embeddings.append(v)
+            #label_embeddings[int(label)] = v
+    return labels, label_embeddings
+
 def write_label_pairs_into_file(label_pairs_file, output_file):
     txtfile = open(output_file, 'w')
     label_pairs = load_pickle(label_pairs_file)
