@@ -10,9 +10,10 @@ import numpy as np
 import tensorflow as tf
 
 class CNN(object):
-    def __init__(self, max_seq_len, word_embedding_dim, filter_sizes, label_embedding_dim, num_classify_hidden, args):
+    def __init__(self, max_seq_len, word_embedding, filter_sizes, label_embedding_dim, num_classify_hidden, args):
         self.max_seq_len = max_seq_len
-        self.word_embedding_dim = word_embedding_dim
+        #self.word_embedding_dim = word_embedding_dim
+        self.word_embedding_dim = word_embedding.shape[-1]
         self.filter_sizes = filter_sizes
         self.num_filters = args.num_filters
         self.pooling_units = args.pooling_units
@@ -24,11 +25,14 @@ class CNN(object):
         self.weight_initializer = tf.contrib.layers.xavier_initializer()
         self.const_initializer = tf.constant_initializer()
 
-        self.use_propensity = args.use_propensity
+        #self.use_propensity = args.use_propensity
+        self.word_embedding = tf.constant(word_embedding, dtype=tf.float32)
 
-        self.x = tf.placeholder(tf.float32, [self.batch_size, self.max_seq_len, self.word_embedding_dim])
+        # self.x = tf.placeholder(tf.float32, [self.batch_size, self.max_seq_len, self.word_embedding_dim])
+        # self.seqlen = tf.placeholder(tf.int32, [self.batch_size])
+        self.x = tf.placeholder(tf.int32, [self.batch_size, self.max_seq_len])
         self.y = tf.placeholder(tf.float32, [self.batch_size, 2])
-        self.label_prop = tf.placeholder(tf.float32, [self.batch_size])
+        #self.label_prop = tf.placeholder(tf.float32, [self.batch_size])
         self.label_embeddings = tf.placeholder(tf.float32, [self.batch_size, self.label_embedding_dim])
 
     def attention_layer(self, hidden_states, label_embeddings, hidden_dim, label_embedding_dim, name_scope=None):
@@ -75,9 +79,12 @@ class CNN(object):
             return tf.nn.softmax(tf.nn.relu(wz_b_plus), -1)
 
     def build_model(self):
-        # x: [batch_size, self.max_seq_len, self.embedding_dim]
+        # ori --- x: [batch_size, self.max_seq_len, self.embedding_dim]
+        # x: [batch_size, self.max_seq_len]
         # y: [batch_size, 2]
-        x = self.x
+        # x = self.x
+        x = tf.nn.embedding_lookup(self.word_embedding, self.x)
+        # x: [batch_size, self.max_seq_len, word_embedding_dim]
         x_expand = tf.expand_dims(x, axis=-1)
         y = self.y
         # dropout
@@ -122,11 +129,11 @@ class CNN(object):
             fea_dim = fea_dropout.get_shape().as_list()[-1]
             y_ = self.classification_layer(fea_dropout, self.label_embeddings, fea_dim, self.label_embedding_dim)
         # loss
-        #loss = tf.losses.sigmoid_cross_entropy(y, y_)
-        if self.use_propensity:
-            loss = tf.losses.sigmoid_cross_entropy(y, y_, weights=tf.expand_dims(self.label_prop, -1))
-        else:
-            loss = tf.losses.sigmoid_cross_entropy(y, y_)
+        loss = tf.losses.sigmoid_cross_entropy(y, y_)
+        # if self.use_propensity:
+        #     loss = tf.losses.sigmoid_cross_entropy(y, y_, weights=tf.expand_dims(self.label_prop, -1))
+        # else:
+        #     loss = tf.losses.sigmoid_cross_entropy(y, y_)
         return x_emb, y_[:, 1], loss
 
 
