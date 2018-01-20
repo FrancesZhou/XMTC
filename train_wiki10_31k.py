@@ -64,14 +64,13 @@ def main():
 
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
     print '-------------- load vocab and word embeddings ---------------'
-    #vocab = load_pickle('datasets/material/' + args.vocab_path)
     word_embeddings = np.load('datasets/material/' + args.word_embedding_path)
     # word_embedding_dim
     word_embedding_dim = word_embeddings.shape[-1]
     print 'word_embeddings shape: ' + str(word_embeddings.shape)
     # add '<PAD>' embedding
     word_embeddings = np.concatenate((np.zeros((1, word_embedding_dim)), word_embeddings), axis=0)
-    print 'add PADDING embedding, word_embeddings shape:' + str(word_embeddings.shape)
+    print 'after add PAD embedding, word_embeddings shape:' + str(word_embeddings.shape)
     print '-------------- load label embeddings ------------------------'
     all_labels, label_embeddings = generate_label_embedding_from_file_2(args.folder_path + 'label.embeddings')
     label_embeddings = np.array(label_embeddings)
@@ -115,7 +114,7 @@ def main():
         args.if_use_seq_len = 1
     elif 'CNN' in args.model:
         print 'build CNN model ...'
-        # CNN: sequence_length, word_embedding, filter_sizes, label_embedding_dim, num_classify_hidden, args
+        # CNN: sequence_length, word_embeddings, filter_sizes, label_embeddings, num_classify_hidden, args
         # args.num_filters, args.pooling_units, args.batch_size, args.dropout_keep_prob
         model = CNN(max_seq_len, word_embeddings, filter_sizes, label_embeddings, 32, args)
         args.if_use_seq_len = 0
@@ -128,7 +127,7 @@ def main():
         test_loader = DataLoader5(test_doc, test_label, all_labels,
                                   args.batch_size,
                                   given_seq_len=True, max_seq_len=max_seq_len)
-        # max_seq_len, word_embedding_dim, filter_sizes, label_output_dim, hidden_dim, args
+        # max_seq_len, word_embedding, filter_sizes, label_output_dim, hidden_dim, args
         # args.num_filters, args.pooling_units, args.batch_size, args.dropout_keep_prob
         model = XML_CNN(max_seq_len, word_embeddings, filter_sizes, len(all_labels), 128, args)
         args.if_output_all_labels = 1

@@ -222,9 +222,6 @@ class DataLoader3():
         end = min(j, len(self.pids))
         for pid in self.pids[i:end]:
             batch_pid.append(pid)
-            #seq_len, seq_emb = generate_embedding_from_vocabID(self.doc_wordID_data[pid], self.max_seq_len, self.word_embeddings)
-            #batch_length.append(seq_len)
-            #batch_x.append(seq_emb)
             seq_len = min(self.doc_length[pid], self.max_seq_len)
             padding_len = self.max_seq_len - seq_len
             x = np.array(self.doc_wordID_data[pid]) + 1
@@ -277,25 +274,24 @@ class DataLoader3():
         self.batch_id = 0
         self.end_of_data = False
 
-# NOT GOOD!
-# DataLoader4 is for loading candidate label subset from SLEEC with pop operator
+
+# DataLoader4 is the same as DataLoader3, except y is a scalar not [0 1] or [1 0]
 class DataLoader4():
     def __init__(self, doc_wordID_data, label_data,
                  candidate_label_data,
-                 all_labels, label_embeddings,
+                 label_dict,
                  batch_size,
-                 vocab, word_embeddings,
                  given_seq_len=False, max_seq_len=5000,
                  if_use_all_true_label=0):
         self.doc_wordID_data = doc_wordID_data
         self.label_data = label_data
-        self.pids = self.label_data.keys()
-        self.all_labels = all_labels
         self.candidate_label_data = candidate_label_data
-        self.label_embeddings = label_embeddings
+        self.pids = self.label_data.keys()
+        self.pid_label = []
+        self.batch_num = 0
+        self.label_dict = label_dict
+        self.all_labels = label_dict.keys()
         self.batch_size = batch_size
-        self.vocab = vocab
-        self.word_embeddings = word_embeddings
         self.given_seq_len = given_seq_len
         self.max_seq_len = max_seq_len
         self.if_use_all_true_label = if_use_all_true_label
@@ -331,6 +327,14 @@ class DataLoader4():
                 candidate_label = self.candidate_label_data[pid]
                 candidate_label = list(set(candidate_label) & set(self.all_labels))
                 self.candidate_label_data[pid] = np.unique(np.concatenate((candidate_label, label))).tolist()
+        # generate self.pid_label
+        for pid, label in self.candidate_label_data.items():
+            stack_pid = [pid]*len(label)
+            self.pid_label.append(np.concatenate(
+                (np.expand_dims(stack_pid, -1), np.expand_dims(label, -1)), axis=-1))
+        self.pid_label = np.concatenate(self.pid_label, axis=0)
+        self.batch_num = math.ceil(len(self.pid_label) / float(self.batch_size))
+        print 'pid_label shape: ' + str(self.pid_label.shape)
         self.reset_data()
 
     def get_pid_x(self, i, j):
@@ -340,24 +344,17 @@ class DataLoader4():
         end = min(j, len(self.pids))
         for pid in self.pids[i:end]:
             batch_pid.append(pid)
-            seq_len, seq_emb = generate_embedding_from_vocabID(self.doc_wordID_data[pid], self.max_seq_len, self.word_embeddings)
+            seq_len = min(self.doc_length[pid], self.max_seq_len)
+            padding_len = self.max_seq_len - seq_len
+            x = np.array(self.doc_wordID_data[pid]) + 1
+            if padding_len:
+                x = np.concatenate((x, np.zeros(padding_len, dtype=int)))
             batch_length.append(seq_len)
-            batch_x.append(seq_emb)
-        while end < j:
-            batch_length.append([int(0)])
-            batch_x.append(np.zeros((self.max_seq_len, self.word_embeddings.shape[-1])))
-            end += 1
+            batch_x.append(x)
+        if end < j:
+            batch_length = np.concatenate((batch_length, np.zeros(j-end, dtype=int)), axis=0)
+            batch_x = np.concatenate((batch_x, np.zeros((j-end, self.max_seq_len), dtype=int)), axis=0)
         return batch_pid, batch_x, batch_length
-
-    def generate_sample(self):
-        pid = np.random.choice(self.pids_copy)
-        label = np.random.choice(self.candidate_label_data_copy[pid])
-        # follow-up processing
-        self.candidate_label_data_copy[pid].remove(label)
-        if not self.candidate_label_data_copy[pid]:
-            self.pids_copy.remove(pid)
-            del self.candidate_label_data_copy[pid]
-        return pid, label
 
     def next_batch(self):
         batch_pid = []
@@ -365,39 +362,41 @@ class DataLoader4():
         batch_x = []
         batch_y = []
         batch_length = []
-        batch_label_embedding = []
-        i = 0
-        while i < self.batch_size:
-            pid, label = self.generate_sample()
-            seq_len, embeddings = generate_embedding_from_vocabID(self.doc_wordID_data[pid], self.max_seq_len, self.word_embeddings)
-            if seq_len == 0:
-                if not self.pids_copy:
-                    self.end_of_data = True
-                    break
-                else:
-                    continue
+        batch_label_embedding_id = []
+        if self.batch_id == self.batch_num-1:
+            index = np.arange(self.batch_id*self.batch_size, len(self.pid_label))
+            self.batch_id = 0
+            self.end_of_data = True
+        else:
+            index = np.arange(self.batch_id*self.batch_size, (self.batch_id+1)*self.batch_size)
+            self.batch_id += 1
+        for i in index:
+            pid, label = self.pid_label[i]
+            pid = int(pid)
+            seq_len = min(self.doc_length[pid], self.max_seq_len)
+            padding_len = self.max_seq_len - seq_len
+            x = np.array(self.doc_wordID_data[pid], dtype=int) + 1
+            x = x.tolist()
+            if padding_len:
+                x = x + [0]*padding_len
+            x = x[:self.max_seq_len]
             batch_pid.append(pid)
             batch_label.append(label)
-            batch_x.append(embeddings)
+            batch_x.append(x)
             if label in self.label_data[pid]:
-                batch_y.append([0, 1])
+                batch_y.append(1)
+                #batch_y.append([0, 1])
             else:
-                batch_y.append([1, 0])
-            #batch_length.append(self.doc_length[pid])
+                batch_y.append(0)
+                #batch_y.append([1, 0])
             batch_length.append(seq_len)
-            batch_label_embedding.append(self.label_embeddings[label])
-            i = i + 1
-            if not self.pids_copy:
-                self.end_of_data = True
-                break
-        return batch_pid, batch_label, batch_x, batch_y, batch_length, batch_label_embedding
+            batch_label_embedding_id.append(int(self.label_dict[label]))
+        return batch_pid, batch_label, batch_x, batch_y, batch_length, batch_label_embedding_id
 
     def reset_data(self):
-        #self.label_data_copy = copy.deepcopy(self.label_data)
-        self.candidate_label_data_copy = copy.deepcopy(self.candidate_label_data)
-        self.pids_copy = copy.deepcopy(self.pids)
+        np.random.shuffle(self.pid_label)
+        self.batch_id = 0
         self.end_of_data = False
-
 
 # DataLoader5 is for XML-CNN to output all labels
 class DataLoader5():

@@ -109,7 +109,7 @@ class ModelSolver(object):
                                     (self.batch_size - len(batch_pid), self.model.max_seq_len)
                                 )),
                                 axis=0)
-                            y = np.concatenate((np.array(y), np.zeros((self.batch_size - len(batch_pid), 2))), axis=0)
+                            y = np.concatenate((np.array(y), np.zeros(self.batch_size - len(batch_pid))))
                             seq_l = np.concatenate((np.array(seq_l), np.zeros((self.batch_size - len(batch_pid)))))
                             label_emb = np.concatenate((np.array(label_emb),
                                                         np.zeros(self.batch_size - len(batch_pid), dtype=int)))
@@ -179,7 +179,7 @@ class ModelSolver(object):
                                         (self.batch_size - len(batch_pid), self.model.max_seq_len)
                                     )),
                                     axis=0)
-                                y = np.concatenate((np.array(y), np.zeros((self.batch_size - len(batch_pid), 2))), axis=0)
+                                y = np.concatenate((np.array(y), np.zeros(self.batch_size - len(batch_pid))))
                                 seq_l = np.concatenate((np.array(seq_l), np.zeros((self.batch_size - len(batch_pid)))))
                                 label_emb = np.concatenate((np.array(label_emb),
                                                             np.zeros(self.batch_size - len(batch_pid), dtype=int)))
@@ -256,7 +256,7 @@ class ModelSolver(object):
                             (self.batch_size - len(batch_pid), self.model.max_seq_len)
                         )),
                         axis=0)
-                    y = np.concatenate((np.array(y), np.zeros((self.batch_size - len(batch_pid), 2))), axis=0)
+                    y = np.concatenate((np.array(y), np.zeros(self.batch_size - len(batch_pid))))
                     seq_l = np.concatenate((np.array(seq_l), np.zeros((self.batch_size - len(batch_pid)))))
                     label_emb = np.concatenate((np.array(label_emb),
                                                 np.zeros(self.batch_size - len(batch_pid), dtype=int)))
@@ -283,9 +283,6 @@ class ModelSolver(object):
                 test_loader.reset_data()
             mean_metric = precision_for_all(test_loader.label_data, pre_pid_label, pre_pid_score)
             print len(mean_metric)
-            #w_text = 'test loss is ' + str(np.mean(test_loss)) + '\n'
-            #print w_text
-            #o_file.write(w_text)
             p1_txt = 'precision@1: ' + str(mean_metric[0]) + '\n'
             p3_txt = 'precision@3: ' + str(mean_metric[1]) + '\n'
             p5_txt = 'precision@5: ' + str(mean_metric[2]) + '\n'
@@ -312,7 +309,7 @@ class ModelSolver(object):
             print 'get train_x_emb'
             i = 0
             k = 0
-            zero_y = np.zeros((self.batch_size, 2))
+            zero_y = np.zeros(self.batch_size)
             zero_label_emb = np.zeros((self.batch_size, self.model.label_embedding_dim))
             while i < len(self.train_data.pids):
                 k += 1
