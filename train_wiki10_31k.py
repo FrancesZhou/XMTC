@@ -41,6 +41,8 @@ def main():
     parse.add_argument('-model', '--model', type=str, default='biLSTM', help='model: LSTM, biLSTM, CNN')
     parse.add_argument('-pretrained_model', '--pretrained_model_path', type=str,
                        default=None, help='path to the pretrained model')
+    # ---------- loss --------------
+    parse.add_argument('-loss_type', '--loss_type', type=int, default=2, help='dim of y in sigmoid cross entropy')
     # ---------- params for CNN ------------
     parse.add_argument('-num_filters', '--num_filters', type=int,
                        default=32, help='number of filters in CNN')
@@ -98,10 +100,18 @@ def main():
     test_candidate_label = load_pickle(candidate_folder_path + 'test_candidate_label.pkl')
     print '============== create train/test data loader ...'
     if 'XML' not in args.model:
-        train_loader = DataLoader4(train_doc, train_label, train_candidate_label, label_dict, args.batch_size, given_seq_len=False, max_seq_len=args.max_seq_len)
-        max_seq_len = train_loader.max_seq_len
-        print 'max_seq_len: ' + str(max_seq_len)
-        test_loader = DataLoader4(test_doc, test_label, test_candidate_label, label_dict, args.batch_size, given_seq_len=True, max_seq_len=max_seq_len)
+        if args.loss_type == 1:
+            train_loader = DataLoader4(train_doc, train_label, train_candidate_label, label_dict, args.batch_size, given_seq_len=False, max_seq_len=args.max_seq_len)
+            max_seq_len = train_loader.max_seq_len
+            print 'max_seq_len: ' + str(max_seq_len)
+            test_loader = DataLoader4(test_doc, test_label, test_candidate_label, label_dict, args.batch_size, given_seq_len=True, max_seq_len=max_seq_len)
+        elif args.loss_type == 2:
+            train_loader = DataLoader3(train_doc, train_label, train_candidate_label, label_dict, args.batch_size,
+                                       given_seq_len=False, max_seq_len=args.max_seq_len)
+            max_seq_len = train_loader.max_seq_len
+            print 'max_seq_len: ' + str(max_seq_len)
+            test_loader = DataLoader3(test_doc, test_label, test_candidate_label, label_dict, args.batch_size,
+                                      given_seq_len=True, max_seq_len=max_seq_len)
     # ----------------------- train ------------------------
     print '============== build model ...'
     if 'biLSTM' in args.model:
@@ -118,7 +128,10 @@ def main():
         print 'build CNN model ...'
         # CNN: sequence_length, word_embeddings, filter_sizes, label_embeddings, num_classify_hidden, args
         # args.num_filters, args.pooling_units, args.batch_size, args.dropout_keep_prob
-        model = CNN2(max_seq_len, word_embeddings, filter_sizes, label_embeddings, 32, args)
+        if args.loss_type == 1:
+            model = CNN2(max_seq_len, word_embeddings, filter_sizes, label_embeddings, 32, args)
+        elif args.loss_type == 2:
+            model = CNN(max_seq_len, word_embeddings, filter_sizes, label_embeddings, 32, args)
         args.if_use_seq_len = 0
     elif 'XML' in args.model:
         print 'build XML-CNN model ...'
@@ -137,17 +150,30 @@ def main():
 
     print '================= model solver ...'
     # solver: __init__(self, model, train_data, test_data, **kwargs):
-    solver = ModelSolver2(model, train_loader, test_loader,
-                         if_use_seq_len=args.if_use_seq_len,
-                         if_output_all_labels=args.if_output_all_labels,
-                         show_batches=args.show_batches,
-                         n_epochs=args.n_epochs,
-                         batch_size=args.batch_size,
-                         update_rule=args.update_rule,
-                         learning_rate=args.learning_rate,
-                         pretrained_model=args.pretrained_model_path,
-                         model_path=args.folder_path + args.model + '/',
-                         test_path=args.folder_path + args.model + '/')
+    if args.loss_type == 1:
+        solver = ModelSolver2(model, train_loader, test_loader,
+                             if_use_seq_len=args.if_use_seq_len,
+                             if_output_all_labels=args.if_output_all_labels,
+                             show_batches=args.show_batches,
+                             n_epochs=args.n_epochs,
+                             batch_size=args.batch_size,
+                             update_rule=args.update_rule,
+                             learning_rate=args.learning_rate,
+                             pretrained_model=args.pretrained_model_path,
+                             model_path=args.folder_path + args.model + '/',
+                             test_path=args.folder_path + args.model + '/')
+    elif args.loss_type == 2:
+        solver = ModelSolver(model, train_loader, test_loader,
+                              if_use_seq_len=args.if_use_seq_len,
+                              if_output_all_labels=args.if_output_all_labels,
+                              show_batches=args.show_batches,
+                              n_epochs=args.n_epochs,
+                              batch_size=args.batch_size,
+                              update_rule=args.update_rule,
+                              learning_rate=args.learning_rate,
+                              pretrained_model=args.pretrained_model_path,
+                              model_path=args.folder_path + args.model + '/',
+                              test_path=args.folder_path + args.model + '/')
     # train
     if args.train:
         print '================= begin training...'
@@ -156,7 +182,7 @@ def main():
     # test
     if args.test:
         print '================= begin testing...'
-        solver.test(args.pretrained_model_path, args.folder_path + args.model + '/test_outcome.txt', solver.test_data)
+        solver.test(args.pretrained_model_path, args.folder_path + args.model + '/test_outcome.txt')
 
     # predict
     if args.predict:
