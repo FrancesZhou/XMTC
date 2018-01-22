@@ -152,7 +152,10 @@ class ModelSolver(object):
                                 print 'batch ' + str(i)
                             batch_pid, batch_x, batch_y = test_loader.get_pid_x(int(i * self.batch_size),
                                                                                  int((i + 1) * self.batch_size))
-                            feed_dict = {self.model.x: np.array(batch_x), self.model.y: np.array(batch_y)}
+                            try:
+                                feed_dict = {self.model.x: np.array(batch_x), self.model.y: np.array(batch_y)}
+                            except:
+                                print i
                             y_p, l_ = sess.run([y_, loss], feed_dict)
                             #print l_
                             test_loss += l_

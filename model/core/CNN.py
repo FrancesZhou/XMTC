@@ -90,6 +90,7 @@ class CNN(object):
         y = self.y
         # dropout
         # TODO
+        #x_expand = tf.nn.dropout(x_expand, keep_prob=0.25)
         conv_outputs = []
         conv_atten_outputs = []
         for i, filter_size in enumerate(self.filter_sizes):

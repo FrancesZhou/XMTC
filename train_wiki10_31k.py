@@ -96,7 +96,7 @@ def main():
     print '============== create train/test data loader ...'
     if 'XML' not in args.model:
         train_loader = DataLoader3(train_doc, train_label, train_candidate_label, label_dict, args.batch_size,
-                                   given_seq_len=False, max_seq_len=args.max_seq_len)
+                                   given_seq_len=False, max_seq_len=args.max_seq_len, if_use_all_true_label=1)
         max_seq_len = train_loader.max_seq_len
         print 'max_seq_len: ' + str(max_seq_len)
         test_loader = DataLoader3(test_doc, test_label, test_candidate_label, label_dict, args.batch_size,

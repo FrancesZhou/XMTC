@@ -438,6 +438,7 @@ class DataLoader5():
         print 'num of y: ' + str(len(self.label_data))
         if not self.given_seq_len:
             self.max_seq_len = min(max(all_length), self.max_seq_len)
+        print 'max sequence length: ' + str(self.max_seq_len)
 
     def get_pid_x(self, i, j):
         batch_pid = []
