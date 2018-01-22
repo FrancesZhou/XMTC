@@ -123,9 +123,9 @@ class DataLoader2():
             batch_x = np.concatenate((batch_x, np.zeros((j-end, self.max_seq_len), dtype=int)), axis=0)
         return batch_pid, batch_x, batch_length
 
-    def next_batch(self, pids, i, j):
-        end = min(len(pids), j)
-        pid_num = end - i
+    def next_batch(self, pids, start_pid, end_pid):
+        end = min(len(pids), end_pid)
+        pid_num = end - start_pid
         batch_pid = np.zeros([pid_num, self.topk_candidate])
         batch_length = np.zeros([pid_num, self.topk_candidate])
         batch_x = np.zeros([pid_num, self.topk_candidate, self.max_seq_len])
@@ -139,7 +139,7 @@ class DataLoader2():
         #batch_label = []
         #batch_label_embedding_id = []
         #batch_y = []
-        for pid in pids[i:end]:
+        for pid in pids[start_pid:end]:
             #batch_pid.append(pid)
             #batch_length.append([self.doc_length[pid]]*self.topk_candidate)
             #batch_x.append(np.tile(self.doc_wordID_data[pid], [self.topk_candidate, 1]))
