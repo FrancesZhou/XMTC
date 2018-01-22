@@ -142,7 +142,7 @@ class ModelSolver(object):
                         batch_pid, _, x, y, seq_l, label_emb = train_loader.next_batch(train_loader.val_pids, i*self.batch_size, (i+1)*self.batch_size)
                         if len(batch_pid) == 0:
                             continue
-                        if len(batch_pid) < self.batch_size:
+                        if len(batch_pid) < self.model.batch_size:
                             x = np.concatenate(
                                 (np.array(x), np.zeros(
                                     (self.model.batch_size - len(batch_pid), self.model.max_seq_len)
@@ -161,10 +161,11 @@ class ModelSolver(object):
                             feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
                                          self.model.label_embedding_id: np.array(label_emb,dtype=int)
                                          }
-                        try:
-                            l_ = sess.run(loss, feed_dict)
-                        except:
-                            print 'error i = ' + str(i)
+                        l_ = sess.run(loss, feed_dict)
+                        # try:
+                        #     l_ = sess.run(loss, feed_dict)
+                        # except:
+                        #     print 'error i = ' + str(i)
                         val_loss += l_
 
                 # ====== output loss ======
@@ -243,7 +244,7 @@ class ModelSolver(object):
                                 feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
                                              self.model.label_embedding_id: np.array(label_emb, dtype=int)
                                              }
-                            l_ = sess.run(loss, feed_dict)
+                            y_p, l_ = sess.run([y_, loss], feed_dict)
                             test_loss += l_
                             # get all predictions
                             for j in range(len(batch_pid)):
