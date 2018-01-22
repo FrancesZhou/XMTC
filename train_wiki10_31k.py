@@ -10,7 +10,7 @@ import os
 import argparse
 import numpy as np
 from model.preprocessing.preprocessing import generate_label_embedding_from_file_2
-from model.preprocessing.dataloader import DataLoader5, DataLoader3
+from model.preprocessing.dataloader import DataLoader5, DataLoader3, DataLoader2
 from model.core.biLSTM import biLSTM
 from model.core.LSTM import LSTM
 from model.core.CNN import CNN
@@ -50,7 +50,8 @@ def main():
     parse.add_argument('-if_all_true', '--if_all_true', type=int, default=0, help='if use all true labels for training')
     parse.add_argument('-if_output_all_labels', '--if_output_all_labels', type=int, default=0, help='if output all labels')
     parse.add_argument('-n_epochs', '--n_epochs', type=int, default=10, help='number of epochs')
-    parse.add_argument('-batch_size', '--batch_size', type=int, default=16, help='batch size')
+    parse.add_argument('-batch_size', '--batch_size', type=int, default=2, help='batch size - number of docs')
+    parse.add_argument('-topk', '--topk', type=int, default=20, help='real_batch_size = topk * batch_size')
     parse.add_argument('-show_batches', '--show_batches', type=int,
                        default=20, help='show how many batches have been processed.')
     parse.add_argument('-lr', '--learning_rate', type=float, default=0.0002, help='learning rate')
@@ -95,12 +96,14 @@ def main():
     test_candidate_label = load_pickle(candidate_folder_path + 'test_candidate_label.pkl')
     print '============== create train/test data loader ...'
     if 'XML' not in args.model:
-        train_loader = DataLoader3(train_doc, train_label, train_candidate_label, label_dict, args.batch_size,
-                                   given_seq_len=False, max_seq_len=args.max_seq_len, if_use_all_true_label=1)
+        train_loader = DataLoader2(train_doc, train_label, train_candidate_label, 20, label_dict,
+                                   max_seq_len=args.max_seq_len, if_use_all_true_label=0)
         max_seq_len = train_loader.max_seq_len
         print 'max_seq_len: ' + str(max_seq_len)
-        test_loader = DataLoader3(test_doc, test_label, test_candidate_label, label_dict, args.batch_size,
-                                  given_seq_len=True, max_seq_len=max_seq_len)
+        test_loader = DataLoader2(test_doc, test_label, test_candidate_label, 20, label_dict,
+                                  max_seq_len=max_seq_len, if_use_all_true_label=0)
+        # test_loader = DataLoader3(test_doc, test_label, test_candidate_label, label_dict, args.batch_size,
+        #                           given_seq_len=True, max_seq_len=max_seq_len)
     # ----------------------- train ------------------------
     print '============== build model ...'
     if 'biLSTM' in args.model:
@@ -115,9 +118,9 @@ def main():
         args.if_use_seq_len = 1
     elif 'CNN' in args.model:
         print 'build CNN model ...'
-        # CNN: sequence_length, word_embeddings, filter_sizes, label_embeddings, num_classify_hidden, args
+        # CNN: sequence_length, word_embeddings, filter_sizes, label_embeddings, num_classify_hidden, batch_size, args
         # args.num_filters, args.pooling_units, args.batch_size, args.dropout_keep_prob
-        model = CNN(max_seq_len, word_embeddings, filter_sizes, label_embeddings, 32, args)
+        model = CNN(max_seq_len, word_embeddings, filter_sizes, label_embeddings, 32, args.batch_size*args.topk, args)
         args.if_use_seq_len = 0
     elif 'XML' in args.model:
         print 'build XML-CNN model ...'
