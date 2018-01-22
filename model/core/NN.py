@@ -10,7 +10,7 @@ import numpy as np
 import tensorflow as tf
 
 class CNN(object):
-    def __init__(self, max_seq_len, word_embedding, filter_sizes, label_embedding, num_classify_hidden, args):
+    def __init__(self, max_seq_len, word_embedding, filter_sizes, label_embedding, num_classify_hidden, batch_size, args):
         self.max_seq_len = max_seq_len
         self.word_embedding_dim = word_embedding.shape[-1]
         self.filter_sizes = filter_sizes
@@ -18,7 +18,7 @@ class CNN(object):
         self.pooling_units = args.pooling_units
         self.num_classify_hidden = num_classify_hidden
         self.label_embedding_dim = label_embedding.shape[-1]
-        #self.batch_size = batch_size
+        self.batch_size = batch_size
         self.dropout_keep_prob = args.dropout_keep_prob
         #
         self.weight_initializer = tf.contrib.layers.xavier_initializer()
@@ -38,15 +38,15 @@ class CNN(object):
         self.y = tf.placeholder(tf.float32, [None, 2])
         self.label_embedding_id = tf.placeholder(tf.int32, [None])
 
-    def attention_layer(self, hidden_states, label_embeddings, num_hiddens, hidden_dim, label_embedding_dim, name_scope=None):
-        # hidden_states: [batch_size, num_hiddens, hidden_dim]
+    def attention_layer(self, hidden_states, label_embeddings, hidden_dim, label_embedding_dim, name_scope=None):
+        # hidden_states: [batch_size, num, hidden_dim]
         # label_embeddings: [batch_size, label_embedding_dim]
         with tf.variable_scope(name_scope + 'att_layer'):
             w = tf.get_variable('w', [hidden_dim, label_embedding_dim], initializer=self.weight_initializer)
             # hidden_states: [batch_size, num, hidden_dim]
             # label_embeddings: [batch_size, label_embedding_dim]
             # score: h*W*l
-            s = tf.matmul(tf.reshape(tf.matmul(tf.reshape(hidden_states, [-1, hidden_dim]), w), [-1, num_hiddens, label_embedding_dim]),
+            s = tf.matmul(tf.reshape(tf.matmul(tf.reshape(hidden_states, [-1, hidden_dim]), w), [self.batch_size, -1, label_embedding_dim]),
                           tf.expand_dims(label_embeddings, axis=-1))
             # s: [batch_size, num, 1]
             s = tf.nn.softmax(s, 1)
@@ -123,10 +123,8 @@ class CNN(object):
                 #print [self.batch_size, self.pooling_units, self.num_filters]
                 print [None, self.pooling_units, self.num_filters]
                 print pool_squeeze.get_shape().as_list()
-                num_hiddens = (self.max_seq_len - filter_size + 1) // pool_size
-                print num_hiddens
                 #tf.assert_equal(pool_squeeze.get_shape().as_list(), [self.batch_size, self.pooling_units, self.num_filters])
-                l_feature = self.attention_layer(pool_squeeze, label_embeddings, num_hiddens, self.num_filters, self.label_embedding_dim, name_scope=name_scope)
+                l_feature = self.attention_layer(pool_squeeze, label_embeddings, self.num_filters, self.label_embedding_dim, name_scope=name_scope)
                 # l_feature: [batch_size, num_filters]
                 conv_atten_outputs.append(l_feature)
         x_emb = tf.concat(conv_outputs, -1)

@@ -47,7 +47,7 @@ def main():
                        default=0.5, help='keep probability in dropout layer')
     filter_sizes = [2, 4, 8]
     # ---------- training parameters --------
-    parse.add_argument('-if_all_true', '--if_all_true', type=int, default=0, help='if use all true labels for training')
+    parse.add_argument('-if_use_all_true', '--if_use_all_true', type=int, default=0, help='if use all true labels for training')
     parse.add_argument('-if_output_all_labels', '--if_output_all_labels', type=int, default=0, help='if output all labels')
     parse.add_argument('-n_epochs', '--n_epochs', type=int, default=10, help='number of epochs')
     parse.add_argument('-batch_size', '--batch_size', type=int, default=2, help='batch size - number of docs')
@@ -96,11 +96,11 @@ def main():
     test_candidate_label = load_pickle(candidate_folder_path + 'test_candidate_label.pkl')
     print '============== create train/test data loader ...'
     if 'XML' not in args.model:
-        train_loader = DataLoader2(train_doc, train_label, train_candidate_label, 20, label_dict,
-                                   max_seq_len=args.max_seq_len, if_use_all_true_label=0)
+        train_loader = DataLoader2(train_doc, train_label, train_candidate_label, args.topk, label_dict,
+                                   max_seq_len=args.max_seq_len, if_use_all_true_label=args.if_use_all_true)
         max_seq_len = train_loader.max_seq_len
         print 'max_seq_len: ' + str(max_seq_len)
-        test_loader = DataLoader2(test_doc, test_label, test_candidate_label, 20, label_dict,
+        test_loader = DataLoader2(test_doc, test_label, test_candidate_label, args.topk, label_dict,
                                   max_seq_len=max_seq_len, if_use_all_true_label=0)
         # test_loader = DataLoader3(test_doc, test_label, test_candidate_label, label_dict, args.batch_size,
         #                           given_seq_len=True, max_seq_len=max_seq_len)
@@ -120,7 +120,8 @@ def main():
         print 'build CNN model ...'
         # CNN: sequence_length, word_embeddings, filter_sizes, label_embeddings, num_classify_hidden, batch_size, args
         # args.num_filters, args.pooling_units, args.batch_size, args.dropout_keep_prob
-        model = CNN(max_seq_len, word_embeddings, filter_sizes, label_embeddings, 32, args.batch_size*args.topk, args)
+        # real_batch_size = args.batch_size*args.topk
+        model = CNN(max_seq_len, word_embeddings, filter_sizes, label_embeddings, 32, args)
         args.if_use_seq_len = 0
     elif 'XML' in args.model:
         print 'build XML-CNN model ...'

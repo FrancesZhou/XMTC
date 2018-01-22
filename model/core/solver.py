@@ -101,7 +101,6 @@ class ModelSolver(object):
                     # batch_size : number of training docs
                     # real_batch_size = topk * batch_size
                     # ------------- train ----------------
-                    '''
                     train_batches = np.arange(math.ceil(len(train_loader.train_pids) * 1.0 / self.batch_size), dtype=int)
                     print 'num of train batches:    ' + str(len(train_batches))
                     for i in train_batches:
@@ -110,6 +109,7 @@ class ModelSolver(object):
                         batch_pid, _, x, y, seq_l, label_emb = train_loader.next_batch(train_loader.train_pids, i*self.batch_size, (i+1)*self.batch_size)
                         if len(batch_pid) == 0:
                             continue
+                        '''
                         if len(batch_pid) < self.batch_size:
                             x = np.concatenate(
                                 (np.array(x), np.zeros(
@@ -120,18 +120,18 @@ class ModelSolver(object):
                             seq_l = np.concatenate((np.array(seq_l), np.zeros((self.model.batch_size - len(batch_pid)))))
                             label_emb = np.concatenate((np.array(label_emb),
                                                         np.zeros(self.model.batch_size - len(batch_pid), dtype=int)))
+                        '''
                         if self.if_use_seq_len:
                             feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
                                          self.model.seqlen: np.array(seq_l),
-                                         self.model.label_embedding_id: np.array(label_emb,dtype=int)
+                                         self.model.label_embedding_id: np.array(label_emb, dtype=int)
                                          }
                         else:
                             feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
-                                         self.model.label_embedding_id: np.array(label_emb,dtype=int)
+                                         self.model.label_embedding_id: np.array(label_emb, dtype=int)
                                          }
                         _, l_ = sess.run([train_op, loss], feed_dict)
                         curr_loss += l_
-                    '''
                     # -------------- validate -------------
                     val_batches = np.arange(math.ceil(len(train_loader.val_pids) * 1.0 / self.batch_size), dtype=int)
                     print 'num of validate batches: ' + str(len(val_batches))
@@ -142,6 +142,7 @@ class ModelSolver(object):
                         batch_pid, _, x, y, seq_l, label_emb = train_loader.next_batch(train_loader.val_pids, i*self.batch_size, (i+1)*self.batch_size)
                         if len(batch_pid) == 0:
                             continue
+                        '''
                         if len(batch_pid) < self.model.batch_size:
                             x = np.concatenate(
                                 (np.array(x), np.zeros(
@@ -152,14 +153,15 @@ class ModelSolver(object):
                             seq_l = np.concatenate((np.array(seq_l), np.zeros((self.model.batch_size - len(batch_pid)))))
                             label_emb = np.concatenate((np.array(label_emb),
                                                         np.zeros(self.model.batch_size - len(batch_pid), dtype=int)))
+                        '''
                         if self.if_use_seq_len:
                             feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
                                          self.model.seqlen: np.array(seq_l),
-                                         self.model.label_embedding_id: np.array(label_emb,dtype=int)
+                                         self.model.label_embedding_id: np.array(label_emb, dtype=int)
                                          }
                         else:
                             feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
-                                         self.model.label_embedding_id: np.array(label_emb,dtype=int)
+                                         self.model.label_embedding_id: np.array(label_emb, dtype=int)
                                          }
                         l_ = sess.run(loss, feed_dict)
                         # try:
@@ -224,6 +226,7 @@ class ModelSolver(object):
                                                                                            (i + 1) * self.batch_size)
                             if len(batch_pid) == 0:
                                 continue
+                            '''
                             if len(batch_pid) < self.batch_size:
                                 x = np.concatenate(
                                     (np.array(x), np.zeros(
@@ -235,6 +238,7 @@ class ModelSolver(object):
                                 seq_l = np.concatenate((np.array(seq_l), np.zeros((self.model.batch_size - len(batch_pid)))))
                                 label_emb = np.concatenate((np.array(label_emb),
                                                             np.zeros(self.model.batch_size - len(batch_pid), dtype=int)))
+                            '''
                             if self.if_use_seq_len:
                                 feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
                                              self.model.seqlen: np.array(seq_l),

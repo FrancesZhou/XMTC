@@ -54,19 +54,22 @@ class DataLoader2():
                         x = np.concatenate((x, np.zeros(padding_len)))
                     self.doc_wordID_data[pid] = x[:self.max_seq_len]
                     # labels
-                    self.candidate_label_data[pid] = np.zeros(self.topk_candidate)
-                    self.candidate_label_embedding_id[pid] = np.zeros(self.topk_candidate)
-                    self.candidate_label_prop[pid] = np.zeros([self.topk_candidate, 2])
                     true_labels = self.label_data[pid]
                     num_true = len(true_labels)
+                    num_candidate = max(self.topk_candidate, num_true)
+                    self.candidate_label_data[pid] = np.zeros(num_candidate)
+                    self.candidate_label_embedding_id[pid] = np.zeros(num_candidate)
+                    self.candidate_label_prop[pid] = np.zeros([num_candidate, 2])
                     self.candidate_label_data[pid][:num_true] = true_labels
                     self.candidate_label_embedding_id[pid][:num_true] = [self.label_dict[e] for e in true_labels]
                     self.candidate_label_prop[pid][:num_true] = np.tile([0, 1], [num_true, 1])
-                    neg_labels = [e for e in self.given_candidate_label_data[pid] if e not in true_labels]
-                    for j in range(num_true, self.topk_candidate):
-                        l_ = neg_labels[j - num_true]
-                        self.candidate_label_embedding_id[pid][j] = self.label_dict[l_]
-                        self.candidate_label_prop[pid][j] = [1, 0]
+                    if num_true < num_candidate:
+                        neg_labels = [e for e in self.given_candidate_label_data[pid] if e not in true_labels]
+                        for j in range(num_true, self.topk_candidate):
+                            l_ = neg_labels[j - num_true]
+                            self.candidate_label_data[pid][j] = l_
+                            self.candidate_label_embedding_id[pid][j] = self.label_dict[l_]
+                            self.candidate_label_prop[pid][j] = [1, 0]
                 else:
                     del self.doc_wordID_data[pid]
                     del self.label_data[pid]
@@ -126,33 +129,34 @@ class DataLoader2():
     def next_batch(self, pids, start_pid, end_pid):
         end = min(len(pids), end_pid)
         pid_num = end - start_pid
-        batch_pid = np.zeros([pid_num, self.topk_candidate])
-        batch_length = np.zeros([pid_num, self.topk_candidate])
-        batch_x = np.zeros([pid_num, self.topk_candidate, self.max_seq_len])
-        batch_label = np.zeros([pid_num, self.topk_candidate])
-        batch_label_embedding_id = np.zeros([pid_num, self.topk_candidate])
-        batch_y = np.zeros([pid_num, self.topk_candidate, 2])
-        i = 0
-        #batch_pid = []
-        #batch_length = []
-        #batch_x = []
-        #batch_label = []
-        #batch_label_embedding_id = []
-        #batch_y = []
+        # batch_pid = np.zeros([pid_num, self.topk_candidate])
+        # batch_length = np.zeros([pid_num, self.topk_candidate])
+        # batch_x = np.zeros([pid_num, self.topk_candidate, self.max_seq_len])
+        # batch_label = np.zeros([pid_num, self.topk_candidate])
+        # batch_label_embedding_id = np.zeros([pid_num, self.topk_candidate])
+        # batch_y = np.zeros([pid_num, self.topk_candidate, 2])
+        # i = 0
+        batch_pid = []
+        batch_length = []
+        batch_x = []
+        batch_label = []
+        batch_label_embedding_id = []
+        batch_y = []
         for pid in pids[start_pid:end]:
-            #batch_pid.append(pid)
-            #batch_length.append([self.doc_length[pid]]*self.topk_candidate)
-            #batch_x.append(np.tile(self.doc_wordID_data[pid], [self.topk_candidate, 1]))
-            #batch_label.append(self.candidate_label_data[pid])
-            #batch_label_embedding_id.append(self.candidate_label_embedding_id[pid])
-            #batch_y.append(self.candidate_label_prop[pid])
-            batch_pid[i] = [pid]*self.topk_candidate
-            batch_length[i] = [self.doc_length[pid]]*self.topk_candidate
-            batch_x[i] = np.tile(self.doc_wordID_data[pid], [self.topk_candidate, 1])
-            batch_label[i] = self.candidate_label_data[pid]
-            batch_label_embedding_id[i] = self.candidate_label_embedding_id[pid]
-            batch_y[i] = self.candidate_label_prop[pid]
-            i += 1
+            num = len(self.candidate_label_data[pid])
+            batch_pid.append([pid]*num)
+            batch_length.append([self.doc_length[pid]]*num)
+            batch_x.append(np.tile(self.doc_wordID_data[pid], [num, 1]))
+            batch_label.append(self.candidate_label_data[pid])
+            batch_label_embedding_id.append(self.candidate_label_embedding_id[pid])
+            batch_y.append(self.candidate_label_prop[pid])
+            # batch_pid[i] = [pid]*self.topk_candidate
+            # batch_length[i] = [self.doc_length[pid]]*self.topk_candidate
+            # batch_x[i] = np.tile(self.doc_wordID_data[pid], [self.topk_candidate, 1])
+            # batch_label[i] = self.candidate_label_data[pid]
+            # batch_label_embedding_id[i] = self.candidate_label_embedding_id[pid]
+            # batch_y[i] = self.candidate_label_prop[pid]
+            # i += 1
         if pid_num > 1:
             batch_pid = np.concatenate(batch_pid, axis=0)
             batch_length = np.concatenate(batch_length, axis=0)
