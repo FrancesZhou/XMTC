@@ -102,7 +102,7 @@ class ModelSolver(object):
                     # real_batch_size = topk * batch_size
                     # ------------- train ----------------
                     train_batches = np.arange(math.ceil(len(train_loader.train_pids) * 1.0 / self.batch_size), dtype=int)
-                    print 'num of train batches:    ' + str(len(batches))
+                    print 'num of train batches:    ' + str(len(train_batches))
                     for i in train_batches:
                         if i % self.show_batches == 0:
                             print 'batch ' + str(i)
@@ -132,7 +132,7 @@ class ModelSolver(object):
                         curr_loss += l_
                     # -------------- validate -------------
                     val_batches = np.arange(math.ceil(len(train_loader.val_pids) * 1.0 / self.batch_size), dtype=int)
-                    print 'num of validate batches: ' + str(len(batches))
+                    print 'num of validate batches: ' + str(len(val_batches))
                     for i in val_batches:
                         if i % self.show_batches == 0:
                             print 'batch ' + str(i)
@@ -208,7 +208,7 @@ class ModelSolver(object):
                         pre_pid_score = {}
                         test_batches = np.arange(math.ceil(len(test_loader.pids) * 1.0 / self.batch_size),
                                                   dtype=int)
-                        print 'num of train batches:    ' + str(len(batches))
+                        print 'num of test batches:    ' + str(len(test_batches))
                         for i in test_batches:
                             if i % self.show_batches == 0:
                                 print 'batch ' + str(i)
