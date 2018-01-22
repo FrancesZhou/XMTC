@@ -112,13 +112,13 @@ class ModelSolver(object):
                         if len(batch_pid) < self.batch_size:
                             x = np.concatenate(
                                 (np.array(x), np.zeros(
-                                    (self.batch_size - len(batch_pid), self.model.max_seq_len)
+                                    (self.model.batch_size - len(batch_pid), self.model.max_seq_len)
                                 )),
                                 axis=0)
-                            y = np.concatenate((np.array(y), np.zeros((self.batch_size - len(batch_pid), 2))), axis=0)
-                            seq_l = np.concatenate((np.array(seq_l), np.zeros((self.batch_size - len(batch_pid)))))
+                            y = np.concatenate((np.array(y), np.zeros((self.model.batch_size - len(batch_pid), 2))), axis=0)
+                            seq_l = np.concatenate((np.array(seq_l), np.zeros((self.model.batch_size - len(batch_pid)))))
                             label_emb = np.concatenate((np.array(label_emb),
-                                                        np.zeros(self.batch_size - len(batch_pid), dtype=int)))
+                                                        np.zeros(self.model.batch_size - len(batch_pid), dtype=int)))
                         if self.if_use_seq_len:
                             feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
                                          self.model.seqlen: np.array(seq_l),
@@ -142,13 +142,13 @@ class ModelSolver(object):
                         if len(batch_pid) < self.batch_size:
                             x = np.concatenate(
                                 (np.array(x), np.zeros(
-                                    (self.batch_size - len(batch_pid), self.model.max_seq_len)
+                                    (self.model.batch_size - len(batch_pid), self.model.max_seq_len)
                                 )),
                                 axis=0)
-                            y = np.concatenate((np.array(y), np.zeros((self.batch_size - len(batch_pid), 2))), axis=0)
-                            seq_l = np.concatenate((np.array(seq_l), np.zeros((self.batch_size - len(batch_pid)))))
+                            y = np.concatenate((np.array(y), np.zeros((self.model.batch_size - len(batch_pid), 2))), axis=0)
+                            seq_l = np.concatenate((np.array(seq_l), np.zeros((self.model.batch_size - len(batch_pid)))))
                             label_emb = np.concatenate((np.array(label_emb),
-                                                        np.zeros(self.batch_size - len(batch_pid), dtype=int)))
+                                                        np.zeros(self.model.batch_size - len(batch_pid), dtype=int)))
                         if self.if_use_seq_len:
                             feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
                                          self.model.seqlen: np.array(seq_l),
@@ -220,14 +220,14 @@ class ModelSolver(object):
                             if len(batch_pid) < self.batch_size:
                                 x = np.concatenate(
                                     (np.array(x), np.zeros(
-                                        (self.batch_size - len(batch_pid), self.model.max_seq_len)
+                                        (self.model.batch_size - len(batch_pid), self.model.max_seq_len)
                                     )),
                                     axis=0)
-                                y = np.concatenate((np.array(y), np.zeros((self.batch_size - len(batch_pid), 2))),
+                                y = np.concatenate((np.array(y), np.zeros((self.model.batch_size - len(batch_pid), 2))),
                                                    axis=0)
-                                seq_l = np.concatenate((np.array(seq_l), np.zeros((self.batch_size - len(batch_pid)))))
+                                seq_l = np.concatenate((np.array(seq_l), np.zeros((self.model.batch_size - len(batch_pid)))))
                                 label_emb = np.concatenate((np.array(label_emb),
-                                                            np.zeros(self.batch_size - len(batch_pid), dtype=int)))
+                                                            np.zeros(self.model.batch_size - len(batch_pid), dtype=int)))
                             if self.if_use_seq_len:
                                 feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
                                              self.model.seqlen: np.array(seq_l),
