@@ -10,11 +10,12 @@ import os
 import argparse
 import numpy as np
 from model.preprocessing.preprocessing import generate_label_embedding_from_file_2
-from model.preprocessing.dataloader import DataLoader5, DataLoader3, DataLoader2
+from model.preprocessing.dataloader import DataLoader5, DataLoader3, DataLoader2, DataLoader
 from model.core.biLSTM import biLSTM
 from model.core.LSTM import LSTM
 from model.core.CNN import CNN
 from model.core.XML_CNN import XML_CNN
+from model.core.CNN_comp import CNN_comp
 from model.core.solver import ModelSolver
 from model.utils.io_utils import load_pickle
 
@@ -96,11 +97,11 @@ def main():
     test_candidate_label = load_pickle(candidate_folder_path + 'test_candidate_label.pkl')
     print '============== create train/test data loader ...'
     if 'XML' not in args.model:
-        train_loader = DataLoader2(train_doc, train_label, train_candidate_label, args.topk, label_dict,
+        train_loader = DataLoader(train_doc, train_label, train_candidate_label, args.topk, label_dict,
                                    max_seq_len=args.max_seq_len, if_use_all_true_label=args.if_use_all_true)
         max_seq_len = train_loader.max_seq_len
         print 'max_seq_len: ' + str(max_seq_len)
-        test_loader = DataLoader2(test_doc, test_label, test_candidate_label, args.topk, label_dict,
+        test_loader = DataLoader(test_doc, test_label, test_candidate_label, args.topk, label_dict,
                                   max_seq_len=max_seq_len, if_use_all_true_label=0)
         # test_loader = DataLoader3(test_doc, test_label, test_candidate_label, label_dict, args.batch_size,
         #                           given_seq_len=True, max_seq_len=max_seq_len)

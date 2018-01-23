@@ -16,7 +16,7 @@ from sklearn.neighbors import NearestNeighbors
 # from biLSTM.preprocessing.preprocessing import batch_data, get_max_seq_len, construct_train_test_corpus, \
 #     generate_labels_from_file, generate_label_pair_from_file
 # from biLSTM.utils.io_utils import load_pickle, write_file, load_txt
-from model.utils.op_utils import precision_for_label_vector, precision_for_all
+from model.utils.op_utils import ndcg_at_k, precision_for_label_vector, precision_for_all, precision_for_comp_score_vector
 from model.utils.io_utils import load_pickle, dump_pickle
 
 
@@ -73,11 +73,12 @@ class ModelSolver(object):
                 print 'Start training with pretrained model...'
                 pretrained_model_path = self.model_path + self.pretrained_model
                 saver.restore(sess, pretrained_model_path)
-            val_loss = 0
+            #val_loss = 0
             for e in range(self.n_epochs):
                 train_loader.reset_data()
                 print '========== begin epoch ' + str(e) + '==========='
                 curr_loss = 0
+                val_loss = 0
                 if self.if_output_all_labels:
                     k = 0
                     batches = np.arange(math.ceil(len(train_loader.pids)*1.0/self.batch_size), dtype=int)
@@ -98,8 +99,6 @@ class ModelSolver(object):
                         k += 1
                 else:
                     # '''
-                    # batch_size : number of training docs
-                    # real_batch_size = topk * batch_size
                     # ------------- train ----------------
                     train_batches = np.arange(math.ceil(len(train_loader.train_pids) * 1.0 / self.batch_size), dtype=int)
                     print 'num of train batches:    ' + str(len(train_batches))
@@ -109,18 +108,6 @@ class ModelSolver(object):
                         batch_pid, _, x, y, seq_l, label_emb = train_loader.next_batch(train_loader.train_pids, i*self.batch_size, (i+1)*self.batch_size)
                         if len(batch_pid) == 0:
                             continue
-                        '''
-                        if len(batch_pid) < self.batch_size:
-                            x = np.concatenate(
-                                (np.array(x), np.zeros(
-                                    (self.model.batch_size - len(batch_pid), self.model.max_seq_len)
-                                )),
-                                axis=0)
-                            y = np.concatenate((np.array(y), np.zeros((self.model.batch_size - len(batch_pid), 2))), axis=0)
-                            seq_l = np.concatenate((np.array(seq_l), np.zeros((self.model.batch_size - len(batch_pid)))))
-                            label_emb = np.concatenate((np.array(label_emb),
-                                                        np.zeros(self.model.batch_size - len(batch_pid), dtype=int)))
-                        '''
                         if self.if_use_seq_len:
                             feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
                                          self.model.seqlen: np.array(seq_l),
@@ -135,6 +122,8 @@ class ModelSolver(object):
                     # -------------- validate -------------
                     val_batches = np.arange(math.ceil(len(train_loader.val_pids) * 1.0 / self.batch_size), dtype=int)
                     print 'num of validate batches: ' + str(len(val_batches))
+                    p_1 = p_3 = p_5 = []
+                    ndcg_1 = ndcg_3 = ndcg_5 = []
                     for i in val_batches:
                         self.show_batches = 500
                         if i % self.show_batches == 0:
@@ -142,18 +131,6 @@ class ModelSolver(object):
                         batch_pid, _, x, y, seq_l, label_emb = train_loader.next_batch(train_loader.val_pids, i*self.batch_size, (i+1)*self.batch_size)
                         if len(batch_pid) == 0:
                             continue
-                        '''
-                        if len(batch_pid) < self.model.batch_size:
-                            x = np.concatenate(
-                                (np.array(x), np.zeros(
-                                    (self.model.batch_size - len(batch_pid), self.model.max_seq_len)
-                                )),
-                                axis=0)
-                            y = np.concatenate((np.array(y), np.zeros((self.model.batch_size - len(batch_pid), 2))), axis=0)
-                            seq_l = np.concatenate((np.array(seq_l), np.zeros((self.model.batch_size - len(batch_pid)))))
-                            label_emb = np.concatenate((np.array(label_emb),
-                                                        np.zeros(self.model.batch_size - len(batch_pid), dtype=int)))
-                        '''
                         if self.if_use_seq_len:
                             feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
                                          self.model.seqlen: np.array(seq_l),
@@ -163,18 +140,28 @@ class ModelSolver(object):
                             feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
                                          self.model.label_embedding_id: np.array(label_emb, dtype=int)
                                          }
-                        l_ = sess.run(loss, feed_dict)
-                        # try:
-                        #     l_ = sess.run(loss, feed_dict)
-                        # except:
-                        #     print 'error i = ' + str(i)
+                        y_p, l_ = sess.run([y_, loss], feed_dict)
                         val_loss += l_
+                        pre_label_index = np.argsort(-y_p)[:5]
+                        r = []
+                        for ind in pre_label_index:
+                            r.append(y[ind])
+                        p_1.append(np.mean(r[:1]))
+                        p_3.append(np.mean(r[:3]))
+                        p_5.append(np.mean(r[:5]))
+                        ndcg_1.append(ndcg_at_k(r, 1))
+                        ndcg_3.append(ndcg_at_k(r, 3))
+                        ndcg_5.append(ndcg_at_k(r, 5))
+                    val_results = np.mean([p_1, p_3, p_5, ndcg_1, ndcg_3, ndcg_5], axis=1)
 
                 # ====== output loss ======
                 w_text = 'at epoch ' + str(e) + ', train loss is ' + str(curr_loss) + '\n'
                 print w_text
                 o_file.write(w_text)
                 w_text = 'at epoch ' + str(e) + ', val loss is ' + str(val_loss) + '\n'
+                print w_text
+                o_file.write(w_text)
+                w_text = 'at epoch ' + str(e) + ', val_results: ' + str(val_results) + '\n'
                 print w_text
                 o_file.write(w_text)
                 # ====== save model ========
@@ -215,6 +202,7 @@ class ModelSolver(object):
                     else:
                         pre_pid_label = {}
                         pre_pid_score = {}
+                        tar_pid_y = {}
                         test_batches = np.arange(math.ceil(len(test_loader.pids) * 1.0 / self.batch_size),
                                                   dtype=int)
                         print 'num of test batches:    ' + str(len(test_batches))
@@ -226,19 +214,6 @@ class ModelSolver(object):
                                                                                            (i + 1) * self.batch_size)
                             if len(batch_pid) == 0:
                                 continue
-                            '''
-                            if len(batch_pid) < self.batch_size:
-                                x = np.concatenate(
-                                    (np.array(x), np.zeros(
-                                        (self.model.batch_size - len(batch_pid), self.model.max_seq_len)
-                                    )),
-                                    axis=0)
-                                y = np.concatenate((np.array(y), np.zeros((self.model.batch_size - len(batch_pid), 2))),
-                                                   axis=0)
-                                seq_l = np.concatenate((np.array(seq_l), np.zeros((self.model.batch_size - len(batch_pid)))))
-                                label_emb = np.concatenate((np.array(label_emb),
-                                                            np.zeros(self.model.batch_size - len(batch_pid), dtype=int)))
-                            '''
                             if self.if_use_seq_len:
                                 feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
                                              self.model.seqlen: np.array(seq_l),
@@ -256,9 +231,12 @@ class ModelSolver(object):
                                     pre_pid_label[batch_pid[j]].append(batch_label[j])
                                     pre_pid_score[batch_pid[j]].append(y_p[j])
                                 except KeyError:
-                                    pre_pid_label[batch_pid[j]] = [batch_label[j]]
-                                    pre_pid_score[batch_pid[j]] = [y_p[j]]
-                        mean_metric = precision_for_all(test_loader.label_data, pre_pid_label, pre_pid_score)
+                                    tar_pid_y[batch_pid[j]] = y
+                                    pre_pid_score[batch_pid[j]] = y_p[j]
+                                    # pre_pid_label[batch_pid[j]] = [batch_label[j]]
+                                    # pre_pid_score[batch_pid[j]] = [y_p[j]]
+                        #mean_metric = precision_for_all(test_loader.label_data, pre_pid_label, pre_pid_score)
+                        mean_metric = precision_for_comp_score_vector(tar_pid_y, pre_pid_score)
                     print len(mean_metric)
                     w_text = 'at epoch' + str(e) + ', test loss is ' + str(test_loss) + '\n'
                     print w_text

@@ -108,4 +108,18 @@ def precision_for_label_vector(tar_pid_label, pred_pid_score):
         ndcg_5.append(ndcg_at_k(r, 5))
     return np.mean([p_1, p_3, p_5, ndcg_1, ndcg_3, ndcg_5], axis=1)
 
-
+def precision_for_comp_score_vector(tar_pid_y, pre_pid_score):
+    p_1 = p_3 = p_5 = []
+    ndcg_1 = ndcg_3 = ndcg_5 = []
+    for pid, y in tar_pid_y.items():
+        pre_label_index = np.argsort(-pre_pid_score[pid])[:5]
+        r = []
+        for ind in pre_label_index:
+            r.append(y[ind])
+        p_1.append(np.mean(r[:1]))
+        p_3.append(np.mean(r[:3]))
+        p_5.append(np.mean(r[:5]))
+        ndcg_1.append(ndcg_at_k(r, 1))
+        ndcg_3.append(ndcg_at_k(r, 3))
+        ndcg_5.append(ndcg_at_k(r, 5))
+    return np.mean([p_1, p_3, p_5, ndcg_1, ndcg_3, ndcg_5], axis=1)
