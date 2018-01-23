@@ -91,12 +91,17 @@ class CNN_comp(object):
         #P_reset = tf.reshape(P_reset, [-1, all_num_filters, self.output_dim])
         #N_reset = tf.reshape(N_reset, [-1, all_num_filters, self.output_dim])
 
-    def output_layer(self, comp_all_features, all_num_filters):
+    def output_layer(self, x_emb, comp_all_features, all_num_filters):
+        # x_emb : [batch_size, all_num_filters]
         # comp_all_features : [batch_size, output_dim, all_num_filters]
+        x_emb_tile = tf.tile(tf.expand_dims(x_emb, 1), [1, self.output_dim, 1])
+        # x_emb_tile: [batch_size, output_dim, all_num_filters]
+        res_all_features = tf.nn.relu(tf.subtract(x_emb_tile, comp_all_features))
         with tf.variable_scope('output_layer'):
             w_output = tf.get_variable('w_output', [self.output_dim, all_num_filters], initializer=self.weight_initializer)
             b_output = tf.get_variable('b_output', [self.output_dim], initializer=self.const_initializer)
-            wf = tf.reduce_sum(tf.multiply(comp_all_features, w_output), -1)
+            #wf = tf.reduce_sum(tf.multiply(comp_all_features, w_output), -1)
+            wf = tf.reduce_sum(tf.multiply(res_all_features, w_output), -1)
             wf_b_plus = tf.add(wf, b_output)
         # wf_b_plus: [batch_size, output_dim]
         return wf_b_plus
@@ -154,14 +159,14 @@ class CNN_comp(object):
         all_features = tf.concat(conv_atten_outputs, -1)
         # all_features: [batch_size, output_dim, all_num_filters]
         # ------------- dropout ------------
-        with tf.name_scope('dropout'):
-            all_features = tf.nn.dropout(all_features, keep_prob=self.dropout_keep_prob)
+        # with tf.name_scope('dropout'):
+        #     all_features = tf.nn.dropout(all_features, keep_prob=self.dropout_keep_prob)
         # ------------- competitive ----------------
         all_num_filters = self.num_filters * len(self.filter_sizes)
         comp_all_features = self.competitive_layer(all_num_filters, all_features, self.topk)
         # comp_all_features : [batch_size, output_dim, all_num_filters]
         # output
-        y_ = self.output_layer(comp_all_features, all_num_filters)
+        y_ = self.output_layer(x_emb, comp_all_features, all_num_filters)
         # loss
         loss = tf.losses.sigmoid_cross_entropy(y, y_)
         return x_emb, y_, loss
