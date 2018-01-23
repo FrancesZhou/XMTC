@@ -119,7 +119,7 @@ def main():
         model = LSTM(max_seq_len, word_embedding_dim, 64, label_embedding_dim, 32, args)
         args.if_use_seq_len = 1
     elif 'CNN' in args.model:
-        print 'build CNN model ...'
+        print 'build CNN_comp model ...'
         # CNN: sequence_length, word_embeddings, filter_sizes, label_embeddings, num_classify_hidden, batch_size, args
         # args.num_filters, args.pooling_units, args.batch_size, args.dropout_keep_prob
         # real_batch_size = args.batch_size*args.topk

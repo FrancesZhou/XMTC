@@ -194,7 +194,6 @@ class ModelSolver(object):
                                 #pre_pid_score[batch_pid[j]] = heapq.nlargest
                         mean_metric = precision_for_label_vector(test_loader.label_data, pre_pid_score)
                     else:
-                        pre_pid_label = {}
                         pre_pid_score = {}
                         tar_pid_y = {}
                         tar_pid_label_num = {}
@@ -222,16 +221,12 @@ class ModelSolver(object):
                             test_loss += l_
                             # get all predictions
                             for j in range(len(batch_pid)):
-                                try:
-                                    pre_pid_label[batch_pid[j]].append(batch_label[j])
-                                    pre_pid_score[batch_pid[j]].append(y_p[j])
-                                except KeyError:
-                                    tar_pid_y[batch_pid[j]] = y[j]
-                                    tar_pid_label_num[batch_pid[j]] = len(test_loader.label_data[batch_pid
-                                                                          [j]])
-                                    pre_pid_score[batch_pid[j]] = y_p[j]
+                                tar_pid_y[batch_pid[j]] = y[j]
+                                tar_pid_label_num[batch_pid[j]] = len(test_loader.label_data[batch_pid
+                                                                      [j]])
+                                pre_pid_score[batch_pid[j]] = y_p[j]
                         mean_metric = precision_for_comp_score_vector(tar_pid_label_num, tar_pid_y, pre_pid_score)
-                    print len(mean_metric)
+                    #print len(mean_metric)
                     w_text = 'at epoch' + str(e) + ', test loss is ' + str(test_loss) + '\n'
                     print w_text
                     o_file.write(w_text)
@@ -275,16 +270,6 @@ class ModelSolver(object):
                 batch_pid, batch_label, x, y, seq_l, label_emb = test_loader.next_batch()
                 if len(batch_pid) == 0:
                     continue
-                if len(batch_pid) < self.batch_size:
-                    x = np.concatenate(
-                        (np.array(x), np.zeros(
-                            (self.batch_size - len(batch_pid), self.model.max_seq_len)
-                        )),
-                        axis=0)
-                    y = np.concatenate((np.array(y), np.zeros((self.batch_size - len(batch_pid), 2))), axis=0)
-                    seq_l = np.concatenate((np.array(seq_l), np.zeros((self.batch_size - len(batch_pid)))))
-                    label_emb = np.concatenate((np.array(label_emb),
-                                                np.zeros(self.batch_size - len(batch_pid), dtype=int)))
                 if self.if_use_seq_len:
                     feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
                                  self.model.seqlen: np.array(seq_l),
@@ -295,7 +280,6 @@ class ModelSolver(object):
                                  self.model.label_embedding_id: np.array(label_emb, dtype=int)
                                 }
                 y_p = sess.run(y_, feed_dict)
-                i += 1
                 # get all predictions
                 for j in range(len(batch_pid)):
                     try:
