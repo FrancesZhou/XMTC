@@ -94,8 +94,8 @@ class CNN_comp(object):
     def output_layer(self, comp_all_features, all_num_filters):
         # comp_all_features : [batch_size, output_dim, all_num_filters]
         with tf.variable_scope('output_layer'):
-            w_output = tf.get_variable('w_output', [self.output_dim, all_num_filters])
-            b_output = tf.get_variable('b_output', [self.output_dim])
+            w_output = tf.get_variable('w_output', [self.output_dim, all_num_filters], initializer=self.weight_initializer)
+            b_output = tf.get_variable('b_output', [self.output_dim], initializer=self.const_initializer)
             wf = tf.reduce_sum(tf.multiply(comp_all_features, w_output), -1)
             wf_b_plus = tf.add(wf, b_output)
         # wf_b_plus: [batch_size, output_dim]
@@ -114,7 +114,6 @@ class CNN_comp(object):
         # x: [batch_size, self.max_seq_len, word_embedding_dim, 1]
         y = self.y
         # dropout
-        # TODO
         #x_expand = tf.nn.dropout(x_expand, keep_prob=0.25)
         conv_outputs = []
         conv_atten_outputs = []
@@ -165,10 +164,6 @@ class CNN_comp(object):
         y_ = self.output_layer(comp_all_features, all_num_filters)
         # loss
         loss = tf.losses.sigmoid_cross_entropy(y, y_)
-        # if self.use_propensity:
-        #     loss = tf.losses.sigmoid_cross_entropy(y, y_, weights=tf.expand_dims(self.label_prop, -1))
-        # else:
-        #     loss = tf.losses.sigmoid_cross_entropy(y, y_)
         return x_emb, y_, loss
 
 

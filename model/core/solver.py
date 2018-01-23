@@ -122,13 +122,10 @@ class ModelSolver(object):
                     # -------------- validate -------------
                     val_batches = np.arange(math.ceil(len(train_loader.val_pids) * 1.0 / self.batch_size), dtype=int)
                     print 'num of validate batches: ' + str(len(val_batches))
-                    # p_1 = p_3 = p_5 = []
-                    # ndcg_1 = ndcg_3 = ndcg_5 = []
                     pre_pid_score = {}
                     tar_pid_y = {}
                     tar_pid_label_num = {}
                     for i in val_batches:
-                        #self.show_batches = 500
                         if i % self.show_batches == 0:
                             print 'batch ' + str(i)
                         batch_pid, _, x, y, seq_l, label_emb = train_loader.next_batch(train_loader.val_pids, i*self.batch_size, (i+1)*self.batch_size)
@@ -233,9 +230,6 @@ class ModelSolver(object):
                                     tar_pid_label_num[batch_pid[j]] = len(test_loader.label_data[batch_pid
                                                                           [j]])
                                     pre_pid_score[batch_pid[j]] = y_p[j]
-                                    # pre_pid_label[batch_pid[j]] = [batch_label[j]]
-                                    # pre_pid_score[batch_pid[j]] = [y_p[j]]
-                        #mean_metric = precision_for_all(test_loader.label_data, pre_pid_label, pre_pid_score)
                         mean_metric = precision_for_comp_score_vector(tar_pid_label_num, tar_pid_y, pre_pid_score)
                     print len(mean_metric)
                     w_text = 'at epoch' + str(e) + ', test loss is ' + str(test_loss) + '\n'

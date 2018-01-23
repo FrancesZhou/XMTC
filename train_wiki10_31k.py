@@ -52,7 +52,8 @@ def main():
     parse.add_argument('-if_output_all_labels', '--if_output_all_labels', type=int, default=0, help='if output all labels')
     parse.add_argument('-n_epochs', '--n_epochs', type=int, default=10, help='number of epochs')
     parse.add_argument('-batch_size', '--batch_size', type=int, default=2, help='batch size - number of docs')
-    parse.add_argument('-topk', '--topk', type=int, default=20, help='real_batch_size = topk * batch_size')
+    parse.add_argument('-num_candidate', '--num_candidate', type=int, default=20, help='number of candidate labels')
+    parse.add_argument('-topk', '--topk', type=int, default=6, help='k in competitive layer')
     parse.add_argument('-show_batches', '--show_batches', type=int,
                        default=20, help='show how many batches have been processed.')
     parse.add_argument('-lr', '--learning_rate', type=float, default=0.0002, help='learning rate')
@@ -122,7 +123,7 @@ def main():
         # CNN: sequence_length, word_embeddings, filter_sizes, label_embeddings, num_classify_hidden, batch_size, args
         # args.num_filters, args.pooling_units, args.batch_size, args.dropout_keep_prob
         # real_batch_size = args.batch_size*args.topk
-        model = CNN_comp(max_seq_len, args.topk, 5, word_embeddings, filter_sizes, label_embeddings, 32, args)
+        model = CNN_comp(max_seq_len, args.num_candidate, args.topk, word_embeddings, filter_sizes, label_embeddings, 32, args)
         args.if_use_seq_len = 0
     elif 'XML' in args.model:
         print 'build XML-CNN model ...'
