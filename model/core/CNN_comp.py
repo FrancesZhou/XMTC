@@ -94,14 +94,14 @@ class CNN_comp(object):
     def output_layer(self, x_emb, comp_all_features, all_num_filters):
         # x_emb : [batch_size, all_num_filters]
         # comp_all_features : [batch_size, output_dim, all_num_filters]
-        x_emb_tile = tf.tile(tf.expand_dims(x_emb, 1), [1, self.output_dim, 1])
+        #x_emb_tile = tf.tile(tf.expand_dims(x_emb, 1), [1, self.output_dim, 1])
         # x_emb_tile: [batch_size, output_dim, all_num_filters]
-        res_all_features = tf.nn.relu(tf.subtract(x_emb_tile, comp_all_features))
+        #res_all_features = tf.nn.relu(tf.subtract(x_emb_tile, comp_all_features))
         with tf.variable_scope('output_layer'):
             w_output = tf.get_variable('w_output', [self.output_dim, all_num_filters], initializer=self.weight_initializer)
             b_output = tf.get_variable('b_output', [self.output_dim], initializer=self.const_initializer)
-            #wf = tf.reduce_sum(tf.multiply(comp_all_features, w_output), -1)
-            wf = tf.reduce_sum(tf.multiply(res_all_features, w_output), -1)
+            wf = tf.reduce_sum(tf.multiply(comp_all_features, w_output), -1)
+            #wf = tf.reduce_sum(tf.multiply(res_all_features, w_output), -1)
             wf_b_plus = tf.add(wf, b_output)
         # wf_b_plus: [batch_size, output_dim]
         return wf_b_plus
