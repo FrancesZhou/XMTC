@@ -69,7 +69,7 @@ class CNN_comp(object):
         # N
         values2, indices2 = tf.nn.top_k(-N, topk - topk / 2)
         my_range = tf.expand_dims(tf.range(0, tf.shape(indices2)[0]), 1)
-        my_range_repeated = tf.tile(my_range, [1, topk / 2])
+        my_range_repeated = tf.tile(my_range, [1, topk - topk / 2])
         full_indices2 = tf.stack([my_range_repeated, indices2], axis=2)
         full_indices2 = tf.reshape(full_indices2, [-1, 2])
         N_reset = tf.sparse_to_dense(full_indices2, tf.shape(x), tf.reshape(values2, [-1]), default_value=0.,
@@ -96,7 +96,7 @@ class CNN_comp(object):
         with tf.variable_scope('output_layer'):
             w_output = tf.get_variable('w_output', [self.output_dim, all_num_filters])
             b_output = tf.get_variable('b_output', [self.output_dim])
-            wf = tf.reduce_sum(tf.matmul(comp_all_features, w_output), -1)
+            wf = tf.reduce_sum(tf.multiply(comp_all_features, w_output), -1)
             wf_b_plus = tf.add(wf, b_output)
         # wf_b_plus: [batch_size, output_dim]
         return wf_b_plus
