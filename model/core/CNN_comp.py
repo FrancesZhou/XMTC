@@ -154,8 +154,8 @@ class CNN_comp(object):
         all_features = tf.concat(conv_atten_outputs, -1)
         # all_features: [batch_size, output_dim, all_num_filters]
         # ------------- dropout ------------
-        # with tf.name_scope('dropout'):
-        #     fea_dropout = tf.nn.dropout(all_features, keep_prob=self.dropout_keep_prob)
+        with tf.name_scope('dropout'):
+            all_features = tf.nn.dropout(all_features, keep_prob=self.dropout_keep_prob)
         # ------------- competitive ----------------
         all_num_filters = self.num_filters * len(self.filter_sizes)
         comp_all_features = self.competitive_layer(all_num_filters, all_features, self.topk)
