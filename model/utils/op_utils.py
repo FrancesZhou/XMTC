@@ -110,13 +110,13 @@ def precision_for_label_vector(tar_pid_label, pred_pid_score):
     return np.mean([p_1, p_3, p_5, ndcg_1, ndcg_3, ndcg_5], axis=1)
 
 def precision_for_comp_score_vector(true_labels, tar_pid_y, pre_pid_score):
-    p_1 = p_3 = p_5 = []
-    ndcg_1 = ndcg_3 = ndcg_5 = []
-    i = 0
+    p_1 = []
+    p_3 = []
+    p_5 = []
+    ndcg_1 = []
+    ndcg_3 = []
+    ndcg_5 = []
     for pid, y in tar_pid_y.items():
-        if i == 0:
-            print y
-        i += 1
         pre_label_index = np.argsort(-pre_pid_score[pid])[:5]
         r = []
         for ind in pre_label_index:
@@ -130,8 +130,12 @@ def precision_for_comp_score_vector(true_labels, tar_pid_y, pre_pid_score):
     return np.mean([p_1, p_3, p_5, ndcg_1, ndcg_3, ndcg_5], axis=1)
 
 def precision_for_batch_comp_score(true_label_num, tar_pid_y, pre_pid_score):
-    p_1 = p_3 = p_5 = []
-    ndcg_1 = ndcg_3 = ndcg_5 = []
+    p_1 = []
+    p_3 = []
+    p_5 = []
+    ndcg_1 = []
+    ndcg_3 = []
+    ndcg_5 = []
     for i in range(len(tar_pid_y)):
         pre_label_index = np.argsort(-pre_pid_score[i])[:5]
         y = tar_pid_y[i]

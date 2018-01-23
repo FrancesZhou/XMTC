@@ -128,7 +128,7 @@ class ModelSolver(object):
                     tar_pid_y = {}
                     tar_pid_label_num = {}
                     for i in val_batches:
-                        self.show_batches = 500
+                        #self.show_batches = 500
                         if i % self.show_batches == 0:
                             print 'batch ' + str(i)
                         batch_pid, _, x, y, seq_l, label_emb = train_loader.next_batch(train_loader.val_pids, i*self.batch_size, (i+1)*self.batch_size)
