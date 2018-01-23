@@ -122,7 +122,7 @@ def main():
         # CNN: sequence_length, word_embeddings, filter_sizes, label_embeddings, num_classify_hidden, batch_size, args
         # args.num_filters, args.pooling_units, args.batch_size, args.dropout_keep_prob
         # real_batch_size = args.batch_size*args.topk
-        model = CNN(max_seq_len, word_embeddings, filter_sizes, label_embeddings, 32, args)
+        model = CNN_comp(max_seq_len, args.topk, 5, word_embeddings, filter_sizes, label_embeddings, 32, args)
         args.if_use_seq_len = 0
     elif 'XML' in args.model:
         print 'build XML-CNN model ...'
