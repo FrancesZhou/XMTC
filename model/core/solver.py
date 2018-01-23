@@ -146,7 +146,7 @@ class ModelSolver(object):
                         y_p, l_ = sess.run([y_, loss], feed_dict)
                         val_loss += l_
                         for j in range(len(batch_pid)):
-                            tar_pid_y[batch_pid[j]] = y
+                            tar_pid_y[batch_pid[j]] = y[j]
                             tar_pid_label_num[batch_pid[j]] = len(train_loader.label_data[batch_pid[j]])
                             pre_pid_score[batch_pid[j]] = y_p[j]
                     val_results = precision_for_comp_score_vector(tar_pid_label_num, tar_pid_y, pre_pid_score)
@@ -229,7 +229,7 @@ class ModelSolver(object):
                                     pre_pid_label[batch_pid[j]].append(batch_label[j])
                                     pre_pid_score[batch_pid[j]].append(y_p[j])
                                 except KeyError:
-                                    tar_pid_y[batch_pid[j]] = y
+                                    tar_pid_y[batch_pid[j]] = y[j]
                                     tar_pid_label_num[batch_pid[j]] = len(test_loader.label_data[batch_pid
                                                                           [j]])
                                     pre_pid_score[batch_pid[j]] = y_p[j]
