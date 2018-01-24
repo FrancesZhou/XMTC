@@ -27,7 +27,7 @@ class CNN2(object):
         self.const_initializer = tf.constant_initializer()
         #
         self.word_embedding = tf.constant(word_embedding, dtype=tf.float32)
-        self.label_embedding = tf.constant(label_embedding, dtype=tf.float32)
+        self.pretrained_label_embedding = tf.constant(label_embedding, dtype=tf.float32)
         #
         self.x = tf.placeholder(tf.int32, [None, self.max_seq_len])
         self.y = tf.placeholder(tf.float32, [None, output_dim])
@@ -142,6 +142,7 @@ class CNN2(object):
         # x = self.x
         x = tf.nn.embedding_lookup(self.word_embedding, self.x)
         # x: [batch_size, self.max_seq_len, word_embedding_dim]
+        self.label_embedding = tf.get_variable('label_embedding', initializer=self.pretrained_label_embedding)
         label_embeddings = tf.nn.embedding_lookup(self.label_embedding, self.label_embedding_id)
         # label_embeddings: [batch_size, output_dim, label_embedding_dim]
         x_expand = tf.expand_dims(x, axis=-1)
@@ -212,14 +213,14 @@ class CNN2(object):
         # mask: [output_dim, output_dim]
         loss_reg = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=score, labels=y))
         # loss_rank = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=score_pair, labels=y_pair) * mask)
-        pos_indices = tf.where(tf.greater(y, tf.constant(0)))
-        neg_indices = tf.where(tf.equal(y, tf.constant(0)))
+        pos_indices = tf.where(tf.greater(y, tf.constant(0, dtype=tf.float32)))
+        neg_indices = tf.where(tf.equal(y, tf.constant(0, dtype=tf.float32)))
         sigmoid_score = tf.sigmoid(score)
-        pos_score = tf.sparse_to_dense(pos_indices, tf.shape(y), tf.gather_nd(sigmoid_score, pos_indices), default_value=0.,
+        pos_score = tf.sparse_to_dense(pos_indices, tf.shape(y, out_type=tf.int64), tf.gather_nd(sigmoid_score, pos_indices), default_value=0.,
                                        validate_indices=False)
-        neg_score = tf.sparse_to_dense(neg_indices, tf.shape(y), tf.gather_nd(sigmoid_score, neg_indices), default_value=0.,
+        neg_score = tf.sparse_to_dense(neg_indices, tf.shape(y, out_type=tf.int64), tf.gather_nd(sigmoid_score, neg_indices), default_value=0.,
                                        validate_indices=False)
-        loss_sep_rank = tf.max(tf.constant(0), 1 - tf.reduce_min(pos_score, -1) + tf.reduce_max(neg_score, -1))
+        loss_sep_rank = tf.maximum(tf.constant(0, dtype=tf.float32), 1 - tf.reduce_min(pos_score, -1) + tf.reduce_max(neg_score, -1))
         #loss = loss_rank + loss_reg
         loss = tf.reduce_mean(loss_sep_rank) + loss_reg
         return x_emb, score, loss
