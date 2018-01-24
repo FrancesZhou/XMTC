@@ -16,7 +16,7 @@ from sklearn.neighbors import NearestNeighbors
 # from biLSTM.preprocessing.preprocessing import batch_data, get_max_seq_len, construct_train_test_corpus, \
 #     generate_labels_from_file, generate_label_pair_from_file
 # from biLSTM.utils.io_utils import load_pickle, write_file, load_txt
-from model.utils.op_utils import ndcg_at_k, precision_for_label_vector, precision_for_all, precision_for_comp_score_vector
+from model.utils.op_utils import ndcg_at_k, precision_for_label_vector, precision_for_all, precision_for_score_vector
 from model.utils.io_utils import load_pickle, dump_pickle
 
 
@@ -225,7 +225,7 @@ class ModelSolver(object):
                                 tar_pid_label_num[batch_pid[j]] = len(test_loader.label_data[batch_pid
                                                                       [j]])
                                 pre_pid_score[batch_pid[j]] = y_p[j]
-                        mean_metric = precision_for_comp_score_vector(tar_pid_label_num, tar_pid_y, pre_pid_score)
+                        mean_metric = precision_for_score_vector(tar_pid_label_num, tar_pid_y, pre_pid_score)
                     #print len(mean_metric)
                     w_text = 'at epoch' + str(e) + ', test loss is ' + str(test_loss) + '\n'
                     print w_text

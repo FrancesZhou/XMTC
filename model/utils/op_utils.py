@@ -17,7 +17,7 @@ def dcg_at_k(r, k):
     r = np.asfarray(r)[:k]
     return np.sum(r / np.log2(np.arange(2, r.size + 2)))
 
-def ndcg_at_k(r, k, true_num):
+def ndcg_at_k(r, k, true_num=5):
     #dcg_max = dcg_at_k(sorted(r, reverse=True), k)
     dcg_max = dcg_at_k(np.ones(k), min(k, true_num))
     if not dcg_max:
@@ -109,7 +109,7 @@ def precision_for_label_vector(tar_pid_label, pred_pid_score):
         ndcg_5.append(ndcg_at_k(r, 5))
     return np.mean([p_1, p_3, p_5, ndcg_1, ndcg_3, ndcg_5], axis=1)
 
-def precision_for_comp_score_vector(true_labels, tar_pid_y, pre_pid_score):
+def precision_for_score_vector(true_labels, tar_pid_y, pre_pid_score):
     p_1 = []
     p_3 = []
     p_5 = []
@@ -129,7 +129,7 @@ def precision_for_comp_score_vector(true_labels, tar_pid_y, pre_pid_score):
         ndcg_5.append(ndcg_at_k(r, 5, true_labels[pid]))
     return np.mean([p_1, p_3, p_5, ndcg_1, ndcg_3, ndcg_5], axis=1)
 
-def precision_for_batch_comp_score(true_label_num, tar_pid_y, pre_pid_score):
+def precision_for_batch_score(true_label_num, tar_pid_y, pre_pid_score):
     p_1 = []
     p_3 = []
     p_5 = []

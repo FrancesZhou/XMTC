@@ -10,9 +10,9 @@ import numpy as np
 import tensorflow as tf
 
 class CNN(object):
-    def __init__(self, max_seq_len, word_embedding, filter_sizes, label_embedding, num_classify_hidden, batch_size, args):
+    def __init__(self, max_seq_len, vocab_size, word_embedding_dim, filter_sizes, label_embedding, num_classify_hidden, batch_size, args):
         self.max_seq_len = max_seq_len
-        self.word_embedding_dim = word_embedding.shape[-1]
+        self.word_embedding_dim = word_embedding_dim
         self.filter_sizes = filter_sizes
         self.num_filters = args.num_filters
         self.pooling_units = args.pooling_units
@@ -24,16 +24,9 @@ class CNN(object):
         self.weight_initializer = tf.contrib.layers.xavier_initializer()
         self.const_initializer = tf.constant_initializer()
         #
-        self.word_embedding = tf.constant(word_embedding, dtype=tf.float32)
-        self.label_embedding = tf.constant(label_embedding, dtype=tf.float32)
+        self.word_embedding = tf.get_variable('word_embedding', [vocab_size, word_embedding_dim])
+        self.label_embedding = tf.get_variable('label_embedding', [])
         #
-        # self.x = tf.placeholder(tf.float32, [self.batch_size, self.max_seq_len, self.word_embedding_dim])
-        # self.seqlen = tf.placeholder(tf.int32, [self.batch_size])
-        # self.label_prop = tf.placeholder(tf.float32, [self.batch_size])
-        #
-        # self.x = tf.placeholder(tf.int32, [self.batch_size, self.max_seq_len])
-        # self.y = tf.placeholder(tf.float32, [self.batch_size, 2])
-        # self.label_embedding_id = tf.placeholder(tf.int32, [self.batch_size])
         self.x = tf.placeholder(tf.int32, [None, self.max_seq_len])
         self.y = tf.placeholder(tf.float32, [None, 2])
         self.label_embedding_id = tf.placeholder(tf.int32, [None])

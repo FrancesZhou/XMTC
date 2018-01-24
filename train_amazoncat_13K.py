@@ -15,7 +15,7 @@ from model.core.biLSTM import biLSTM
 from model.core.LSTM import LSTM
 from model.core.CNN import CNN
 from model.core.XML_CNN import XML_CNN
-from model.core.CNN_comp import CNN_comp
+from model.core.CNN2 import CNN_comp
 from model.core.solver import ModelSolver
 from model.utils.io_utils import load_pickle
 

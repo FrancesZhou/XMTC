@@ -9,7 +9,7 @@ from __future__ import absolute_import
 import numpy as np
 import tensorflow as tf
 
-class CNN_comp(object):
+class CNN2(object):
     def __init__(self, max_seq_len, output_dim, word_embedding, filter_sizes, label_embedding, hidden_dim, args):
         self.max_seq_len = max_seq_len
         self.output_dim = output_dim
