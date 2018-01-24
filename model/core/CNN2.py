@@ -207,9 +207,9 @@ class CNN2(object):
         y_pair = tf.tile(tf.expand_dims(y, -1), [1, 1, self.output_dim]) - tf.tile(tf.expand_dims(y, 1), [1, self.output_dim, 1])
         score_pair = tf.tile(tf.expand_dims(score, -1), [1, 1, self.output_dim]) - tf.tile(tf.expand_dims(score, 1), [1, self.output_dim, 1])
         # pair: [batch_size, output_dim, output_dim]
-        mask = tf.tile(tf.ones([1, self.output_dim, self.output_dim]) - tf.diag(tf.ones([self.output_dim])),
-                       [self.output_dim, 1, 1])
-        loss = tf.reduce_mean(mask * tf.nn.sigmoid_cross_entropy_with_logits(logits=score_pair, labels=y_pair))
+        mask = tf.subtract(tf.ones([self.output_dim, self.output_dim]), tf.diag(tf.ones([self.output_dim])))
+        # mask: [output_dim, output_dim]
+        loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=score_pair, labels=y_pair) * mask)
         return x_emb, score, loss
 
 
