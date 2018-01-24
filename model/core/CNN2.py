@@ -128,9 +128,10 @@ class CNN2(object):
             # output socre
             with tf.variable_scope('output'):
                 w_output = tf.get_variable('w_output', [hidden_dim, 1], initializer=self.weight_initializer)
-                b_output = tf.get_variable('b_output', [1], initializer=self.const_initializer)
-                wx_b_plus = tf.matmul(tf.reshape(x_label_plus_b, [-1, hidden_dim]), w_output) + b_output
-                score = tf.reshape(wx_b_plus, [-1, self.output_dim])
+                b_output = tf.get_variable('b_output', [self.output_dim], initializer=self.const_initializer)
+                wx_output = tf.reshape(tf.matmul(tf.reshape(x_label_plus_b, [-1, hidden_dim]), w_output), [-1, self.output_dim])
+                score = wx_output + b_output
+                #score = tf.reshape(wx_b_plus, [-1, self.output_dim])
                 # score: [batch_size, output_dim]
         return score
 
