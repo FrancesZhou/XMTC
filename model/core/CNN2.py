@@ -10,15 +10,15 @@ import numpy as np
 import tensorflow as tf
 
 class CNN_comp(object):
-    def __init__(self, max_seq_len, output_dim, topk, word_embedding, filter_sizes, label_embedding, num_classify_hidden, args):
+    def __init__(self, max_seq_len, output_dim, word_embedding, filter_sizes, label_embedding, hidden_dim, args):
         self.max_seq_len = max_seq_len
         self.output_dim = output_dim
-        self.topk = topk
+        #self.topk = topk
         self.word_embedding_dim = word_embedding.shape[-1]
         self.filter_sizes = filter_sizes
         self.num_filters = args.num_filters
         self.pooling_units = args.pooling_units
-        self.num_classify_hidden = num_classify_hidden
+        self.hidden_dim = hidden_dim
         self.label_embedding_dim = label_embedding.shape[-1]
         #self.batch_size = batch_size
         self.dropout_keep_prob = args.dropout_keep_prob
@@ -106,6 +106,34 @@ class CNN_comp(object):
         # wf_b_plus: [batch_size, output_dim]
         return wf_b_plus
 
+    def score(self, x_emb, all_num_filters, label_embeddings, label_embedding_dim, hidden_dim):
+        # x_emb: [batch_size, all_num_filters]
+        # label_embeddings: [batch_size, output_dim, label_embedding_dim]
+        with tf.variable_scope('socre'):
+            with tf.variable_scope('x-embedding'):
+                w_x = tf.get_variable('w_x', [all_num_filters, hidden_dim], initializer=self.weight_initializer)
+                # x_emb: [batch_size, all_num_filters]
+                x_project = tf.matmul(x_emb, w_x)
+                # x_project : [batch_size, hidden_dim]
+            with tf.variable_scope('label'):
+                w_label = tf.get_variable('w_label', [label_embedding_dim, hidden_dim], initializer=self.weight_initializer)
+                # label_embedding: [batch_size, output_dim, label_embedding_dim]
+                label_project = tf.reshape(tf.matmul(tf.reshape(label_embeddings, [-1, label_embedding_dim]), w_label), [-1, self.output_dim, hidden_dim])
+                # label_project : [batch_size, output_dim, hidden_dim]
+            b = tf.get_variable('b', [hidden_dim], initializer=self.const_initializer)
+            x_label_plus = tf.add(tf.tile(tf.expand_dims(x_project, 1), [1, self.output_dim, 1]),
+                                  label_project)
+            x_label_plus_b = x_label_plus + b
+            # x_label_plus_b: [batch_size, output_dim, hidden_dim]
+            # output socre
+            with tf.variable_scope('output'):
+                w_output = tf.get_variable('w_output', [hidden_dim, 1], initializer=self.weight_initializer)
+                b_output = tf.get_variable('b_output', [1], initializer=self.const_initializer)
+                wx_b_plus = tf.matmul(tf.reshape(x_label_plus_b, [-1, hidden_dim]), w_output) + b_output
+                score = tf.reshape(wx_b_plus, [-1, self.output_dim])
+                # score: [batch_size, output_dim]
+        return score
+
     def build_model(self):
         # x: [batch_size, self.max_seq_len]
         # y: [batch_size, output_dim]
@@ -119,9 +147,8 @@ class CNN_comp(object):
         # x: [batch_size, self.max_seq_len, word_embedding_dim, 1]
         y = self.y
         # dropout
-        #x_expand = tf.nn.dropout(x_expand, keep_prob=0.25)
-        conv_outputs = []
-        conv_atten_outputs = []
+        # x_expand = tf.nn.dropout(x_expand, keep_prob=0.25)
+        max_pool_outputs = []
         for i, filter_size in enumerate(self.filter_sizes):
             with tf.name_scope('convolution-pooling-{0}'.format(filter_size)) as name_scope:
                 # ============= convolution ============
@@ -136,15 +163,18 @@ class CNN_comp(object):
                 pool_emb = tf.nn.max_pool(conv_b, ksize=[1, self.max_seq_len-filter_size+1, 1, 1],
                                           strides=[1, 1, 1, 1], padding='VALID', name='max-pooling')
                 # pool_emb: [batch_size, 1, 1, num_filters]
-                conv_outputs.append(tf.squeeze(pool_emb, [1, 2]))
-                # ============= dynamic max pooling =================
+                max_pool_outputs.append(tf.squeeze(pool_emb, [1, 2]))
+                # ============== dynamic max pooling =================
+                '''
                 pool_size = (self.max_seq_len - filter_size + 1) // self.pooling_units
                 pool_out = tf.nn.max_pool(conv_b, ksize=[1, pool_size, 1, 1],
                                           strides=[1, pool_size, 1, 1], padding='VALID', name='dynamic-max-pooling')
                 # pool_out: [batch_size, pooling_units, 1, num_filters]
+                dynamic_pool_outputs.append(tf.squeeze(pool_out, [-2]))
+                '''
                 # ============= attention ===============
+                '''
                 pool_squeeze = tf.squeeze(pool_out, [-2])
-                #print [self.batch_size, self.pooling_units, self.num_filters]
                 print [None, self.pooling_units, self.num_filters]
                 print pool_squeeze.get_shape().as_list()
                 num_hiddens = (self.max_seq_len - filter_size + 1) // pool_size
@@ -155,21 +185,32 @@ class CNN_comp(object):
                 # [batch_size, output_dim, hidden_dim]
                 # l_feature: [batch_size, output_dim, num_filters]
                 conv_atten_outputs.append(l_feature)
-        x_emb = tf.concat(conv_outputs, -1)
-        all_features = tf.concat(conv_atten_outputs, -1)
+                '''
+        x_emb = tf.concat(max_pool_outputs, -1)
+        all_num_filters = self.num_filters * len(self.filter_sizes)
+        score = self.score(x_emb, all_num_filters, label_embeddings, self.label_embedding_dim, self.hidden_dim)
+        # all_features = tf.concat(conv_atten_outputs, -1)
         # all_features: [batch_size, output_dim, all_num_filters]
         # ------------- dropout ------------
         # with tf.name_scope('dropout'):
         #     all_features = tf.nn.dropout(all_features, keep_prob=self.dropout_keep_prob)
         # ------------- competitive ----------------
-        all_num_filters = self.num_filters * len(self.filter_sizes)
-        comp_all_features = self.competitive_layer(all_num_filters, all_features, self.topk)
+        # comp_all_features = self.competitive_layer(all_num_filters, all_features, self.topk)
         # comp_all_features : [batch_size, output_dim, all_num_filters]
         # output
-        y_ = self.output_layer(x_emb, comp_all_features, all_num_filters)
+        #y_ = self.output_layer(x_emb, comp_all_features, all_num_filters)
         # loss
-        loss = tf.losses.sigmoid_cross_entropy(y, y_)
-        return x_emb, y_, loss
+        # loss = tf.losses.sigmoid_cross_entropy(y, y_)
+        # rank loss
+        # y: [batch_size, output_dim]
+        # score: [batch_size, output_dim]
+        y_pair = tf.tile(tf.expand_dims(y, -1), [1, 1, self.output_dim]) - tf.tile(tf.expand_dims(y, 1), [1, self.output_dim, 1])
+        score_pair = tf.tile(tf.expand_dims(score, -1), [1, 1, self.output_dim]) - tf.tile(tf.expand_dims(score, 1), [1, self.output_dim, 1])
+        # pair: [batch_size, output_dim, output_dim]
+        mask = tf.tile(tf.ones([1, self.output_dim, self.output_dim]) - tf.diag(tf.ones([self.output_dim])),
+                       [self.output_dim, 1, 1])
+        loss = tf.reduce_mean(mask * tf.nn.sigmoid_cross_entropy_with_logits(logits=score_pair, labels=y_pair))
+        return x_emb, score, loss
 
 
 
