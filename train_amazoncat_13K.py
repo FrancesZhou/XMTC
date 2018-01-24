@@ -15,7 +15,7 @@ from model.core.biLSTM import biLSTM
 from model.core.LSTM import LSTM
 from model.core.CNN import CNN
 from model.core.XML_CNN import XML_CNN
-from model.core.CNN2 import CNN_comp
+from model.core.CNN2 import CNN2
 from model.core.solver import ModelSolver
 from model.utils.io_utils import load_pickle
 
@@ -123,7 +123,7 @@ def main():
         # CNN: sequence_length, word_embeddings, filter_sizes, label_embeddings, num_classify_hidden, batch_size, args
         # args.num_filters, args.pooling_units, args.batch_size, args.dropout_keep_prob
         # real_batch_size = args.batch_size*args.topk
-        model = CNN_comp(max_seq_len, args.num_candidate, args.topk, word_embeddings, filter_sizes, label_embeddings, 32, args)
+        model = CNN2(max_seq_len, args.num_candidate, word_embeddings, filter_sizes, label_embeddings, 32, args)
         args.if_use_seq_len = 0
     elif 'XML' in args.model:
         print 'build XML-CNN model ...'
