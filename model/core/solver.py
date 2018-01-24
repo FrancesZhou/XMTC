@@ -146,7 +146,7 @@ class ModelSolver(object):
                             tar_pid_y[batch_pid[j]] = y[j]
                             tar_pid_label_num[batch_pid[j]] = len(train_loader.label_data[batch_pid[j]])
                             pre_pid_score[batch_pid[j]] = y_p[j]
-                    val_results = precision_for_comp_score_vector(tar_pid_label_num, tar_pid_y, pre_pid_score)
+                    val_results = precision_for_score_vector(tar_pid_label_num, tar_pid_y, pre_pid_score)
 
                 # ====== output loss ======
                 w_text = 'at epoch ' + str(e) + ', train loss is ' + str(curr_loss) + '\n'

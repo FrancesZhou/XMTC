@@ -210,7 +210,7 @@ class CNN2(object):
         # pair: [batch_size, output_dim, output_dim]
         mask = tf.subtract(tf.ones([self.output_dim, self.output_dim]), tf.diag(tf.ones([self.output_dim])))
         # mask: [output_dim, output_dim]
-        loss_reg = tf.reduce_mean(tf.nn.sigmoid_cross_entropy(logits=score, labels=y))
+        loss_reg = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=score, labels=y))
         loss_rank = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=score_pair, labels=y_pair) * mask)
         loss = loss_rank + loss_reg
         return x_emb, score, loss
