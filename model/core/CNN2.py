@@ -202,17 +202,26 @@ class CNN2(object):
         #y_ = self.output_layer(x_emb, comp_all_features, all_num_filters)
         # loss
         # loss = tf.losses.sigmoid_cross_entropy(y, y_)
-        # rank loss
         # y: [batch_size, output_dim]
         # score: [batch_size, output_dim]
-        y_pair = tf.tile(tf.expand_dims(y, -1), [1, 1, self.output_dim]) - tf.tile(tf.expand_dims(y, 1), [1, self.output_dim, 1])
-        score_pair = tf.tile(tf.expand_dims(score, -1), [1, 1, self.output_dim]) - tf.tile(tf.expand_dims(score, 1), [1, self.output_dim, 1])
+        # ------------ rank loss -------------
+        # y_pair = tf.tile(tf.expand_dims(y, -1), [1, 1, self.output_dim]) - tf.tile(tf.expand_dims(y, 1), [1, self.output_dim, 1])
+        # score_pair = tf.tile(tf.expand_dims(score, -1), [1, 1, self.output_dim]) - tf.tile(tf.expand_dims(score, 1), [1, self.output_dim, 1])
         # pair: [batch_size, output_dim, output_dim]
-        mask = tf.subtract(tf.ones([self.output_dim, self.output_dim]), tf.diag(tf.ones([self.output_dim])))
+        # mask = tf.subtract(tf.ones([self.output_dim, self.output_dim]), tf.diag(tf.ones([self.output_dim])))
         # mask: [output_dim, output_dim]
         loss_reg = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=score, labels=y))
-        loss_rank = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=score_pair, labels=y_pair) * mask)
-        loss = loss_rank + loss_reg
+        # loss_rank = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=score_pair, labels=y_pair) * mask)
+        pos_indices = tf.where(tf.greater(y, tf.constant(0)))
+        neg_indices = tf.where(tf.equal(y, tf.constant(0)))
+        sigmoid_score = tf.sigmoid(score)
+        pos_score = tf.sparse_to_dense(pos_indices, tf.shape(y), tf.gather_nd(sigmoid_score, pos_indices), default_value=0.,
+                                       validate_indices=False)
+        neg_score = tf.sparse_to_dense(neg_indices, tf.shape(y), tf.gather_nd(sigmoid_score, neg_indices), default_value=0.,
+                                       validate_indices=False)
+        loss_sep_rank = tf.max(tf.constant(0), 1 - tf.reduce_min(pos_score, -1) + tf.reduce_max(neg_score, -1))
+        #loss = loss_rank + loss_reg
+        loss = tf.reduce_mean(loss_sep_rank) + loss_reg
         return x_emb, score, loss
 
 
