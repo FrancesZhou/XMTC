@@ -74,8 +74,9 @@ class ModelSolver(object):
                 pretrained_model_path = self.model_path + self.pretrained_model
                 saver.restore(sess, pretrained_model_path)
             #val_loss = 0
+            train_loader.reset_data()
             for e in range(self.n_epochs):
-                train_loader.reset_data()
+                #train_loader.reset_data()
                 print '========== begin epoch ' + str(e) + '==========='
                 curr_loss = 0
                 val_loss = 0
