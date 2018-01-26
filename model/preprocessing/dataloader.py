@@ -631,7 +631,7 @@ class DataLoader4():
                 sample = items
         except KeyError:
             neg_set = list(set(self.pids) - set(self.label_pos_pid[label]))
-            sample = np.random.choice(neg_set, num)
+            sample = np.random.choice(neg_set, num).tolist()
         return sample
 
     def reset_data(self):
