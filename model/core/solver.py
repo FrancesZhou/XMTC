@@ -16,7 +16,7 @@ from sklearn.neighbors import NearestNeighbors
 # from biLSTM.preprocessing.preprocessing import batch_data, get_max_seq_len, construct_train_test_corpus, \
 #     generate_labels_from_file, generate_label_pair_from_file
 # from biLSTM.utils.io_utils import load_pickle, write_file, load_txt
-from model.utils.op_utils import ndcg_at_k, precision_for_label_vector, precision_for_all, results_for_score_vector
+from model.utils.op_utils import ndcg_at_k, precision_for_pre_label, precision_for_all, results_for_score_vector
 from model.utils.io_utils import load_pickle, dump_pickle
 
 
