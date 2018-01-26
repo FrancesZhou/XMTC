@@ -520,8 +520,8 @@ class DataLoader5():
         return batch_pid, batch_x, batch_y
 
 
-# for propensity-loss dataloader
-class DataLoader4():
+# for propensity-loss train dataloader
+class TrainDataLoader():
     def __init__(self, doc_wordID_data, label_data,
                  candidate_label_data,
                  label_dict, label_prop,
@@ -646,3 +646,67 @@ class DataLoader4():
         np.random.shuffle(self.pid_label_y)
         # validate
         _, self.val_pids = train_test_split(self.pids, test_size=0.1)
+
+# for propensity-loss test dataloader
+class TestDataLoader():
+    def __init__(self, doc_wordID_data, label_data,
+                 candidate_label_data,
+                 label_dict, label_prop,
+                 num_pos, num_neg,
+                 max_seq_len=3000):
+        self.doc_wordID_data = doc_wordID_data
+        self.label_data = label_data
+        self.candidate_label_data = candidate_label_data
+        self.doc_length = {}
+        self.pids = self.label_data.keys()
+        self.label_dict = label_dict
+        self.label_prop = label_prop
+        self.all_labels = label_dict.keys()
+        self.num_pos = num_pos
+        self.num_neg = num_neg
+        self.label_pos_pid = {}
+        self.label_neg_pid = {}
+        self.candidate_label_embedding_id = {}
+        self.candidate_label_y = {}
+        self.max_seq_len = max_seq_len
+        self.train_pids = []
+        self.val_pids = []
+        self.pid_label_y = []
+        self.initialize_dataloader()
+
+    def initialize_dataloader(self):
+        print 'num of doc:             ' + str(len(self.doc_wordID_data))
+        print 'num of y:               ' + str(len(self.label_data))
+        print 'num of candidate_label: ' + str(len(self.candidate_label_data))
+        # doc_token_data consists of wordIDs in vocab.
+        for pid in self.pids:
+            wordID_seq = self.doc_wordID_data[pid]
+            seq_len = min(len(wordID_seq), self.max_seq_len)
+            self.doc_length[pid] = seq_len
+            padding_len = self.max_seq_len - seq_len
+            x = np.array(wordID_seq, dtype=int) + 1
+            if padding_len > 0:
+                x = np.concatenate((x, np.zeros(padding_len)))
+            self.doc_wordID_data[pid] = x[:self.max_seq_len]
+            # labels
+            candidate_label = self.candidate_label_data[pid]
+            true_labels = self.label_data[pid]
+            # candidate label for validation
+            self.candidate_label_embedding_id[pid] = np.zeros(len(candidate_label))
+            self.candidate_label_y[pid] = np.zeros(len(candidate_label))
+            for j in range(len(candidate_label)):
+                l_ = candidate_label[j]
+                self.candidate_label_embedding_id[pid][j] = self.label_dict[l_]
+                if l_ in true_labels:
+                    self.candidate_label_y[pid][j] = 1
+
+    def get_pid_x(self, pid):
+        candidate_labels = self.candidate_label_data[pid]
+        batch_x = [self.doc_wordID_data[pid]] * len(candidate_labels)
+        batch_y = self.candidate_label_y[pid]
+        batch_length = [self.doc_length[pid]] * len(candidate_labels)
+        batch_label_embedding_id = self.candidate_label_embedding_id[pid]
+        batch_label_prop = [self.label_prop[e] for e in candidate_labels]
+        return pid, batch_x, batch_y, batch_length, batch_label_embedding_id, batch_label_prop
+
+
