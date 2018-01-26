@@ -605,7 +605,7 @@ class DataLoader4():
         batch_y = pid_label_y[:, 2]
         return batch_x, batch_y, batch_length, batch_label_embedding_id
 
-    def get_fixed_length_samples(self, items, num):
+    def get_fixed_length_pos_samples(self, items, num):
         length = len(items)
         if length < num:
             sample = items
@@ -617,10 +617,27 @@ class DataLoader4():
             sample = items
         return sample
 
+    def get_fixed_length_neg_samples(self, label, num):
+        try:
+            items = self.label_neg_pid[label]
+            length = len(items)
+            if length < num:
+                sample = items
+                pad_sample = np.random.choice(items, num-length)
+                sample = sample + pad_sample.tolist()
+            elif length > num:
+                sample = random.sample(items, num)
+            else:
+                sample = items
+        except KeyError:
+            neg_set = list(set(self.pids) - set(self.label_pos_pid[label]))
+            sample = np.random.choice(neg_set, num)
+        return sample
+
     def reset_data(self):
         for label in self.all_labels:
-            pos_pid = self.get_fixed_length_samples(self.label_pos_pid[label], self.num_pos)
-            neg_pid = self.get_fixed_length_samples(self.label_neg_pid[label], self.num_neg)
+            pos_pid = self.get_fixed_length_pos_samples(self.label_pos_pid[label], self.num_pos)
+            neg_pid = self.get_fixed_length_neg_samples(label, self.num_neg)
             pids = pos_pid + neg_pid
             stack_label = [label] * len(pids)
             y = [1] * self.num_pos + [0] * self.num_neg
