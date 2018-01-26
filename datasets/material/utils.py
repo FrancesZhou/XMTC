@@ -78,7 +78,7 @@ def get_wordID_from_vocab(text, vocab):
             continue
     return token_indices
 
-def get_wordID_from_vocab_dict(text, vocab_dict):
+def get_wordID_from_vocab_dict_for_raw_text(text, vocab_dict):
     all_tokens = re.split('([A-Za-z]+)|([0-9]+)|(\W)', text)
     all_tokens = filter(not_empty, all_tokens)
     all_tokens = [e.strip() for e in all_tokens]
@@ -92,8 +92,8 @@ def get_wordID_from_vocab_dict(text, vocab_dict):
             continue
     return token_indices
 
-def get_wordID_from_vocab_dict2(text, vocab_dict):
-    #all_tokens = [e.strip() for e in all_tokens]
+def get_wordID_from_vocab_dict_for_token_list(text, vocab_dict):
+    # all_tokens = [e.strip() for e in all_tokens]
     # check if tokens are in the vocab
     token_indices = []
     for t in text:

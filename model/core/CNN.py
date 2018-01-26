@@ -18,7 +18,6 @@ class CNN(object):
         self.pooling_units = args.pooling_units
         self.num_classify_hidden = num_classify_hidden
         self.label_embedding_dim = label_embedding.shape[-1]
-        #self.batch_size = batch_size
         self.dropout_keep_prob = args.dropout_keep_prob
         #
         self.weight_initializer = tf.contrib.layers.xavier_initializer()
@@ -35,7 +34,7 @@ class CNN(object):
         # self.y = tf.placeholder(tf.float32, [self.batch_size, 2])
         # self.label_embedding_id = tf.placeholder(tf.int32, [self.batch_size])
         self.x = tf.placeholder(tf.int32, [None, self.max_seq_len])
-        self.y = tf.placeholder(tf.float32, [None, 2])
+        self.y = tf.placeholder(tf.float32, [None])
         self.label_embedding_id = tf.placeholder(tf.int32, [None])
 
     def attention_layer(self, hidden_states, label_embeddings, num_hiddens, hidden_dim, label_embedding_dim, name_scope=None):
@@ -70,27 +69,30 @@ class CNN(object):
                 # label_embedding: [batch_size, label_embedding_dim]
                 label_att = tf.matmul(label_embeddings, w_label)
             b = tf.get_variable('b', [self.num_classify_hidden], initializer=self.const_initializer)
-            fea_label_plus = tf.nn.relu(fea_att + label_att) + b
-            # fea_label_plus: [batch_size, num_classify_hidden]
+            fea_label_plus = tf.add(fea_att, label_att)
+            fea_label_plus_b = tf.nn.relu(tf.add(fea_label_plus, b))
+            # fea_label_plus_b: [batch_size, num_classify_hidden]
             #
             with tf.variable_scope('classify'):
-                w_classify = tf.get_variable('w_classify', [self.num_classify_hidden, 2], initializer=self.weight_initializer)
-                b_classify = tf.get_variable('b_classify', [2], initializer=self.const_initializer)
-                wz_b_plus = tf.matmul(fea_label_plus, w_classify) + b_classify
-            # wz_b_plus: [batch_size, 2]
-            #return tf.nn.relu(wz_b_plus)
-            #return wz_b_plus
-            return tf.nn.softmax(wz_b_plus, -1)
-            #return tf.nn.softmax(tf.nn.relu(wz_b_plus), -1)
+                w_classify = tf.get_variable('w_classify', [self.num_classify_hidden, 1], initializer=self.weight_initializer)
+                #b_classify = tf.get_variable('b_classify', [1], initializer=self.const_initializer)
+                out = tf.matmul(fea_label_plus_b, w_classify)
+                # out = tf.add(wz_b_plus, b_classify)
+                # out: [batch_size, 1]
+        return tf.squeeze(out)
+        #return tf.nn.relu(wz_b_plus)
+        #return wz_b_plus
+        #return tf.nn.softmax(out, -1)
+        #return tf.nn.softmax(tf.nn.relu(wz_b_plus), -1)
 
     def build_model(self):
-        # ori --- x: [batch_size, self.max_seq_len, self.embedding_dim]
         # x: [batch_size, self.max_seq_len]
-        # y: [batch_size, 2]
-        # x = self.x
+        # y: [batch_size]
+        # label_embedding_id: [batch_size]
         x = tf.nn.embedding_lookup(self.word_embedding, self.x)
         # x: [batch_size, self.max_seq_len, word_embedding_dim]
         label_embeddings = tf.nn.embedding_lookup(self.label_embedding, self.label_embedding_id)
+        # label_embeddings: [batch_size, label_embedding_dim]
         x_expand = tf.expand_dims(x, axis=-1)
         y = self.y
         # dropout
@@ -121,12 +123,10 @@ class CNN(object):
                 # ============= attention ===============
                 pool_squeeze = tf.squeeze(pool_out, [-2])
                 # pool_squeeze: [batch_size, pooling_units, num_filters]
-                #print [self.batch_size, self.pooling_units, self.num_filters]
                 print [None, self.pooling_units, self.num_filters]
                 print pool_squeeze.get_shape().as_list()
                 num_hiddens = (self.max_seq_len - filter_size + 1) // pool_size
                 print num_hiddens
-                #tf.assert_equal(pool_squeeze.get_shape().as_list(), [self.batch_size, self.pooling_units, self.num_filters])
                 l_feature = self.attention_layer(pool_squeeze, label_embeddings, num_hiddens, self.num_filters, self.label_embedding_dim, name_scope=name_scope)
                 # l_feature: [batch_size, num_filters]
                 conv_atten_outputs.append(l_feature)
@@ -139,12 +139,13 @@ class CNN(object):
             fea_dim = fea_dropout.get_shape().as_list()[-1]
             y_ = self.classification_layer(fea_dropout, label_embeddings, fea_dim, self.label_embedding_dim)
         # loss
-        loss = tf.losses.sigmoid_cross_entropy(y, y_)
+        # loss = tf.losses.sigmoid_cross_entropy(y, y_)
+        loss = tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(labels=y, logits=y_))
         # if self.use_propensity:
         #     loss = tf.losses.sigmoid_cross_entropy(y, y_, weights=tf.expand_dims(self.label_prop, -1))
         # else:
         #     loss = tf.losses.sigmoid_cross_entropy(y, y_)
-        return x_emb, y_[:, 1], loss
+        return x_emb, y_, loss
 
 
 

@@ -30,20 +30,20 @@ def main():
     args = parse.parse_args()
 
     data_path = 'data/deeplearning_data/adjacent_labels/all_para/'
-    train_title_label = load_pickle(data_path + 'train_title_label.pkl')
+    train_pid_label = load_pickle(data_path + 'train_label.pkl')
 
-    train_label = train_title_label.values()
+    train_label = train_pid_label.values()
     train_label = np.concatenate(train_label).tolist()
     label_frequency = dict(Counter(train_label))
     labels = label_frequency.keys()
     fre = np.array(label_frequency.values())
 
-    N = len(train_title_label)
+    N = len(train_pid_label)
     C = (math.log(N)-1) * (args.B + 1)**args.A
     inv_prop = 1 + C * (fre + args.B)**(-args.A)
 
     inv_prop_dict = dict(zip(labels, inv_prop.tolist()))
-    dump_pickle(inv_prop_dict, data_path + 'inv_prop.pkl')
+    dump_pickle(inv_prop_dict, data_path + 'inv_prop_dict.pkl')
 
 
 

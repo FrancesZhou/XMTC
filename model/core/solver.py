@@ -16,7 +16,7 @@ from sklearn.neighbors import NearestNeighbors
 # from biLSTM.preprocessing.preprocessing import batch_data, get_max_seq_len, construct_train_test_corpus, \
 #     generate_labels_from_file, generate_label_pair_from_file
 # from biLSTM.utils.io_utils import load_pickle, write_file, load_txt
-from model.utils.op_utils import ndcg_at_k, precision_for_label_vector, precision_for_all, precision_for_score_vector
+from model.utils.op_utils import ndcg_at_k, precision_for_label_vector, precision_for_all, results_for_score_vector
 from model.utils.io_utils import load_pickle, dump_pickle
 
 
@@ -75,9 +75,12 @@ class ModelSolver(object):
                 saver.restore(sess, pretrained_model_path)
             #val_loss = 0
             #train_loader.reset_data()
-            for e in range(self.n_epochs):
+            num_train_points = len(train_loader.pid_label_y)
+            train_batches = xrange(math.ceil(num_train_points * 1.0 / self.batch_size))
+            print 'num of train batches:    %d' % len(train_batches)
+            for e in xrange(self.n_epochs):
                 train_loader.reset_data()
-                print '========== begin epoch ' + str(e) + '==========='
+                print '========== begin epoch %d ===========' % e
                 curr_loss = 0
                 val_loss = 0
                 if self.if_output_all_labels:
@@ -101,13 +104,11 @@ class ModelSolver(object):
                 else:
                     # '''
                     # ------------- train ----------------
-                    train_batches = np.arange(math.ceil(len(train_loader.train_pids) * 1.0 / self.batch_size), dtype=int)
-                    print 'num of train batches:    ' + str(len(train_batches))
                     for i in train_batches:
                         if i % self.show_batches == 0:
-                            print 'batch ' + str(i)
-                        batch_pid, _, x, y, seq_l, label_emb = train_loader.next_batch(train_loader.train_pids, i*self.batch_size, (i+1)*self.batch_size)
-                        if len(batch_pid) == 0:
+                            print 'batch %d' % i
+                        x, y, seq_l, label_emb = train_loader.next_batch(num_train_points, i*self.batch_size, (i+1)*self.batch_size)
+                        if len(y) == 0:
                             continue
                         if self.if_use_seq_len:
                             feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
@@ -121,17 +122,17 @@ class ModelSolver(object):
                         _, l_ = sess.run([train_op, loss], feed_dict)
                         curr_loss += l_
                     # -------------- validate -------------
-                    val_batches = np.arange(math.ceil(len(train_loader.val_pids) * 1.0 / self.batch_size), dtype=int)
-                    print 'num of validate batches: ' + str(len(val_batches))
+                    print 'num of validate docs: %d' % len(train_loader.val_pids)
+                    pre_pid_prop = {}
                     pre_pid_score = {}
                     tar_pid_y = {}
-                    tar_pid_label_num = {}
-                    for i in val_batches:
+                    tar_pid_true_label_prop = {}
+                    i = 0
+                    for pid in train_loader.val_pids:
+                        i += 1
                         if i % self.show_batches == 0:
-                            print 'batch ' + str(i)
-                        batch_pid, _, x, y, seq_l, label_emb = train_loader.next_batch(train_loader.val_pids, i*self.batch_size, (i+1)*self.batch_size)
-                        if len(batch_pid) == 0:
-                            continue
+                            print 'batch %d' % i
+                        pid, x, y, seq_l, label_emb, label_prop = train_loader.get_pid_x(pid)
                         if self.if_use_seq_len:
                             feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
                                          self.model.seqlen: np.array(seq_l),
@@ -143,20 +144,21 @@ class ModelSolver(object):
                                          }
                         y_p, l_ = sess.run([y_, loss], feed_dict)
                         val_loss += l_
-                        for j in range(len(batch_pid)):
-                            tar_pid_y[batch_pid[j]] = y[j]
-                            tar_pid_label_num[batch_pid[j]] = len(train_loader.label_data[batch_pid[j]])
-                            pre_pid_score[batch_pid[j]] = y_p[j]
-                    val_results = precision_for_score_vector(tar_pid_label_num, tar_pid_y, pre_pid_score)
+                        # prediction
+                        tar_pid_y[pid] = y
+                        tar_pid_true_label_prop[pid] = [train_loader.label_prop[e] for e in train_loader.label_data[pid]]
+                        pre_pid_score[pid] = y_p
+                        pre_pid_prop[pid] = label_prop
+                    val_results = results_for_score_vector(tar_pid_true_label_prop, tar_pid_y, pre_pid_score, pre_pid_prop)
 
                 # ====== output loss ======
-                w_text = 'at epoch ' + str(e) + ', train loss is ' + str(curr_loss) + '\n'
+                w_text = 'at epoch %d, train loss is %f \n' % (e, curr_loss)
                 print w_text
                 o_file.write(w_text)
-                w_text = 'at epoch ' + str(e) + ', val loss is ' + str(val_loss) + '\n'
+                w_text = 'at epoch %d, val loss is %f \n' % (e, val_loss)
                 print w_text
                 o_file.write(w_text)
-                w_text = 'at epoch ' + str(e) + ', val_results: ' + str(val_results) + '\n'
+                w_text = 'at epoch %d, val_results: ' % e + val_results
                 print w_text
                 o_file.write(w_text)
                 # ====== save model ========
@@ -164,7 +166,6 @@ class ModelSolver(object):
                 saver.save(sess, save_name, global_step=e+1)
                 print 'model-%s saved.' % (e+1)
                 # '''
-
                 # ----------------- test ---------------------
                 if e % 2 == 0:
                     print '=============== test ================'
@@ -195,20 +196,17 @@ class ModelSolver(object):
                                 #pre_pid_score[batch_pid[j]] = heapq.nlargest
                         mean_metric = precision_for_label_vector(test_loader.label_data, pre_pid_score)
                     else:
+                        pre_pid_prop = {}
                         pre_pid_score = {}
                         tar_pid_y = {}
-                        tar_pid_label_num = {}
-                        test_batches = np.arange(math.ceil(len(test_loader.pids) * 1.0 / self.batch_size),
-                                                  dtype=int)
-                        print 'num of test batches:    ' + str(len(test_batches))
-                        for i in test_batches:
+                        tar_pid_true_label_prop = {}
+                        print 'num of test pids:    %d' % len(test_loader.pids)
+                        i = 0
+                        for pid in test_loader.pids:
+                            i += 1
                             if i % self.show_batches == 0:
                                 print 'batch ' + str(i)
-                            batch_pid, batch_label, x, y, seq_l, label_emb = test_loader.next_batch(test_loader.pids,
-                                                                                           i * self.batch_size,
-                                                                                           (i + 1) * self.batch_size)
-                            if len(batch_pid) == 0:
-                                continue
+                            pid, x, y, seq_l, label_emb, label_prop = test_loader.get_pid_x(pid)
                             if self.if_use_seq_len:
                                 feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
                                              self.model.seqlen: np.array(seq_l),
@@ -221,22 +219,23 @@ class ModelSolver(object):
                             y_p, l_ = sess.run([y_, loss], feed_dict)
                             test_loss += l_
                             # get all predictions
-                            for j in range(len(batch_pid)):
-                                tar_pid_y[batch_pid[j]] = y[j]
-                                tar_pid_label_num[batch_pid[j]] = len(test_loader.label_data[batch_pid
-                                                                      [j]])
-                                pre_pid_score[batch_pid[j]] = y_p[j]
-                        mean_metric = precision_for_score_vector(tar_pid_label_num, tar_pid_y, pre_pid_score)
-                    #print len(mean_metric)
-                    w_text = 'at epoch' + str(e) + ', test loss is ' + str(test_loss) + '\n'
+                            # prediction
+                            tar_pid_y[pid] = y
+                            tar_pid_true_label_prop[pid] = [train_loader.label_prop[e] for e in
+                                                            train_loader.label_data[pid]]
+                            pre_pid_score[pid] = y_p
+                            pre_pid_prop[pid] = label_prop
+                        test_results = results_for_score_vector(tar_pid_true_label_prop, tar_pid_y, pre_pid_score,
+                                                                   pre_pid_prop)
+                    w_text = 'at epoch %d, test loss is %f \n' % (e, test_loss)
                     print w_text
                     o_file.write(w_text)
-                    p1_txt = 'precision@1: ' + str(mean_metric[0]) + '\n'
-                    p3_txt = 'precision@3: ' + str(mean_metric[1]) + '\n'
-                    p5_txt = 'precision@5: ' + str(mean_metric[2]) + '\n'
-                    ndcg1_txt = 'ndcg@1: ' + str(mean_metric[3]) + '\n'
-                    ndcg3_txt = 'ndcg@3: ' + str(mean_metric[4]) + '\n'
-                    ndcg5_txt = 'ndcg@5: ' + str(mean_metric[5]) + '\n'
+                    p1_txt = 'prec_wt@1: %f \n' % test_results[0]
+                    p3_txt = 'prec_wt@3: %f \n' % test_results[1]
+                    p5_txt = 'prec_wt@5: %f \n' % test_results[2]
+                    ndcg1_txt = 'ndcg_wt@1: %f \n' % test_results[3]
+                    ndcg3_txt = 'ndcg_wt@3: %f \n' % test_results[4]
+                    ndcg5_txt = 'ndcg_wt@5: %f \n' % test_results[5]
                     o_file.write(p1_txt + p3_txt + p5_txt + ndcg1_txt + ndcg3_txt + ndcg5_txt)
                     print p1_txt + p3_txt + p5_txt + ndcg1_txt + ndcg3_txt + ndcg5_txt
             # save model
