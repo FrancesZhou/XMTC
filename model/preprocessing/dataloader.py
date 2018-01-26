@@ -609,8 +609,8 @@ class DataLoader4():
         length = len(items)
         if length < num:
             sample = items
-            pad_sample = random.sample(items, num-length)
-            sample = sample + pad_sample
+            pad_sample = np.random.choice(items, num-length)
+            sample = sample + pad_sample.tolist()
         elif length > num:
             sample = random.sample(items, num)
         else:
