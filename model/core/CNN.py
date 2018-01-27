@@ -36,6 +36,7 @@ class CNN(object):
         self.x = tf.placeholder(tf.int32, [None, self.max_seq_len])
         self.y = tf.placeholder(tf.float32, [None])
         self.label_embedding_id = tf.placeholder(tf.int32, [None])
+        self.label_prop = tf.placeholder(tf.float32, [None])
 
     def attention_layer(self, hidden_states, label_embeddings, num_hiddens, hidden_dim, label_embedding_dim, name_scope=None):
         # hidden_states: [batch_size, num_hiddens, hidden_dim]
@@ -139,8 +140,11 @@ class CNN(object):
             fea_dim = fea_dropout.get_shape().as_list()[-1]
             y_ = self.classification_layer(fea_dropout, label_embeddings, fea_dim, self.label_embedding_dim)
         # loss
-        # loss = tf.losses.sigmoid_cross_entropy(y, y_)
-        loss = tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(labels=y, logits=y_))
+        # y: [batch_size]
+        #loss = tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(labels=y, logits=y_))
+        loss = tf.reduce_sum(
+            tf.multiply(tf.nn.sigmoid_cross_entropy_with_logits(labels=y, logits=y_), self.label_prop)
+        )
         # if self.use_propensity:
         #     loss = tf.losses.sigmoid_cross_entropy(y, y_, weights=tf.expand_dims(self.label_prop, -1))
         # else:

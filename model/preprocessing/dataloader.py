@@ -603,7 +603,8 @@ class TrainDataLoader():
         batch_label_embedding_id = [self.label_dict[e] for e in batch_label]
         batch_x = [self.doc_wordID_data[p] for p in batch_pid]
         batch_y = pid_label_y[:, 2]
-        return batch_x, batch_y, batch_length, batch_label_embedding_id
+        batch_label_prop = [self.label_prop[e] for e in batch_label]
+        return batch_x, batch_y, batch_length, batch_label_embedding_id, batch_label_prop
 
     def get_fixed_length_pos_samples(self, items, num):
         length = len(items)

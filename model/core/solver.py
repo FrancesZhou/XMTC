@@ -107,17 +107,19 @@ class ModelSolver(object):
                     for i in train_batches:
                         if i % self.show_batches == 0:
                             print 'batch %d' % i
-                        x, y, seq_l, label_emb = train_loader.next_batch(num_train_points, i*self.batch_size, (i+1)*self.batch_size)
+                        x, y, seq_l, label_emb, label_prop = train_loader.next_batch(num_train_points, i*self.batch_size, (i+1)*self.batch_size)
                         if len(y) == 0:
                             continue
                         if self.if_use_seq_len:
                             feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
                                          self.model.seqlen: np.array(seq_l),
-                                         self.model.label_embedding_id: np.array(label_emb, dtype=int)
+                                         self.model.label_embedding_id: np.array(label_emb, dtype=int),
+                                         self.model.label_prop: np.array(label_prop)
                                          }
                         else:
                             feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
-                                         self.model.label_embedding_id: np.array(label_emb, dtype=int)
+                                         self.model.label_embedding_id: np.array(label_emb, dtype=int),
+                                         self.model.label_prop: np.array(label_prop)
                                          }
                         _, l_ = sess.run([train_op, loss], feed_dict)
                         curr_loss += l_
@@ -136,11 +138,13 @@ class ModelSolver(object):
                         if self.if_use_seq_len:
                             feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
                                          self.model.seqlen: np.array(seq_l),
-                                         self.model.label_embedding_id: np.array(label_emb, dtype=int)
+                                         self.model.label_embedding_id: np.array(label_emb, dtype=int),
+                                         self.model.label_prop: np.array(label_prop)
                                          }
                         else:
                             feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
-                                         self.model.label_embedding_id: np.array(label_emb, dtype=int)
+                                         self.model.label_embedding_id: np.array(label_emb, dtype=int),
+                                         self.model.label_prop: np.array(label_prop)
                                          }
                         y_p, l_ = sess.run([y_, loss], feed_dict)
                         val_loss += l_
@@ -211,11 +215,13 @@ class ModelSolver(object):
                             if self.if_use_seq_len:
                                 feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
                                              self.model.seqlen: np.array(seq_l),
-                                             self.model.label_embedding_id: np.array(label_emb, dtype=int)
+                                             self.model.label_embedding_id: np.array(label_emb, dtype=int),
+                                             self.model.label_prop: np.array(label_prop)
                                              }
                             else:
                                 feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
-                                             self.model.label_embedding_id: np.array(label_emb, dtype=int)
+                                             self.model.label_embedding_id: np.array(label_emb, dtype=int),
+                                             self.model.label_prop: np.array(label_prop)
                                              }
                             y_p, l_ = sess.run([y_, loss], feed_dict)
                             test_loss += l_
