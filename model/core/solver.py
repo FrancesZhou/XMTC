@@ -76,7 +76,7 @@ class ModelSolver(object):
             #val_loss = 0
             #train_loader.reset_data()
             num_train_points = len(train_loader.pid_label_y)
-            train_batches = xrange(math.ceil(num_train_points * 1.0 / self.batch_size))
+            train_batches = xrange(int(math.ceil(num_train_points * 1.0 / self.batch_size)))
             print 'num of train batches:    %d' % len(train_batches)
             for e in xrange(self.n_epochs):
                 train_loader.reset_data()
@@ -146,7 +146,7 @@ class ModelSolver(object):
                         val_loss += l_
                         # prediction
                         tar_pid_y[pid] = y
-                        tar_pid_true_label_prop[pid] = [train_loader.label_prop[e] for e in train_loader.label_data[pid]]
+                        tar_pid_true_label_prop[pid] = [train_loader.label_prop[q] for q in train_loader.label_data[pid]]
                         pre_pid_score[pid] = y_p
                         pre_pid_prop[pid] = label_prop
                     val_results = results_for_score_vector(tar_pid_true_label_prop, tar_pid_y, pre_pid_score, pre_pid_prop)
@@ -158,7 +158,8 @@ class ModelSolver(object):
                 w_text = 'at epoch %d, val loss is %f \n' % (e, val_loss)
                 print w_text
                 o_file.write(w_text)
-                w_text = 'at epoch %d, val_results: ' % e + val_results
+                w_text = 'at epoch %d, val_results: ' % e
+                w_text = w_text + str(val_results)
                 print w_text
                 o_file.write(w_text)
                 # ====== save model ========
@@ -221,8 +222,8 @@ class ModelSolver(object):
                             # get all predictions
                             # prediction
                             tar_pid_y[pid] = y
-                            tar_pid_true_label_prop[pid] = [train_loader.label_prop[e] for e in
-                                                            train_loader.label_data[pid]]
+                            tar_pid_true_label_prop[pid] = [test_loader.label_prop[q] for q in
+                                                            test_loader.label_data[pid]]
                             pre_pid_score[pid] = y_p
                             pre_pid_prop[pid] = label_prop
                         test_results = results_for_score_vector(tar_pid_true_label_prop, tar_pid_y, pre_pid_score,

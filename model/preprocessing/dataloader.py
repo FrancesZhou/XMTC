@@ -595,7 +595,7 @@ class TrainDataLoader():
         return pid, batch_x, batch_y, batch_length, batch_label_embedding_id, batch_label_prop
 
     def next_batch(self, length, start, end):
-        end = min(len(length), end)
+        end = min(length, end)
         pid_label_y = self.pid_label_y[start:end]
         batch_pid = pid_label_y[:, 0]
         batch_label = pid_label_y[:, 1]
@@ -635,6 +635,7 @@ class TrainDataLoader():
         return sample
 
     def reset_data(self):
+        self.pid_label_y = []
         for label in self.all_labels:
             pos_pid = self.get_fixed_length_pos_samples(self.label_pos_pid[label], self.num_pos)
             neg_pid = self.get_fixed_length_neg_samples(label, self.num_neg)

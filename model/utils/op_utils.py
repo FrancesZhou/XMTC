@@ -123,7 +123,7 @@ def results_for_score_vector(tar_true_label_prop, tar_pid_y, pre_pid_score, pre_
         wts_p_3.append(np.mean(wts_r[:3]) / np.mean(opt_r[:3]))
         wts_p_5.append(np.mean(wts_r[:5]) / np.mean(opt_r[:5]))
         wts_ndcg_1.append(ndcg_at_k(wts_r, 1, 1) / ndcg_at_k(opt_r, 1, 1))
-        wts_ndcg_1.append(ndcg_at_k(wts_r, 3, 3) / ndcg_at_k(opt_r, 3, 3))
-        wts_ndcg_1.append(ndcg_at_k(wts_r, 5, 5) / ndcg_at_k(opt_r, 5, 5))
+        wts_ndcg_3.append(ndcg_at_k(wts_r, 3, 3) / ndcg_at_k(opt_r, 3, 3))
+        wts_ndcg_5.append(ndcg_at_k(wts_r, 5, 5) / ndcg_at_k(opt_r, 5, 5))
     return np.mean([wts_p_1, wts_p_3, wts_p_5, wts_ndcg_1, wts_ndcg_3, wts_ndcg_5], axis=1)
 
