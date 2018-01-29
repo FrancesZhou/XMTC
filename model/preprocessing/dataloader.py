@@ -748,7 +748,10 @@ class TrainDataLoader2():
                 x = np.concatenate((x, np.zeros(padding_len)))
             self.doc_wordID_data[pid] = x[:self.max_seq_len]
             # labels
-            candidate_label = self.candidate_label_data[pid].keys()
+            # self.candidate_label_data[pid] = dict(
+            #     sorted(self.candidate_label_data[pid].items(), key=lambda item: item[1], reverse=True)[:30]
+            # )
+            candidate_label, _ = zip(*(self.candidate_label_data[pid][:30]))
             pos_labels = self.label_data[pid]
             neg_labels = list(set(candidate_label) - set(pos_labels))
             for label in pos_labels:
@@ -772,7 +775,8 @@ class TrainDataLoader2():
         self.reset_data()
 
     def get_pid_x(self, pid):
-        candidate_labels, batch_count_score = zip(*(self.candidate_label_data[pid]).iteritems())
+        #candidate_labels, batch_count_score = zip(*(self.candidate_label_data[pid].iteritems()))
+        candidate_labels, batch_count_score = zip(*(self.candidate_label_data[pid][:30]))
         batch_x = [self.doc_wordID_data[pid]] * len(candidate_labels)
         batch_y = self.candidate_label_y[pid]
         batch_length = [self.doc_length[pid]] * len(candidate_labels)
@@ -872,7 +876,7 @@ class TestDataLoader2():
                 x = np.concatenate((x, np.zeros(padding_len)))
             self.doc_wordID_data[pid] = x[:self.max_seq_len]
             # labels
-            candidate_label = self.candidate_label_data[pid].keys()
+            candidate_label, _ = zip(*(self.candidate_label_data[pid][:30]))
             true_labels = self.label_data[pid]
             # candidate label for validation
             self.candidate_label_embedding_id[pid] = np.zeros(len(candidate_label))
@@ -885,7 +889,8 @@ class TestDataLoader2():
 
     def get_pid_x(self, pid):
         #candidate_labels = self.candidate_label_data[pid]
-        candidate_labels, batch_count_score = zip(*(self.candidate_label_data[pid]).iteritems())
+        #candidate_labels, batch_count_score = zip(*(self.candidate_label_data[pid]).iteritems())
+        candidate_labels, batch_count_score = zip(*(self.candidate_label_data[pid][:30]))
         batch_x = [self.doc_wordID_data[pid]] * len(candidate_labels)
         batch_y = self.candidate_label_y[pid]
         batch_length = [self.doc_length[pid]] * len(candidate_labels)
