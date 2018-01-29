@@ -149,7 +149,7 @@ class CNN(object):
         #     loss = tf.losses.sigmoid_cross_entropy(y, y_, weights=tf.expand_dims(self.label_prop, -1))
         # else:
         #     loss = tf.losses.sigmoid_cross_entropy(y, y_)
-        return x_emb, y_, loss
+        return x_emb, tf.sigmoid(y_), loss
 
 
 
