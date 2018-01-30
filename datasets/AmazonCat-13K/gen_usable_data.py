@@ -123,7 +123,7 @@ def get_train_test_data(vocab,
         wordID = get_wordID_from_vocab_dict_for_raw_text(text, vocab_dict)
         if not wordID:
             continue
-        train_doc_wordID[ind] = wordID
+        test_doc_wordID[ind] = wordID
         #
         #line = test_asin_label_fea[test_asin_map.index(t)]
         line = test_asin_label_fea[test_asin_map_dict[t]]
