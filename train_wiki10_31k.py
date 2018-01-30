@@ -161,7 +161,7 @@ def main():
     # test
     if args.test:
         print '================= begin testing...'
-        solver.test(args.pretrained_model_path, args.folder_path + args.model + '/test_outcome.txt')
+        solver.test(args.folder_path + args.model + '/' + args.pretrained_model_path, args.folder_path + args.model + '/test_outcome.txt')
 
     # predict
     if args.predict:
