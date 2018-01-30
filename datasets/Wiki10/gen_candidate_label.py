@@ -51,21 +51,33 @@ def get_candidate_labels(path, out_path, type, format):
         for i in xrange(len(train_titles)):
             pid = int(train_titles[i].strip())
             candidate_label_line = train_candidate_all[i].strip()
-            candidate_label_score = {}
-            for l_s in candidate_label_line.split(' ')[:30]:
+            temp = []
+            for l_s in candidate_label_line.split(' '):
                 l_, s_ = l_s.split(':')
-                ll = index_label[int(l_)]
-                candidate_label_score[ll] = float(s_)
-            train_candidate_labels[pid] = candidate_label_score
+                temp.append((l_, s_))
+            sorted_temp = sorted(temp, key=lambda e: e[1], reverse=True)
+            train_candidate_labels[pid] = dict(sorted_temp[:30])
+            # candidate_label_score = {}
+            # for l_s in candidate_label_line.split(' ')[:30]:
+            #     l_, s_ = l_s.split(':')
+            #     ll = index_label[int(l_)]
+            #     candidate_label_score[ll] = float(s_)
+            # train_candidate_labels[pid] = candidate_label_score
         for i in xrange(len(test_titles)):
             pid = int(test_titles[i].strip())
             candidate_label_line = test_candidate_all[i].strip()
-            candidate_label_score = {}
-            for l_s in candidate_label_line.split(' ')[:30]:
+            temp = []
+            for l_s in candidate_label_line.split(' '):
                 l_, s_ = l_s.split(':')
-                ll = index_label[int(l_)]
-                candidate_label_score[ll] = float(s_)
-            test_candidate_labels[pid] = candidate_label_score
+                temp.append((l_, s_))
+            sorted_temp = sorted(temp, key=lambda e: e[1], reverse=True)
+            train_candidate_labels[pid] = dict(sorted_temp[:30])
+            # candidate_label_score = {}
+            # for l_s in candidate_label_line.split(' ')[:30]:
+            #     l_, s_ = l_s.split(':')
+            #     ll = index_label[int(l_)]
+            #     candidate_label_score[ll] = float(s_)
+            # test_candidate_labels[pid] = candidate_label_score
 
     dump_pickle(train_candidate_labels, out_path + type + '_candidate/train_candidate_label.pkl')
     dump_pickle(test_candidate_labels, out_path + type + '_candidate/test_candidate_label.pkl')
