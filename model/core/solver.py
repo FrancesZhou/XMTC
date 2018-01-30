@@ -265,7 +265,7 @@ class ModelSolver(object):
             tf.global_variables_initializer().run()
             saver = tf.train.Saver(tf.global_variables())
             print 'load trained model...'
-            model_name = trained_model_path + 'model_final'
+            model_name = trained_model_path
             saver.restore(sess, model_name)
             # -------------- test -------------
             print 'begin testing...'
@@ -326,11 +326,11 @@ class ModelSolver(object):
                     tar_pid_true_label_prop[pid] = [test_loader.label_prop[q] for q in
                                                     test_loader.label_data[pid]]
                     # pre_pid_score[pid] = y_p
-                    pre_pid_score[pid] = np.multiply(np.power(y_p, 0.8), np.power(count_score, 0.2))
+                    pre_pid_score[pid] = np.multiply(np.power(y_p, 0), np.power(count_score, 1))
                     pre_pid_prop[pid] = label_prop
                 test_results = results_for_score_vector(tar_pid_true_label_prop, tar_pid_y, pre_pid_score,
                                                         pre_pid_prop)
-            w_text = 'at epoch %d, test loss is %f \n' % (e, test_loss)
+            w_text = 'test loss is %f \n' % test_loss
             print w_text
             o_file.write(w_text)
             p1_txt = 'prec_wt@1: %f \n' % test_results[0]
