@@ -14,10 +14,10 @@ from utils import load_pickle, dump_pickle, load_txt
 
 source_path = 'data/deeplearning_data/adjacent_labels/'
 des_path = 'data/baseline_data/adjacent_labels/'
-train_asin_label_file = source_path + 'train_asin_label.pkl'
-test_asin_label_file = source_path + 'test_asin_label.pkl'
-train_asin_feature_file = source_path + 'train_asin_feature.pkl'
-test_asin_feature_file = source_path + 'test_asin_feature.pkl'
+train_asin_label_file = source_path + 'train_label.pkl'
+test_asin_label_file = source_path + 'test_label.pkl'
+train_asin_feature_file = source_path + 'train_feature.pkl'
+test_asin_feature_file = source_path + 'test_feature.pkl'
 
 train_asin_label = load_pickle(train_asin_label_file)
 test_asin_label = load_pickle(test_asin_label_file)

@@ -82,7 +82,7 @@ def get_train_test_data(vocab,
     k = 0
     for t in train_asin:
         k = k + 1
-        if k % 1000 == 0:
+        if k % 10000 == 0:
             print k
         try:
             #ind = asin_map.index(t)
@@ -111,7 +111,7 @@ def get_train_test_data(vocab,
     k = 0
     for t in test_asin:
         k = k + 1
-        if k % 1000 == 0:
+        if k % 10000 == 0:
             print k
         try:
             ind = asin_map_dict[t]
@@ -126,7 +126,7 @@ def get_train_test_data(vocab,
         train_doc_wordID[ind] = wordID
         #
         #line = test_asin_label_fea[test_asin_map.index(t)]
-        line = train_asin_label_fea[train_asin_map_dict[t]]
+        line = test_asin_label_fea[test_asin_map_dict[t]]
         labels_str, feature_str = line.split(' ', 1)
         labels = [int(label) for label in labels_str.split(',')]
         test_label[ind] = labels
@@ -201,7 +201,7 @@ def get_valid_train_test_data(all_adjacent_labels,
     k = 0
     for pid in train_pids:
         k = k + 1
-        if k % 10000 == 0:
+        if k % 50000 == 0:
             print k
         #l = train_asin_label[pid]
         l2 = list(set(train_asin_label[pid]) & set(all_adjacent_labels))
@@ -216,7 +216,7 @@ def get_valid_train_test_data(all_adjacent_labels,
     k = 0
     for pid in test_pids:
         k = k + 1
-        if k % 10000 == 0:
+        if k % 50000 == 0:
             print k
         l2 = list(set(test_asin_label[pid]) & set(all_adjacent_labels))
         if len(l2):
@@ -238,7 +238,7 @@ def main():
                        default='adjacent',
                        help='adjacent labels or all labels')
     parse.add_argument('-if_split_train_test', '--if_split_train_test', type=int,
-                       default=1,
+                       default=0,
                        help='if have split train and test data: 0 for not, 1 for have split')
     args = parse.parse_args()
 
