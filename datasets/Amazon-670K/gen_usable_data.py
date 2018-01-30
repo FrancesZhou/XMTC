@@ -126,7 +126,7 @@ def get_train_test_data(vocab,
         train_doc_wordID[ind] = wordID
         #
         #line = test_asin_label_fea[test_asin_map.index(t)]
-        line = train_asin_label_fea[train_asin_map_dict[t]]
+        line = test_asin_label_fea[test_asin_map_dict[t]]
         labels_str, feature_str = line.split(' ', 1)
         labels = [int(label) for label in labels_str.split(',')]
         test_label[ind] = labels
