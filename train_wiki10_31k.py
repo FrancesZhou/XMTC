@@ -60,7 +60,7 @@ def main():
     parse.add_argument('-update_rule', '--update_rule', type=str, default='adam', help='update rule')
     # ------ train or predict -------
     parse.add_argument('-train', '--train', type=int, default=1, help='if training')
-    parse.add_argument('-test', '--test', type=int, default=1, help='if testing')
+    parse.add_argument('-test', '--test', type=int, default=0, help='if testing')
     parse.add_argument('-predict', '--predict', type=int, default=0, help='if predicting')
     args = parse.parse_args()
 

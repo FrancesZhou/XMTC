@@ -152,7 +152,7 @@ class ModelSolver(object):
                         tar_pid_y[pid] = y
                         tar_pid_true_label_prop[pid] = [train_loader.label_prop[q] for q in train_loader.label_data[pid]]
                         #pre_pid_score[pid] = y_p
-                        pre_pid_score[pid] = np.multiply(np.power(y_p, 0.8), np.power(count_score, 0.2))
+                        pre_pid_score[pid] = np.multiply(np.power(y_p, 0.9), np.power(count_score, 0.1))
                         pre_pid_prop[pid] = label_prop
                     val_results = results_for_score_vector(tar_pid_true_label_prop, tar_pid_y, pre_pid_score, pre_pid_prop)
 
@@ -232,7 +232,7 @@ class ModelSolver(object):
                             tar_pid_true_label_prop[pid] = [test_loader.label_prop[q] for q in
                                                             test_loader.label_data[pid]]
                             #pre_pid_score[pid] = y_p
-                            pre_pid_score[pid] = np.multiply(np.power(y_p, 0.8), np.power(count_score, 0.2))
+                            pre_pid_score[pid] = np.multiply(np.power(y_p, 0.9), np.power(count_score, 0.1))
                             pre_pid_prop[pid] = label_prop
                         test_results = results_for_score_vector(tar_pid_true_label_prop, tar_pid_y, pre_pid_score,
                                                                    pre_pid_prop)
@@ -257,7 +257,7 @@ class ModelSolver(object):
         o_file = open(output_file_path, 'w')
         if not test_loader:
             test_loader = self.test_data
-        test_loader.reset_data()
+        #test_loader.reset_data()
         # restore trained_model
         _, y_, loss = self.model.build_model()
         gpu_options = tf.GPUOptions(allow_growth=True)
