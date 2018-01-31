@@ -313,3 +313,11 @@ sources/xml/
 wiki: all_labels(len-29944), train/test data: 14142/6604
 Amazon-670K: all_labels(len-589140), train/test data: 331949/83301
 
+
+--------------- process ----------------
+gen_usable_data
+gen_baseline_data
+inv_propensity
+sleec/fastxml/pfastxml/pfastrexml
+gen_candidate_data
+

@@ -90,10 +90,12 @@ def main():
     print '-------------- load candidate labels ------------------------'
     if 'sleec' in args.model:
         candidate_type = 'sleec'
-    elif 'fastxml' in args.model:
-        candidate_type = 'fastxml'
     elif 'pfastrexml' in args.model:
         candidate_type = 'pfastrexml'
+    elif 'pfastxml' in args.model:
+        candidate_type = 'pfastxml'
+    elif 'fastxml' in args.model:
+        candidate_type = 'fastxml'
     print 'candidate from: ' + candidate_type
     candidate_folder_path = args.folder_path + candidate_type + '_candidate/'
     train_candidate_label = load_pickle(candidate_folder_path + 'train_candidate_label.pkl')
