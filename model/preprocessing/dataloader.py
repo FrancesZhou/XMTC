@@ -779,17 +779,43 @@ class TrainDataLoader2():
                     self.candidate_label_y[pid][j] = 1
         self.reset_data()
 
-    def get_pid_x(self, pid):
+    def get_pid_x(self, length, start, end):
         #candidate_labels, batch_count_score = zip(*(self.candidate_label_data[pid].iteritems()))
         #candidate_labels, batch_count_score = zip(*(self.candidate_label_data[pid][:30]))
-        candidate_labels = self.candidate_label[pid]
-        batch_count_score = self.candidate_count_score[pid]
-        batch_x = [self.doc_wordID_data[pid]] * len(candidate_labels)
-        batch_y = self.candidate_label_y[pid]
-        batch_length = [self.doc_length[pid]] * len(candidate_labels)
-        batch_label_embedding_id = self.candidate_label_embedding_id[pid]
-        batch_label_prop = [self.label_prop[e] for e in candidate_labels]
-        return pid, batch_x, batch_y, batch_length, batch_label_embedding_id, batch_label_prop, batch_count_score
+        batch_pid = []
+        batch_x = []
+        batch_y = []
+        batch_length = []
+        batch_label_embedding_id = []
+        batch_label_prop = []
+        batch_count_score = []
+        end = min(length, end)
+        for i in xrange(start, end):
+            pid = self.val_pids[i]
+            candidate_labels = self.candidate_label[pid]
+            num = len(candidate_labels)
+            batch_pid.append([pid]*num)
+            batch_x.append([self.doc_wordID_data[pid]] * num)
+            batch_y.append(self.candidate_label_y[pid])
+            batch_length.append([self.doc_length[pid]] * num)
+            batch_label_embedding_id.append(self.candidate_label_embedding_id[pid])
+            batch_label_prop.append([self.label_prop[e] for e in candidate_labels])
+            batch_count_score.append(self.candidate_count_score[pid])
+        # candidate_labels = self.candidate_label[pid]
+        # batch_count_score = self.candidate_count_score[pid]
+        # batch_x = [self.doc_wordID_data[pid]] * len(candidate_labels)
+        # batch_y = self.candidate_label_y[pid]
+        # batch_length = [self.doc_length[pid]] * len(candidate_labels)
+        # batch_label_embedding_id = self.candidate_label_embedding_id[pid]
+        # batch_label_prop = [self.label_prop[e] for e in candidate_labels]
+        batch_pid = np.concatenate(batch_pid, axis=0)
+        batch_x = np.concatenate(batch_x, axis=0)
+        batch_y = np.concatenate(batch_y, axis=0)
+        batch_length = np.concatenate(batch_length, axis=0)
+        batch_label_embedding_id = np.concatenate(batch_label_embedding_id, axis=0)
+        batch_label_prop = np.concatenate(batch_label_prop, axis=0)
+        batch_count_score = np.concatenate(batch_count_score, axis=0)
+        return batch_pid, batch_x, batch_y, batch_length, batch_label_embedding_id, batch_label_prop, batch_count_score
 
     def next_batch(self, length, start, end):
         end = min(length, end)
@@ -901,17 +927,34 @@ class TestDataLoader2():
                 if l_ in true_labels:
                     self.candidate_label_y[pid][j] = 1
 
-    def get_pid_x(self, pid):
-        #candidate_labels = self.candidate_label_data[pid]
-        #candidate_labels, batch_count_score = zip(*(self.candidate_label_data[pid]).iteritems())
-        candidate_labels = self.candidate_label[pid]
-        batch_count_score = self.candidate_count_score[pid]
-        batch_x = [self.doc_wordID_data[pid]] * len(candidate_labels)
-        batch_y = self.candidate_label_y[pid]
-        batch_length = [self.doc_length[pid]] * len(candidate_labels)
-        batch_label_embedding_id = self.candidate_label_embedding_id[pid]
-        batch_label_prop = [self.label_prop[e] for e in candidate_labels]
-        return pid, batch_x, batch_y, batch_length, batch_label_embedding_id, batch_label_prop, batch_count_score
+    def get_pid_x(self, length, start, end):
+        batch_pid = []
+        batch_x = []
+        batch_y = []
+        batch_length = []
+        batch_label_embedding_id = []
+        batch_label_prop = []
+        batch_count_score = []
+        end = min(length, end)
+        for i in xrange(start, end):
+            pid = self.pids[i]
+            candidate_labels = self.candidate_label[pid]
+            num = len(candidate_labels)
+            batch_pid.append([pid] * num)
+            batch_x.append([self.doc_wordID_data[pid]] * num)
+            batch_y.append(self.candidate_label_y[pid])
+            batch_length.append([self.doc_length[pid]] * num)
+            batch_label_embedding_id.append(self.candidate_label_embedding_id[pid])
+            batch_label_prop.append([self.label_prop[e] for e in candidate_labels])
+            batch_count_score.append(self.candidate_count_score[pid])
+        batch_pid = np.concatenate(batch_pid, axis=0)
+        batch_x = np.concatenate(batch_x, axis=0)
+        batch_y = np.concatenate(batch_y, axis=0)
+        batch_length = np.concatenate(batch_length, axis=0)
+        batch_label_embedding_id = np.concatenate(batch_label_embedding_id, axis=0)
+        batch_label_prop = np.concatenate(batch_label_prop, axis=0)
+        batch_count_score = np.concatenate(batch_count_score, axis=0)
+        return batch_pid, batch_x, batch_y, batch_length, batch_label_embedding_id, batch_label_prop, batch_count_score
 
     def get_all_metrics_for_baseline_result(self):
         tar_pid_y = {}
@@ -919,11 +962,12 @@ class TestDataLoader2():
         pre_pid_score = {}
         pre_pid_prop = {}
         for pid in self.pids:
-            _, _, y, _, _, label_prop, count_score = self.get_pid_x(pid)
-            tar_pid_y[pid] = y
+            tar_pid_y[pid] = self.candidate_label_y[pid]
             tar_pid_true_label_prop[pid] = [self.label_prop[q] for q in self.label_data[pid]]
-            pre_pid_score[pid] = count_score
-            pre_pid_prop[pid] = label_prop
+            pre_pid_prop[pid] = [self.label_prop[e] for e in self.candidate_label[pid]]
+            pre_pid_score[pid] = self.candidate_count_score[pid]
+            # pre_pid_score[pid] = np.divide(self.candidate_count_score[pid], pre_pid_prop[pid])
+            # pre_pid_score[pid] = np.multiply(self.candidate_count_score[pid], pre_pid_prop[pid])
         results = results_for_score_vector(tar_pid_true_label_prop, tar_pid_y, pre_pid_score, pre_pid_prop)
         print '=========== metrics of candidate baseline result =============='
         print results

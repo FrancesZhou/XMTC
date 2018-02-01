@@ -41,6 +41,8 @@ def main():
                        default=None, help='path to the pretrained model')
     parse.add_argument('-cal_metrics', '--cal_metrics', type=int, default=1,
                        help='if calculate wts_p and wts_ndcg for baseline results')
+    parse.add_argument('-alpha', '--alpha', type=float, default=0.2,
+                       help='trade off parameter between baseline score and refinement score')
     # ---------- params for CNN ------------
     parse.add_argument('-num_filters', '--num_filters', type=int,
                        default=32, help='number of filters in CNN')
@@ -53,7 +55,8 @@ def main():
     #parse.add_argument('-if_use_all_true', '--if_use_all_true', type=int, default=0, help='if use all true labels for training')
     parse.add_argument('-if_output_all_labels', '--if_output_all_labels', type=int, default=0, help='if output all labels')
     parse.add_argument('-n_epochs', '--n_epochs', type=int, default=10, help='number of epochs')
-    parse.add_argument('-batch_size', '--batch_size', type=int, default=32, help='batch size - number of docs')
+    parse.add_argument('-batch_size', '--batch_size', type=int, default=32, help='batch size for training')
+    parse.add_argument('-batch_pid_size', '--batch_pid_size', type=int, default=4, help='batch pid size for testing')
     #parse.add_argument('-num_candidate', '--num_candidate', type=int, default=20, help='number of candidate labels')
     #parse.add_argument('-topk', '--topk', type=int, default=6, help='k in competitive layer')
     parse.add_argument('-show_batches', '--show_batches', type=int,

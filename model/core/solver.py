@@ -34,6 +34,8 @@ class ModelSolver(object):
         self.show_batches = kwargs.pop('show_batches', 20)
         self.n_epochs = kwargs.pop('n_epochs', 10)
         self.batch_size = kwargs.pop('batch_size', 32)
+        self.batch_pid_size = kwargs.pop('batch_pid_size', 4)
+        self.alpha = kwargs.pop('alpha', 0.2)
         self.learning_rate = kwargs.pop('learning_rate', 0.000001)
         self.update_rule = kwargs.pop('update_rule', 'adam')
         self.model_path = kwargs.pop('model_path', './model/')
@@ -61,7 +63,6 @@ class ModelSolver(object):
             grads = tf.gradients(loss, tf.trainable_variables())
             grads_and_vars = list(zip(grads, tf.trainable_variables()))
             train_op = optimizer.apply_gradients(grads_and_vars=grads_and_vars)
-
         tf.get_variable_scope().reuse_variables()
         # set upper limit of used gpu memory
         #gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.5)
@@ -73,13 +74,7 @@ class ModelSolver(object):
                 print 'Start training with pretrained model...'
                 pretrained_model_path = self.model_path + self.pretrained_model
                 saver.restore(sess, pretrained_model_path)
-            #val_loss = 0
-            #train_loader.reset_data()
-            num_train_points = len(train_loader.pid_label_y)
-            train_batches = xrange(int(math.ceil(num_train_points * 1.0 / self.batch_size)))
-            print 'num of train batches:    %d' % len(train_batches)
             for e in xrange(self.n_epochs):
-                train_loader.reset_data()
                 print '========== begin epoch %d ===========' % e
                 curr_loss = 0
                 val_loss = 0
@@ -104,10 +99,14 @@ class ModelSolver(object):
                 else:
                     # '''
                     # ------------- train ----------------
+                    num_train_points = len(train_loader.pid_label_y)
+                    train_batches = xrange(int(math.ceil(num_train_points * 1.0 / self.batch_size)))
+                    print 'num of train batches:    %d' % len(train_batches)
                     for i in train_batches:
                         if i % self.show_batches == 0:
                             print 'batch %d' % i
-                        x, y, seq_l, label_emb, label_prop = train_loader.next_batch(num_train_points, i*self.batch_size, (i+1)*self.batch_size)
+                        x, y, seq_l, label_emb, label_prop \
+                            = train_loader.next_batch(num_train_points, i*self.batch_size, (i+1)*self.batch_size)
                         if len(y) == 0:
                             continue
                         if self.if_use_seq_len:
@@ -124,17 +123,18 @@ class ModelSolver(object):
                         _, l_ = sess.run([train_op, loss], feed_dict)
                         curr_loss += l_
                     # -------------- validate -------------
-                    print 'num of validate docs: %d' % len(train_loader.val_pids)
+                    num_val_pids = len(train_loader.val_pids)
+                    val_pid_batches = xrange(int(math.ceil(num_val_pids*1.0 / self.batch_pid_size)))
+                    print 'num of validate pid batches: %d' % len(val_pid_batches)
                     pre_pid_prop = {}
                     pre_pid_score = {}
                     tar_pid_y = {}
                     tar_pid_true_label_prop = {}
-                    i = 0
-                    for pid in train_loader.val_pids:
-                        i += 1
+                    for i in val_pid_batches:
                         if i % self.show_batches == 0:
                             print 'batch %d' % i
-                        pid, x, y, seq_l, label_emb, label_prop, count_score = train_loader.get_pid_x(pid)
+                        batch_pid, x, y, seq_l, label_emb, label_prop, count_score \
+                            = train_loader.get_pid_x(num_val_pids, i*self.batch_pid_size, (i+1)*self.batch_pid_size)
                         if self.if_use_seq_len:
                             feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
                                          self.model.seqlen: np.array(seq_l),
@@ -149,13 +149,29 @@ class ModelSolver(object):
                         y_p, l_ = sess.run([y_, loss], feed_dict)
                         val_loss += l_
                         # prediction
-                        tar_pid_y[pid] = y
-                        tar_pid_true_label_prop[pid] = [train_loader.label_prop[q] for q in train_loader.label_data[pid]]
-                        #pre_pid_score[pid] = y_p
-                        pre_pid_score[pid] = np.multiply(np.power(y_p, 0.2), np.power(count_score, 0.8))
-                        pre_pid_prop[pid] = label_prop
+                        for p_i in xrange(len(batch_pid)):
+                            pid = batch_pid[p_i]
+                            try:
+                                tar_pid_y[pid].append(y[p_i])
+                                pre_pid_score[pid].append(np.multiply(
+                                    np.power(y_p[p_i], self.alpha), np.power(count_score[p_i], 1-self.alpha)
+                                ))
+                                pre_pid_prop[pid].append(label_prop[p_i])
+                            except KeyError:
+                                tar_pid_y[pid] = [y[p_i]]
+                                pre_pid_score[pid] = [np.multiply(
+                                    np.power(y_p[p_i], self.alpha), np.power(count_score[p_i], 1-self.alpha)
+                                )]
+                                pre_pid_prop[pid] = [label_prop[p_i]]
+                        for pid in np.unique(batch_pid):
+                            tar_pid_true_label_prop[pid] = [train_loader.label_prop[q] for q in train_loader.label_data[pid]]
+                        # tar_pid_y[pid] = y
+                        # tar_pid_true_label_prop[pid] = [train_loader.label_prop[q] for q in train_loader.label_data[pid]]
+                        # pre_pid_score[pid] = np.multiply(np.power(y_p, 0.2), np.power(count_score, 0.8))
+                        # pre_pid_prop[pid] = label_prop
                     val_results = results_for_score_vector(tar_pid_true_label_prop, tar_pid_y, pre_pid_score, pre_pid_prop)
-
+                # reset train_loader
+                train_loader.reset_data()
                 # ====== output loss ======
                 w_text = 'at epoch %d, train loss is %f \n' % (e, curr_loss)
                 print w_text
@@ -206,13 +222,14 @@ class ModelSolver(object):
                         pre_pid_score = {}
                         tar_pid_y = {}
                         tar_pid_true_label_prop = {}
-                        print 'num of test pids:    %d' % len(test_loader.pids)
-                        i = 0
-                        for pid in test_loader.pids:
-                            i += 1
+                        num_test_pids = len(test_loader.pids)
+                        test_pid_batches = xrange(int(math.ceil(num_test_pids * 1.0 / self.batch_pid_size)))
+                        print 'num of test pid batches: %d' % len(test_pid_batches)
+                        for i in test_pid_batches:
                             if i % self.show_batches == 0:
                                 print 'batch ' + str(i)
-                            pid, x, y, seq_l, label_emb, label_prop, count_score = test_loader.get_pid_x(pid)
+                                batch_pid, x, y, seq_l, label_emb, label_prop, count_score = test_loader.get_pid_x(
+                                    num_test_pids, i * self.batch_pid_size, (i + 1) * self.batch_pid_size)
                             if self.if_use_seq_len:
                                 feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
                                              self.model.seqlen: np.array(seq_l),
@@ -228,12 +245,23 @@ class ModelSolver(object):
                             test_loss += l_
                             # get all predictions
                             # prediction
-                            tar_pid_y[pid] = y
-                            tar_pid_true_label_prop[pid] = [test_loader.label_prop[q] for q in
-                                                            test_loader.label_data[pid]]
-                            #pre_pid_score[pid] = y_p
-                            pre_pid_score[pid] = np.multiply(np.power(y_p, 0.2), np.power(count_score, 0.8))
-                            pre_pid_prop[pid] = label_prop
+                            for p_i in xrange(len(batch_pid)):
+                                pid = batch_pid[p_i]
+                                try:
+                                    tar_pid_y[pid].append(y[p_i])
+                                    pre_pid_score[pid].append(np.multiply(
+                                        np.power(y_p[p_i], self.alpha), np.power(count_score[p_i], 1 - self.alpha)
+                                    ))
+                                    pre_pid_prop[pid].append(label_prop[p_i])
+                                except KeyError:
+                                    tar_pid_y[pid] = [y[p_i]]
+                                    pre_pid_score[pid] = [np.multiply(
+                                        np.power(y_p[p_i], self.alpha), np.power(count_score[p_i], 1 - self.alpha)
+                                    )]
+                                    pre_pid_prop[pid] = [label_prop[p_i]]
+                            for pid in np.unique(batch_pid):
+                                tar_pid_true_label_prop[pid] = [test_loader.label_prop[q] for q in
+                                                                test_loader.label_data[pid]]
                         test_results = results_for_score_vector(tar_pid_true_label_prop, tar_pid_y, pre_pid_score,
                                                                    pre_pid_prop)
                     w_text = 'at epoch %d, test loss is %f \n' % (e, test_loss)
@@ -300,13 +328,14 @@ class ModelSolver(object):
                 pre_pid_score = {}
                 tar_pid_y = {}
                 tar_pid_true_label_prop = {}
-                print 'num of test pids:    %d' % len(test_loader.pids)
-                i = 0
-                for pid in test_loader.pids:
-                    i += 1
+                num_test_pids = len(test_loader.pids)
+                test_pid_batches = xrange(int(math.ceil(num_test_pids * 1.0 / self.batch_pid_size)))
+                print 'num of test pid batches: %d' % len(test_pid_batches)
+                for i in test_pid_batches:
                     if i % self.show_batches == 0:
                         print 'batch ' + str(i)
-                    pid, x, y, seq_l, label_emb, label_prop, count_score = test_loader.get_pid_x(pid)
+                        batch_pid, x, y, seq_l, label_emb, label_prop, count_score = test_loader.get_pid_x(
+                            num_test_pids, i * self.batch_pid_size, (i + 1) * self.batch_pid_size)
                     if self.if_use_seq_len:
                         feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
                                      self.model.seqlen: np.array(seq_l),
@@ -322,12 +351,21 @@ class ModelSolver(object):
                     test_loss += l_
                     # get all predictions
                     # prediction
-                    tar_pid_y[pid] = y
-                    tar_pid_true_label_prop[pid] = [test_loader.label_prop[q] for q in
-                                                    test_loader.label_data[pid]]
-                    # pre_pid_score[pid] = y_p
-                    pre_pid_score[pid] = np.multiply(np.power(y_p, 0), np.power(count_score, 1))
-                    pre_pid_prop[pid] = label_prop
+                    for p_i in xrange(len(batch_pid)):
+                        pid = batch_pid[p_i]
+                        try:
+                            tar_pid_y[pid].append(y[p_i])
+                            pre_pid_score[pid].append(np.multiply(np.power(y_p[p_i], self.alpha),
+                                                                  np.power(count_score[p_i], 1 - self.alpha)))
+                            pre_pid_prop[pid].append(label_prop[p_i])
+                        except KeyError:
+                            tar_pid_y[pid] = [y[p_i]]
+                            pre_pid_score[pid] = [np.multiply(np.power(y_p[p_i], self.alpha),
+                                                              np.power(count_score[p_i], 1 - self.alpha))]
+                            pre_pid_prop[pid] = [label_prop[p_i]]
+                    for pid in np.unique(batch_pid):
+                        tar_pid_true_label_prop[pid] = [test_loader.label_prop[q] for q in
+                                                        test_loader.label_data[pid]]
                 test_results = results_for_score_vector(tar_pid_true_label_prop, tar_pid_y, pre_pid_score,
                                                         pre_pid_prop)
             w_text = 'test loss is %f \n' % test_loss
