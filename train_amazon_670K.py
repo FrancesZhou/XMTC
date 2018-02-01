@@ -10,7 +10,7 @@ import os
 import argparse
 import numpy as np
 from model.preprocessing.preprocessing import generate_label_embedding_from_file_2
-from model.preprocessing.dataloader import DataLoader5, DataLoader3, DataLoader2, DataLoader
+from model.preprocessing.dataloader import *
 from model.core.biLSTM import biLSTM
 from model.core.LSTM import LSTM
 from model.core.CNN import CNN
@@ -39,6 +39,10 @@ def main():
     parse.add_argument('-model', '--model', type=str, default='CNN', help='model: LSTM, biLSTM, CNN')
     parse.add_argument('-pretrained_model', '--pretrained_model_path', type=str,
                        default=None, help='path to the pretrained model')
+    parse.add_argument('-cal_metrics', '--cal_metrics', type=int, default=1,
+                       help='if calculate wts_p and wts_ndcg for baseline results')
+    parse.add_argument('-alpha', '--alpha', type=float, default=0.2,
+                       help='trade off parameter between baseline score and refinement score')
     # ---------- params for CNN ------------
     parse.add_argument('-num_filters', '--num_filters', type=int,
                        default=32, help='number of filters in CNN')
@@ -48,14 +52,15 @@ def main():
                        default=0.5, help='keep probability in dropout layer')
     filter_sizes = [2, 4, 8]
     # ---------- training parameters --------
-    parse.add_argument('-if_use_all_true', '--if_use_all_true', type=int, default=0, help='if use all true labels for training')
+    #parse.add_argument('-if_use_all_true', '--if_use_all_true', type=int, default=0, help='if use all true labels for training')
     parse.add_argument('-if_output_all_labels', '--if_output_all_labels', type=int, default=0, help='if output all labels')
     parse.add_argument('-n_epochs', '--n_epochs', type=int, default=10, help='number of epochs')
-    parse.add_argument('-batch_size', '--batch_size', type=int, default=2, help='batch size - number of docs')
-    parse.add_argument('-num_candidate', '--num_candidate', type=int, default=20, help='number of candidate labels')
-    parse.add_argument('-topk', '--topk', type=int, default=5, help='k in competitive layer')
+    parse.add_argument('-batch_size', '--batch_size', type=int, default=256, help='batch size for training')
+    parse.add_argument('-batch_pid_size', '--batch_pid_size', type=int, default=5, help='batch pid size for testing')
+    #parse.add_argument('-num_candidate', '--num_candidate', type=int, default=20, help='number of candidate labels')
+    #parse.add_argument('-topk', '--topk', type=int, default=6, help='k in competitive layer')
     parse.add_argument('-show_batches', '--show_batches', type=int,
-                       default=20, help='show how many batches have been processed.')
+                       default=1000, help='show how many batches have been processed.')
     parse.add_argument('-lr', '--learning_rate', type=float, default=0.0001, help='learning rate')
     parse.add_argument('-update_rule', '--update_rule', type=str, default='adam', help='update rule')
     # ------ train or predict -------
@@ -80,30 +85,36 @@ def main():
     print 'number of labels: ' + str(len(all_labels))
     # label_embedding_dim
     label_embedding_dim = len(label_embeddings[all_labels[0]])
+    print '-------------- load label propensity ------------------------'
+    label_prop = load_pickle(args.folder_path + 'inv_prop_dict.pkl')
     print '-------------- load train/test data -------------------------'
     train_doc = load_pickle(args.folder_path + 'train_doc_wordID.pkl')
     test_doc = load_pickle(args.folder_path + 'test_doc_wordID.pkl')
-    train_label = load_pickle(args.folder_path + 'train_asin_label.pkl')
-    test_label = load_pickle(args.folder_path + 'test_asin_label.pkl')
+    train_label = load_pickle(args.folder_path + 'train_label.pkl')
+    test_label = load_pickle(args.folder_path + 'test_label.pkl')
     print '-------------- load candidate labels ------------------------'
     if 'sleec' in args.model:
         candidate_type = 'sleec'
-    elif 'fastxml' in args.model:
-        candidate_type = 'fastxml'
     elif 'pfastrexml' in args.model:
         candidate_type = 'pfastrexml'
+    elif 'pfastxml' in args.model:
+        candidate_type = 'pfastxml'
+    elif 'fastxml' in args.model:
+        candidate_type = 'fastxml'
     print 'candidate from: ' + candidate_type
     candidate_folder_path = args.folder_path + candidate_type + '_candidate/'
     train_candidate_label = load_pickle(candidate_folder_path + 'train_candidate_label.pkl')
     test_candidate_label = load_pickle(candidate_folder_path + 'test_candidate_label.pkl')
     print '============== create train/test data loader ...'
     if 'XML' not in args.model:
-        train_loader = DataLoader(train_doc, train_label, train_candidate_label, args.num_candidate, label_dict,
-                                   max_seq_len=args.max_seq_len, if_use_all_true_label=args.if_use_all_true)
+        train_loader = TrainDataLoader2(train_doc, train_label, train_candidate_label, label_dict, label_prop,
+                                   10, 10, max_seq_len=args.max_seq_len)
         max_seq_len = train_loader.max_seq_len
+        #max_seq_len = args.max_seq_len
+        #train_loader = {}
         print 'max_seq_len: ' + str(max_seq_len)
-        test_loader = DataLoader(test_doc, test_label, test_candidate_label, args.num_candidate, label_dict,
-                                  max_seq_len=max_seq_len, if_use_all_true_label=0)
+        test_loader = TestDataLoader2(test_doc, test_label, test_candidate_label, label_dict, label_prop,
+                                      max_seq_len=max_seq_len, if_cal_metrics=args.cal_metrics)
         # test_loader = DataLoader3(test_doc, test_label, test_candidate_label, label_dict, args.batch_size,
         #                           given_seq_len=True, max_seq_len=max_seq_len)
     # ----------------------- train ------------------------
@@ -119,11 +130,10 @@ def main():
         model = LSTM(max_seq_len, word_embedding_dim, 64, label_embedding_dim, 32, args)
         args.if_use_seq_len = 1
     elif 'CNN' in args.model:
-        print 'build CNN_comp model ...'
-        # CNN: sequence_length, word_embeddings, filter_sizes, label_embeddings, num_classify_hidden, batch_size, args
+        print 'build CNN model ...'
+        # CNN: sequence_length, word_embeddings, filter_sizes, label_embeddings, num_classify_hidden, args
         # args.num_filters, args.pooling_units, args.batch_size, args.dropout_keep_prob
-        # real_batch_size = args.batch_size*args.topk
-        model = CNN2(max_seq_len, args.num_candidate, word_embeddings, filter_sizes, label_embeddings, 32, args)
+        model = CNN(max_seq_len, word_embeddings, filter_sizes, label_embeddings, 32, args)
         args.if_use_seq_len = 0
     elif 'XML' in args.model:
         print 'build XML-CNN model ...'
@@ -161,7 +171,7 @@ def main():
     # test
     if args.test:
         print '================= begin testing...'
-        solver.test(args.pretrained_model_path, args.folder_path + args.model + '/test_outcome.txt')
+        solver.test(args.folder_path + args.model + '/' + args.pretrained_model_path, args.folder_path + args.model + '/test_outcome.txt')
 
     # predict
     if args.predict:
