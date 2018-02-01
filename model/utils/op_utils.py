@@ -106,7 +106,7 @@ def results_for_score_vector(tar_true_label_prop, tar_pid_y, pre_pid_score, pre_
     wts_ndcg_5 = []
     for pid, y in tar_pid_y.items():
         true_label_prop = tar_true_label_prop[pid]
-        pre_label_index = np.argsort(-pre_pid_score[pid])[:5]
+        pre_label_index = np.argsort(-np.array(pre_pid_score[pid]))[:5]
         # r = [y[ind] for ind in pre_label_index]
         # p_1.append(np.mean(r[:1]))
         # p_3.append(np.mean(r[:3]))
