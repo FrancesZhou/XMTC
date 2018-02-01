@@ -965,9 +965,9 @@ class TestDataLoader2():
             tar_pid_y[pid] = self.candidate_label_y[pid]
             tar_pid_true_label_prop[pid] = [self.label_prop[q] for q in self.label_data[pid]]
             pre_pid_prop[pid] = [self.label_prop[e] for e in self.candidate_label[pid]]
-            pre_pid_score[pid] = self.candidate_count_score[pid]
-            # pre_pid_score[pid] = np.divide(self.candidate_count_score[pid], pre_pid_prop[pid])
-            # pre_pid_score[pid] = np.multiply(self.candidate_count_score[pid], pre_pid_prop[pid])
+            pre_pid_score[pid] = np.array(self.candidate_count_score[pid])
+            #pre_pid_score[pid] = np.divide(self.candidate_count_score[pid], pre_pid_prop[pid])
+            #pre_pid_score[pid] = np.multiply(self.candidate_count_score[pid], pre_pid_prop[pid])
         results = results_for_score_vector(tar_pid_true_label_prop, tar_pid_y, pre_pid_score, pre_pid_prop)
         print '=========== metrics of candidate baseline result =============='
         print results
