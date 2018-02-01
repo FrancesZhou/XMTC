@@ -94,8 +94,8 @@ def main():
 
     args = parse.parse_args()
 
-    path = 'data/baseline_data/adjacent_labels/all_para/'
-    out_path = 'data/deeplearning_data/adjacent_labels/all_para/'
+    path = 'data/baseline_data/adjacent_labels/'
+    out_path = 'data/deeplearning_data/adjacent_labels/'
 
     get_candidate_labels(path, out_path, args.candidate_type, args.data_format)
 
