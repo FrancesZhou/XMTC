@@ -10,8 +10,9 @@ import numpy as np
 import math
 import random
 from sklearn.model_selection import train_test_split
-import re
-import copy
+# import re
+# import copy
+from ..utils.op_utils import *
 from .preprocessing import generate_embedding_from_vocabID, generate_label_vector_of_fixed_length, get_wordID_from_vocab
 
 # for CNN_comp, output 20 rank score of candidate labels
@@ -850,7 +851,8 @@ class TestDataLoader2():
     def __init__(self, doc_wordID_data, label_data,
                  candidate_label_data,
                  label_dict, label_prop,
-                 max_seq_len=3000):
+                 max_seq_len=3000,
+                 if_cal_metrics=1):
         self.doc_wordID_data = doc_wordID_data
         self.label_data = label_data
         self.candidate_label_data = candidate_label_data
@@ -868,6 +870,8 @@ class TestDataLoader2():
         self.max_seq_len = max_seq_len
         self.pid_label_y = []
         self.initialize_dataloader()
+        if if_cal_metrics:
+            self.get_all_metrics_for_baseline_result()
 
     def initialize_dataloader(self):
         print 'num of doc:             ' + str(len(self.doc_wordID_data))
@@ -908,4 +912,20 @@ class TestDataLoader2():
         batch_label_embedding_id = self.candidate_label_embedding_id[pid]
         batch_label_prop = [self.label_prop[e] for e in candidate_labels]
         return pid, batch_x, batch_y, batch_length, batch_label_embedding_id, batch_label_prop, batch_count_score
+
+    def get_all_metrics_for_baseline_result(self):
+        tar_pid_y = {}
+        tar_pid_true_label_prop = {}
+        pre_pid_score = {}
+        pre_pid_prop = {}
+        for pid in self.pids:
+            _, _, y, _, _, label_prop, count_score = self.get_pid_x(pid)
+            tar_pid_y[pid] = y
+            tar_pid_true_label_prop[pid] = [self.label_prop[q] for q in self.label_data[pid]]
+            pre_pid_score[pid] = count_score
+            pre_pid_prop[pid] = label_prop
+        results = results_for_score_vector(tar_pid_true_label_prop, tar_pid_y, pre_pid_score, pre_pid_prop)
+        print '=========== metrics of candidate baseline result =============='
+        print results
+
 

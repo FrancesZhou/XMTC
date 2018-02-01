@@ -39,6 +39,8 @@ def main():
     parse.add_argument('-model', '--model', type=str, default='CNN', help='model: LSTM, biLSTM, CNN')
     parse.add_argument('-pretrained_model', '--pretrained_model_path', type=str,
                        default=None, help='path to the pretrained model')
+    parse.add_argument('-cal_metrics', '--cal_metrics', type=int, default=1,
+                       help='if calculate wts_p and wts_ndcg for baseline results')
     # ---------- params for CNN ------------
     parse.add_argument('-num_filters', '--num_filters', type=int,
                        default=32, help='number of filters in CNN')
@@ -106,7 +108,8 @@ def main():
                                    10, 10, max_seq_len=args.max_seq_len)
         max_seq_len = train_loader.max_seq_len
         print 'max_seq_len: ' + str(max_seq_len)
-        test_loader = TestDataLoader2(test_doc, test_label, test_candidate_label, label_dict, label_prop, max_seq_len=max_seq_len)
+        test_loader = TestDataLoader2(test_doc, test_label, test_candidate_label, label_dict, label_prop,
+                                      max_seq_len=max_seq_len, if_cal_metrics=args.cal_metrics)
         # test_loader = DataLoader3(test_doc, test_label, test_candidate_label, label_dict, args.batch_size,
         #                           given_seq_len=True, max_seq_len=max_seq_len)
     # ----------------------- train ------------------------
