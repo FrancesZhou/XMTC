@@ -57,7 +57,7 @@ def get_candidate_labels(path, out_path, type, format):
                 ll = index_label[int(l_)]
                 temp.append((ll, float(s_)))
             sorted_temp = sorted(temp, key=lambda e: e[1], reverse=True)
-            train_candidate_labels[pid] = dict(sorted_temp[:30])
+            train_candidate_labels[pid] = dict(sorted_temp[:50])
             # candidate_label_score = {}
             # for l_s in candidate_label_line.split(' ')[:30]:
             #     l_, s_ = l_s.split(':')
@@ -73,7 +73,7 @@ def get_candidate_labels(path, out_path, type, format):
                 ll = index_label[int(l_)]
                 temp.append((ll, float(s_)))
             sorted_temp = sorted(temp, key=lambda e: e[1], reverse=True)
-            test_candidate_labels[pid] = dict(sorted_temp[:30])
+            test_candidate_labels[pid] = dict(sorted_temp[:50])
             # candidate_label_score = {}
             # for l_s in candidate_label_line.split(' ')[:30]:
             #     l_, s_ = l_s.split(':')
