@@ -100,8 +100,8 @@ class ModelSolver(object):
                     # '''
                     # ------------- train ----------------
                     num_train_points = len(train_loader.pid_label_y)
-                    #train_batches = xrange(int(math.ceil(num_train_points * 1.0 / self.batch_size)))
-                    train_batches = xrange(int(math.floor(num_train_points * 1.0 / self.batch_size)))
+                    train_batches = xrange(int(math.ceil(num_train_points * 1.0 / self.batch_size)))
+                    #train_batches = xrange(int(math.floor(num_train_points * 1.0 / self.batch_size)))
                     print 'num of train batches:    %d' % len(train_batches)
                     for i in train_batches:
                         if i % self.show_batches == 0:
@@ -124,8 +124,8 @@ class ModelSolver(object):
                         _, l_ = sess.run([train_op, loss], feed_dict)
                         curr_loss += l_
                     # -------------- validate -------------
-                    num_val_pids = len(train_loader.val_pids)
-                    val_pid_batches = xrange(int(math.ceil(num_val_pids*1.0 / self.batch_pid_size)))
+                    num_val_points = len(train_loader.val_pid_label_y)
+                    val_pid_batches = xrange(int(math.ceil(num_val_points*1.0 / self.batch_size)))
                     print 'num of validate pid batches: %d' % len(val_pid_batches)
                     pre_pid_prop = {}
                     pre_pid_score = {}
@@ -135,7 +135,7 @@ class ModelSolver(object):
                         if i % self.show_batches == 0:
                             print 'batch %d' % i
                         batch_pid, x, y, seq_l, label_emb, label_prop, count_score \
-                            = train_loader.get_pid_x(num_val_pids, i*self.batch_pid_size, (i+1)*self.batch_pid_size)
+                            = train_loader.get_pid_x(num_val_points, i*self.batch_size, (i+1)*self.batch_size)
                         if self.if_use_seq_len:
                             feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
                                          self.model.seqlen: np.array(seq_l),
@@ -223,14 +223,14 @@ class ModelSolver(object):
                         pre_pid_score = {}
                         tar_pid_y = {}
                         tar_pid_true_label_prop = {}
-                        num_test_pids = len(test_loader.pids)
-                        test_pid_batches = xrange(int(math.ceil(num_test_pids * 1.0 / self.batch_pid_size)))
+                        num_test_points = len(test_loader.pid_label_y)
+                        test_pid_batches = xrange(int(math.ceil(num_test_points * 1.0 / self.batch_pid_size)))
                         print 'num of test pid batches: %d' % len(test_pid_batches)
                         for i in test_pid_batches:
                             if i % self.show_batches == 0:
                                 print 'batch ' + str(i)
                                 batch_pid, x, y, seq_l, label_emb, label_prop, count_score = test_loader.get_pid_x(
-                                    num_test_pids, i * self.batch_pid_size, (i + 1) * self.batch_pid_size)
+                                    num_test_points, i * self.batch_pid_size, (i + 1) * self.batch_pid_size)
                             if self.if_use_seq_len:
                                 feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
                                              self.model.seqlen: np.array(seq_l),

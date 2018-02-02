@@ -733,10 +733,11 @@ class TrainDataLoader2():
         self.candidate_label_y = {}
         self.max_seq_len = max_seq_len
         self.if_doc_is_dict = if_doc_is_dict
-        self.train_pids = []
-        self.val_pids = []
+        # self.train_pids = []
+        # self.val_pids = []
         self.pid_label_y = []
         self.initialize_dataloader()
+        self.reset_data()
 
     def initialize_dataloader(self):
         print 'num of doc:             ' + str(len(self.doc_wordID_data))
@@ -783,7 +784,6 @@ class TrainDataLoader2():
                 self.candidate_label_embedding_id[pid][j] = self.label_dict[l_]
                 if l_ in pos_labels:
                     self.candidate_label_y[pid][j] = 1
-        self.reset_data()
 
     def get_pid_x(self, length, start, end):
         #candidate_labels, batch_count_score = zip(*(self.candidate_label_data[pid].iteritems()))
@@ -816,17 +816,9 @@ class TrainDataLoader2():
         # batch_label_prop = [self.label_prop[e] for e in candidate_labels]
         if end2 < end:
             batch_pid = np.concatenate(batch_pid, axis=0)
-            batch_x = np.concatenate(batch_x, axis=0)
-            batch_y = np.concatenate(batch_y, axis=0)
-            batch_length = np.concatenate(batch_length, axis=0)
-            batch_label_embedding_id = np.concatenate(batch_label_embedding_id, axis=0)
-            batch_label_prop = np.concatenate(batch_label_prop, axis=0)
-            batch_count_score = np.concatenate(batch_count_score, axis=0)
-        else:
-            batch_pid = np.concatenate(batch_pid, axis=0)
             padding_num = end - end2
             batch_x = np.concatenate((np.concatenate(batch_x, axis=0),
-                                     np.zeros((padding_num, self.max_seq_len))), axis=0)
+                                      np.zeros((padding_num, self.max_seq_len))), axis=0)
             batch_y = np.concatenate((np.concatenate(batch_y, axis=0),
                                       np.zeros(padding_num)), axis=0)
             batch_length = np.concatenate((np.concatenate(batch_length, axis=0),
@@ -836,12 +828,30 @@ class TrainDataLoader2():
             batch_label_prop = np.concatenate((np.concatenate(batch_label_prop, axis=0),
                                                np.zeros(padding_num)), axis=0)
             batch_count_score = np.concatenate((np.concatenate(batch_count_score, axis=0),
-                                               np.zeros(padding_num)), axis=0)
+                                                np.zeros(padding_num)), axis=0)
+        else:
+            batch_pid = np.concatenate(batch_pid, axis=0)
+            batch_x = np.concatenate(batch_x, axis=0)
+            batch_y = np.concatenate(batch_y, axis=0)
+            batch_length = np.concatenate(batch_length, axis=0)
+            batch_label_embedding_id = np.concatenate(batch_label_embedding_id, axis=0)
+            batch_label_prop = np.concatenate(batch_label_prop, axis=0)
+            batch_count_score = np.concatenate(batch_count_score, axis=0)
         return batch_pid, batch_x, batch_y, batch_length, batch_label_embedding_id, batch_label_prop, batch_count_score
 
-    def next_batch(self, length, start, end):
-        end = min(length, end)
-        pid_label_y = self.pid_label_y[start:end]
+    def set_val_batch(self):
+        self.val_pid_label_y = []
+        for pid in self.val_pids:
+            candidate_labels = self.candidate_label[pid]
+            pids = [pid] * len(candidate_labels)
+            y = self.candidate_label_y[pid]
+            score = self.candidate_count_score[pid]
+            self.val_pid_label_y.append(np.transpose(np.array([pids, candidate_labels, y, score])))
+        self.val_pid_label_y = np.concatenate(self.val_pid_label_y, axis=0)
+
+    def get_val_batch(self, length, start, end):
+        end2 = min(length, end)
+        pid_label_y = self.val_pid_label_y[start:end2]
         batch_pid = pid_label_y[:, 0]
         batch_label = pid_label_y[:, 1]
         batch_length = [self.doc_length[p] for p in batch_pid]
@@ -849,6 +859,45 @@ class TrainDataLoader2():
         batch_x = [self.doc_wordID_data[p] for p in batch_pid]
         batch_y = pid_label_y[:, 2]
         batch_label_prop = [self.label_prop[e] for e in batch_label]
+        batch_count_score = pid_label_y[:, 3]
+        if end2 < end:
+            padding_num = end - end2
+            batch_length = np.concatenate((np.array(batch_length),
+                                           np.ones(padding_num)), axis=0)
+            batch_label_embedding_id = np.concatenate((np.array(batch_label_embedding_id),
+                                                       np.zeros(padding_num)), axis=0)
+            batch_x = np.concatenate((np.array(batch_x),
+                                      np.zeros((padding_num, self.max_seq_len))), axis=0)
+            batch_y = np.concatenate((np.array(batch_y),
+                                      np.zeros(padding_num)), axis=0)
+            batch_label_prop = np.concatenate((np.array(batch_label_prop),
+                                               np.zeros(padding_num)), axis=0)
+            batch_count_score = np.concatenate((np.array(batch_count_score),
+                                                np.zeros(padding_num)), axis=0)
+        return batch_pid, batch_x, batch_y, batch_length, batch_label_embedding_id, batch_label_prop, batch_count_score
+
+    def next_batch(self, length, start, end):
+        end2 = min(length, end)
+        pid_label_y = self.pid_label_y[start:end2]
+        batch_pid = pid_label_y[:, 0]
+        batch_label = pid_label_y[:, 1]
+        batch_length = [self.doc_length[p] for p in batch_pid]
+        batch_label_embedding_id = [self.label_dict[e] for e in batch_label]
+        batch_x = [self.doc_wordID_data[p] for p in batch_pid]
+        batch_y = pid_label_y[:, 2]
+        batch_label_prop = [self.label_prop[e] for e in batch_label]
+        if end2 < end:
+            padding_num = end - end2
+            batch_length = np.concatenate((np.array(batch_length),
+                                           np.ones(padding_num)), axis=0)
+            batch_label_embedding_id = np.concatenate((np.array(batch_label_embedding_id),
+                                                       np.zeros(padding_num)), axis=0)
+            batch_x = np.concatenate((np.array(batch_x),
+                                      np.zeros((padding_num, self.max_seq_len))), axis=0)
+            batch_y = np.concatenate((np.array(batch_y),
+                                      np.zeros(padding_num)), axis=0)
+            batch_label_prop = np.concatenate((np.array(batch_label_prop),
+                                               np.zeros(padding_num)), axis=0)
         return batch_x, batch_y, batch_length, batch_label_embedding_id, batch_label_prop
 
     def get_fixed_length_pos_samples(self, items, num):
@@ -891,8 +940,10 @@ class TrainDataLoader2():
             self.pid_label_y.append(np.transpose(np.array([pids, stack_label, y])))
         self.pid_label_y = np.concatenate(self.pid_label_y, axis=0)
         np.random.shuffle(self.pid_label_y)
-        # validate
         _, self.val_pids = train_test_split(self.pids, test_size=0.1)
+        self.set_val_batch()
+
+
 
 # for propensity-loss and rerank test dataloader
 class TestDataLoader2():
@@ -922,6 +973,7 @@ class TestDataLoader2():
         self.initialize_dataloader()
         if if_cal_metrics:
             self.get_all_metrics_for_baseline_result()
+        self.set_all_batch()
 
     def initialize_dataloader(self):
         print 'num of doc:             ' + str(len(self.doc_wordID_data))
@@ -998,6 +1050,43 @@ class TestDataLoader2():
             batch_count_score = np.concatenate((np.concatenate(batch_count_score, axis=0),
                                                np.zeros(padding_num)), axis=0)
         return batch_pid, batch_x, batch_y, batch_length, batch_label_embedding_id, batch_label_prop, batch_count_score
+
+    def get_batch(self, length, start, end):
+        end2 = min(length, end)
+        pid_label_y = self.pid_label_y[start:end2]
+        batch_pid = pid_label_y[:, 0]
+        batch_label = pid_label_y[:, 1]
+        batch_length = [self.doc_length[p] for p in batch_pid]
+        batch_label_embedding_id = [self.label_dict[e] for e in batch_label]
+        batch_x = [self.doc_wordID_data[p] for p in batch_pid]
+        batch_y = pid_label_y[:, 2]
+        batch_label_prop = [self.label_prop[e] for e in batch_label]
+        batch_count_score = pid_label_y[:, 3]
+        if end2 < end:
+            padding_num = end - end2
+            batch_length = np.concatenate((np.array(batch_length),
+                                           np.ones(padding_num)), axis=0)
+            batch_label_embedding_id = np.concatenate((np.array(batch_label_embedding_id),
+                                                       np.zeros(padding_num)), axis=0)
+            batch_x = np.concatenate((np.array(batch_x),
+                                      np.zeros((padding_num, self.max_seq_len))), axis=0)
+            batch_y = np.concatenate((np.array(batch_y),
+                                      np.zeros(padding_num)), axis=0)
+            batch_label_prop = np.concatenate((np.array(batch_label_prop),
+                                               np.zeros(padding_num)), axis=0)
+            batch_count_score = np.concatenate((np.array(batch_count_score),
+                                                np.zeros(padding_num)), axis=0)
+        return batch_pid, batch_x, batch_y, batch_length, batch_label_embedding_id, batch_label_prop, batch_count_score
+
+    def set_all_batch(self):
+        self.pid_label_y = []
+        for pid in self.pids:
+            candidate_labels = self.candidate_label[pid]
+            pids = [pid] * len(candidate_labels)
+            y = self.candidate_label_y[pid]
+            score = self.candidate_count_score[pid]
+            self.pid_label_y.append(np.transpose(np.array([pids, candidate_labels, y, score])))
+        self.pid_label_y = np.concatenate(self.pid_label_y, axis=0)
 
     def get_all_metrics_for_baseline_result(self):
         tar_pid_y = {}
