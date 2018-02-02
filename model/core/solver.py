@@ -100,7 +100,8 @@ class ModelSolver(object):
                     # '''
                     # ------------- train ----------------
                     num_train_points = len(train_loader.pid_label_y)
-                    train_batches = xrange(int(math.ceil(num_train_points * 1.0 / self.batch_size)))
+                    #train_batches = xrange(int(math.ceil(num_train_points * 1.0 / self.batch_size)))
+                    train_batches = xrange(int(math.floor(num_train_points * 1.0 / self.batch_size)))
                     print 'num of train batches:    %d' % len(train_batches)
                     for i in train_batches:
                         if i % self.show_batches == 0:
