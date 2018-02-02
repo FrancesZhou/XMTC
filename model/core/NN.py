@@ -29,7 +29,7 @@ class NN(object):
         #
         self.x = tf.placeholder(tf.int32, [None, self.max_seq_len])
         self.y = tf.placeholder(tf.float32, [None])
-        self.seq_len = tf.placeholder(tf.int32, [None])
+        self.seqlen = tf.placeholder(tf.int32, [None])
         self.label_embedding_id = tf.placeholder(tf.int32, [None])
         self.label_prop = tf.placeholder(tf.float32, [None])
 
@@ -100,7 +100,7 @@ class NN(object):
         with tf.name_scope('attention'):
             x_lbl_fea = self.attention_layer(x, label_embeddings,
                                              self.word_embedding_dim, self.label_embedding_dim,
-                                             self.seq_len)
+                                             self.seqlen)
         with tf.name_scope('output'):
             fea_dim = x_lbl_fea.get_shape().as_list()[-1]
             y_ = self.classification_layer(x_lbl_fea, label_embeddings, fea_dim, self.label_embedding_dim)
