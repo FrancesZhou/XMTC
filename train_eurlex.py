@@ -115,7 +115,7 @@ def main():
     print '============== build model ...'
     if 'NN' in args.model:
         print 'build NN model ...'
-        model = NN(max_seq_len, 5000+1, 300, label_embedding_dim, 32, args)
+        model = NN(max_seq_len, 5000+1, 300, label_embeddings, 32, args)
         args.if_use_seq_len = 1
 
     print '================= model solver ...'

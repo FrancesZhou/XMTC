@@ -36,7 +36,7 @@ class NN(object):
     def attention_layer(self, hidden_states, label_embeddings, hidden_dim, label_embedding_dim, seqlen, name_scope=None):
         # hidden_states: [batch_size, max_seq_len, hidden_dim]
         # label_embeddings: [batch_size, label_embedding_dim]
-        with tf.variable_scope(name_scope + 'att_layer'):
+        with tf.variable_scope('att_layer'):
             w = tf.get_variable('w', [hidden_dim, label_embedding_dim], initializer=self.weight_initializer)
             # hidden_states: [batch_size, max_seq_len, hidden_dim]
             # label_embeddings: [batch_size, label_embedding_dim]
