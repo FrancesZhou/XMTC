@@ -135,7 +135,7 @@ class ModelSolver(object):
                         if i % self.show_batches == 0:
                             print 'batch %d' % i
                         batch_pid, x, y, seq_l, label_emb, label_prop, count_score \
-                            = train_loader.get_pid_x(num_val_points, i*self.batch_size, (i+1)*self.batch_size)
+                            = train_loader.get_val_batch(num_val_points, i*self.batch_size, (i+1)*self.batch_size)
                         if self.if_use_seq_len:
                             feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
                                          self.model.seqlen: np.array(seq_l),
@@ -229,7 +229,7 @@ class ModelSolver(object):
                         for i in test_pid_batches:
                             if i % self.show_batches == 0:
                                 print 'batch ' + str(i)
-                                batch_pid, x, y, seq_l, label_emb, label_prop, count_score = test_loader.get_pid_x(
+                                batch_pid, x, y, seq_l, label_emb, label_prop, count_score = test_loader.get_batch(
                                     num_test_points, i * self.batch_pid_size, (i + 1) * self.batch_pid_size)
                             if self.if_use_seq_len:
                                 feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
