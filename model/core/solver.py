@@ -224,13 +224,13 @@ class ModelSolver(object):
                         tar_pid_y = {}
                         tar_pid_true_label_prop = {}
                         num_test_points = len(test_loader.pid_label_y)
-                        test_pid_batches = xrange(int(math.ceil(num_test_points * 1.0 / self.batch_pid_size)))
+                        test_pid_batches = xrange(int(math.ceil(num_test_points * 1.0 / self.batch_size)))
                         print 'num of test pid batches: %d' % len(test_pid_batches)
                         for i in test_pid_batches:
                             if i % self.show_batches == 0:
                                 print 'batch ' + str(i)
                                 batch_pid, x, y, seq_l, label_emb, label_prop, count_score = test_loader.get_batch(
-                                    num_test_points, i * self.batch_pid_size, (i + 1) * self.batch_pid_size)
+                                    num_test_points, i * self.batch_size, (i + 1) * self.batch_size)
                             if self.if_use_seq_len:
                                 feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
                                              self.model.seqlen: np.array(seq_l),
