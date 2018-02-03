@@ -329,14 +329,15 @@ class ModelSolver(object):
                 pre_pid_score = {}
                 tar_pid_y = {}
                 tar_pid_true_label_prop = {}
-                num_test_points = len(test_loader.pid_label_y)
+                #num_test_points = len(test_loader.pid_label_y)
+                self.batch_size = self.batch_pid_size
+                num_test_points = len(test_loader.pids)
                 test_batches = xrange(int(math.ceil(num_test_points * 1.0 / self.batch_size)))
-                #test_batches = xrange(int(math.ceil(num_test_points * 1.0 / self.batch_pid_size)))
                 print 'num of test batches: %d' % len(test_batches)
                 for i in test_batches:
                     if i % self.show_batches == 0:
                         print 'batch ' + str(i)
-                        batch_pid, x, y, seq_l, label_emb, label_prop, count_score = test_loader.get_batch(
+                        batch_pid, x, y, seq_l, label_emb, label_prop, count_score = test_loader.get_pid_x(
                             num_test_points, i * self.batch_size, (i + 1) * self.batch_size)
                     if self.if_use_seq_len:
                         feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
@@ -352,22 +353,26 @@ class ModelSolver(object):
                     y_p, l_ = sess.run([y_, loss], feed_dict)
                     test_loss += l_
                     # get all predictions
-                    # prediction
-                    for p_i in xrange(len(batch_pid)):
-                        pid = batch_pid[p_i]
-                        try:
-                            tar_pid_y[pid].append(y[p_i])
-                            pre_pid_score[pid].append(np.multiply(np.power(y_p[p_i], self.alpha),
-                                                                  np.power(count_score[p_i], 1 - self.alpha)))
-                            pre_pid_prop[pid].append(label_prop[p_i])
-                        except KeyError:
-                            tar_pid_y[pid] = [y[p_i]]
-                            pre_pid_score[pid] = [np.multiply(np.power(y_p[p_i], self.alpha),
-                                                              np.power(count_score[p_i], 1 - self.alpha))]
-                            pre_pid_prop[pid] = [label_prop[p_i]]
-                    for pid in np.unique(batch_pid):
-                        tar_pid_true_label_prop[pid] = [test_loader.label_prop[q] for q in
-                                                        test_loader.label_data[pid]]
+                    # for p_i in xrange(len(batch_pid)):
+                    #     pid = batch_pid[p_i]
+                    #     try:
+                    #         tar_pid_y[pid].append(y[p_i])
+                    #         pre_pid_score[pid].append(np.multiply(np.power(y_p[p_i], self.alpha),
+                    #                                               np.power(count_score[p_i], 1 - self.alpha)))
+                    #         pre_pid_prop[pid].append(label_prop[p_i])
+                    #     except KeyError:
+                    #         tar_pid_y[pid] = [y[p_i]]
+                    #         pre_pid_score[pid] = [np.multiply(np.power(y_p[p_i], self.alpha),
+                    #                                           np.power(count_score[p_i], 1 - self.alpha))]
+                    #         pre_pid_prop[pid] = [label_prop[p_i]]
+                    # for pid in np.unique(batch_pid):
+                    #     tar_pid_true_label_prop[pid] = [test_loader.label_prop[q] for q in
+                    #                                     test_loader.label_data[pid]]
+                    for pid in batch_pid:
+                        tar_pid_y[pid] = y
+                        tar_pid_true_label_prop[pid] = [test_loader.label_prop[q] for q in test_loader.label_data[pid]]
+                        pre_pid_score[pid] = np.multiply(np.power(y_p, 0.2), np.power(count_score, 0.8))
+                        pre_pid_prop[pid] = label_prop
                 test_results = results_for_score_vector(tar_pid_true_label_prop, tar_pid_y, pre_pid_score,
                                                         pre_pid_prop)
             w_text = 'test loss is %f \n' % test_loss
