@@ -1006,6 +1006,18 @@ class TestDataLoader2():
                 if l_ in true_labels:
                     self.candidate_label_y[pid][j] = 1
 
+    def get_one_pid_x(self, pid):
+        candidate_labels = self.candidate_label[pid]
+        num = len(candidate_labels)
+        #batch_pid = [pid] * num
+        batch_x = [self.doc_wordID_data[pid]] * num
+        batch_y = self.candidate_label_y[pid]
+        batch_length = [self.doc_length[pid]] * num
+        batch_label_embedding_id = self.candidate_label_embedding_id[pid]
+        batch_label_prop = [self.label_prop[e] for e in candidate_labels]
+        batch_count_score = self.candidate_count_score[pid]
+        return pid, batch_x, batch_y, batch_length, batch_label_embedding_id, batch_label_prop, batch_count_score
+
     def get_pid_x(self, length, start, end):
         batch_pid = []
         batch_x = []
@@ -1028,17 +1040,9 @@ class TestDataLoader2():
             batch_count_score.append(self.candidate_count_score[pid])
         if end2 < end:
             batch_pid = np.concatenate(batch_pid, axis=0)
-            batch_x = np.concatenate(batch_x, axis=0)
-            batch_y = np.concatenate(batch_y, axis=0)
-            batch_length = np.concatenate(batch_length, axis=0)
-            batch_label_embedding_id = np.concatenate(batch_label_embedding_id, axis=0)
-            batch_label_prop = np.concatenate(batch_label_prop, axis=0)
-            batch_count_score = np.concatenate(batch_count_score, axis=0)
-        else:
-            batch_pid = np.concatenate(batch_pid, axis=0)
             padding_num = end - end2
             batch_x = np.concatenate((np.concatenate(batch_x, axis=0),
-                                     np.zeros((padding_num, self.max_seq_len))), axis=0)
+                                      np.zeros((padding_num, self.max_seq_len))), axis=0)
             batch_y = np.concatenate((np.concatenate(batch_y, axis=0),
                                       np.zeros(padding_num)), axis=0)
             batch_length = np.concatenate((np.concatenate(batch_length, axis=0),
@@ -1048,7 +1052,15 @@ class TestDataLoader2():
             batch_label_prop = np.concatenate((np.concatenate(batch_label_prop, axis=0),
                                                np.zeros(padding_num)), axis=0)
             batch_count_score = np.concatenate((np.concatenate(batch_count_score, axis=0),
-                                               np.zeros(padding_num)), axis=0)
+                                                np.zeros(padding_num)), axis=0)
+        else:
+            batch_pid = np.concatenate(batch_pid, axis=0)
+            batch_x = np.concatenate(batch_x, axis=0)
+            batch_y = np.concatenate(batch_y, axis=0)
+            batch_length = np.concatenate(batch_length, axis=0)
+            batch_label_embedding_id = np.concatenate(batch_label_embedding_id, axis=0)
+            batch_label_prop = np.concatenate(batch_label_prop, axis=0)
+            batch_count_score = np.concatenate(batch_count_score, axis=0)
         return batch_pid, batch_x, batch_y, batch_length, batch_label_embedding_id, batch_label_prop, batch_count_score
 
     def get_batch(self, length, start, end):
