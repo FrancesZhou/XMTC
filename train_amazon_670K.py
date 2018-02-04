@@ -107,11 +107,11 @@ def main():
     test_candidate_label = load_pickle(candidate_folder_path + 'test_candidate_label.pkl')
     print '============== create train/test data loader ...'
     if 'XML' not in args.model:
-        #train_loader = TrainDataLoader2(train_doc, train_label, train_candidate_label, label_dict, label_prop,
-        #                           10, 10, max_seq_len=args.max_seq_len)
-        #max_seq_len = train_loader.max_seq_len
-        max_seq_len = args.max_seq_len
-        train_loader = {}
+        train_loader = TrainDataLoader2(train_doc, train_label, train_candidate_label, label_dict, label_prop,
+                                   10, 10, max_seq_len=args.max_seq_len)
+        max_seq_len = train_loader.max_seq_len
+        #max_seq_len = args.max_seq_len
+        #train_loader = {}
         print 'max_seq_len: ' + str(max_seq_len)
         test_loader = TestDataLoader2(test_doc, test_label, test_candidate_label, label_dict, label_prop,
                                       max_seq_len=max_seq_len, if_cal_metrics=args.cal_metrics)
