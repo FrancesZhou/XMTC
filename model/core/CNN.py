@@ -25,6 +25,7 @@ class CNN(object):
         #
         self.word_embedding = tf.constant(word_embedding, dtype=tf.float32)
         self.label_embedding = tf.constant(label_embedding, dtype=tf.float32)
+        self.label_embedding = tf.get_variable('label_embedding', [], initializer=label_embedding)
         #
         # self.x = tf.placeholder(tf.float32, [self.batch_size, self.max_seq_len, self.word_embedding_dim])
         # self.seqlen = tf.placeholder(tf.int32, [self.batch_size])
