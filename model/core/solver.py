@@ -63,14 +63,16 @@ class ModelSolver(object):
         # train op
         with tf.name_scope('optimizer'):
             optimizer = self.optimizer(learning_rate=self.learning_rate)
-            grads = tf.gradients(loss, tf.trainable_variables())
-            grads_and_vars = list(zip(grads, tf.trainable_variables()))
-            train_op = optimizer.apply_gradients(grads_and_vars=grads_and_vars)
+            train_op = optimizer.minimize(loss, global_step=tf.train.get_global_step())
+            # grads = tf.gradients(loss, tf.trainable_variables())
+            # grads_and_vars = list(zip(grads, tf.trainable_variables()))
+            # train_op = optimizer.apply_gradients(grads_and_vars=grads_and_vars)
             # graph
             g_optimizer = self.optimizer(learning_rate=self.g_learning_rate)
-            g_grads = tf.gradients(g_loss, tf.trainable_variables())
-            g_grads_and_vars = list(zip(g_grads, tf.trainable_variables()))
-            g_train_op = g_optimizer.apply_gradients(grads_and_vars=g_grads_and_vars)
+            g_train_op = g_optimizer.minimize(g_loss, global_step=tf.train.get_global_step())
+            # g_grads = tf.gradients(g_loss, tf.trainable_variables())
+            # g_grads_and_vars = list(zip(g_grads, tf.trainable_variables()))
+            # g_train_op = g_optimizer.apply_gradients(grads_and_vars=g_grads_and_vars)
         tf.get_variable_scope().reuse_variables()
         # set upper limit of used gpu memory
         #gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.5)
@@ -131,13 +133,13 @@ class ModelSolver(object):
                                          self.model.label_embedding_id: np.array(label_emb, dtype=np.int32),
                                          self.model.label_prop: np.array(label_prop)
                                          }
-                        '''
+                        #
                         g_feed_dict = {self.model.gl1: np.array(gx1, dtype=np.int32),
                                        self.model.gl2: np.array(gx2, dtype=np.int32),
                                        self.model.gy: np.array(gy, dtype=np.float32)}
                         feed_dict.update(g_feed_dict)
-                        '''
-                        print feed_dict
+                        #
+                        #print feed_dict
                         _, l_ = sess.run([train_op, loss], feed_dict)
                         _, gl_ = sess.run([g_train_op, g_loss], feed_dict)
                         curr_loss += l_
