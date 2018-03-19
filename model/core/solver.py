@@ -126,7 +126,10 @@ class ModelSolver(object):
                             feed_dict = {self.model.x: np.array(x, dtype=np.int32), self.model.y: np.array(y, dtype=np.float32),
                                          self.model.seqlen: np.array(seq_l, dtype=np.int32),
                                          self.model.label_embedding_id: np.array(label_emb, dtype=np.int32),
-                                         self.model.label_prop: np.array(label_prop, dtype=np.float32)
+                                         self.model.label_prop: np.array(label_prop, dtype=np.float32),
+                                         self.model.gl1: np.array(gx1, dtype=np.int32),
+                                         self.model.gl2: np.array(gx2, dtype=np.int32),
+                                         self.model.gy: np.array(gy, dtype=np.float32)
                                          }
                         else:
                             feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
@@ -134,10 +137,10 @@ class ModelSolver(object):
                                          self.model.label_prop: np.array(label_prop)
                                          }
                         #
-                        g_feed_dict = {self.model.gl1: np.array(gx1, dtype=np.int32),
-                                       self.model.gl2: np.array(gx2, dtype=np.int32),
-                                       self.model.gy: np.array(gy, dtype=np.float32)}
-                        feed_dict.update(g_feed_dict)
+                        # g_feed_dict = {self.model.gl1: np.array(gx1, dtype=np.int32),
+                        #                self.model.gl2: np.array(gx2, dtype=np.int32),
+                        #                self.model.gy: np.array(gy, dtype=np.float32)}
+                        # feed_dict.update(g_feed_dict)
                         #
                         #print feed_dict
                         _, l_ = sess.run([train_op, loss], feed_dict)
