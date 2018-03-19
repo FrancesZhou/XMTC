@@ -21,10 +21,11 @@ from model.utils.io_utils import load_pickle, dump_pickle
 
 
 class ModelSolver(object):
-    def __init__(self, model, train_data, test_data, **kwargs):
+    def __init__(self, model, train_data, test_data, graph_data=None, **kwargs):
         self.model = model
         self.train_data = train_data
         self.test_data = test_data
+        self.graph_data = graph_data
         self.train_x_emb = {}
         self.test_x_emb = {}
         self.test_unique_candidate_label = {}
@@ -36,7 +37,8 @@ class ModelSolver(object):
         self.batch_size = kwargs.pop('batch_size', 32)
         self.batch_pid_size = kwargs.pop('batch_pid_size', 4)
         self.alpha = kwargs.pop('alpha', 0.2)
-        self.learning_rate = kwargs.pop('learning_rate', 0.000001)
+        self.learning_rate = kwargs.pop('learning_rate', 0.0001)
+        self.g_learning_rate = kwargs.pop('learning_rate', 0.1)
         self.update_rule = kwargs.pop('update_rule', 'adam')
         self.model_path = kwargs.pop('model_path', './model/')
         self.pretrained_model = kwargs.pop('pretrained_model', None)
@@ -55,14 +57,20 @@ class ModelSolver(object):
         o_file = open(output_file_path, 'w')
         train_loader = self.train_data
         test_loader = self.test_data
+        graph_loader = self.graph_data
         # build_model
-        _, y_, loss = self.model.build_model()
+        _, y_, loss, g_loss = self.model.build_model()
         # train op
         with tf.name_scope('optimizer'):
             optimizer = self.optimizer(learning_rate=self.learning_rate)
             grads = tf.gradients(loss, tf.trainable_variables())
             grads_and_vars = list(zip(grads, tf.trainable_variables()))
             train_op = optimizer.apply_gradients(grads_and_vars=grads_and_vars)
+            # graph
+            g_optimizer = self.optimizer(learning_rate=self.g_learning_rate)
+            g_grads = tf.gradients(g_loss, tf.trainable_variables())
+            g_grads_and_vars = list(zip(g_grads, tf.trainable_variables()))
+            g_train_op = g_optimizer.apply_gradients(grads_and_vars=g_grads_and_vars)
         tf.get_variable_scope().reuse_variables()
         # set upper limit of used gpu memory
         #gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.5)
@@ -77,6 +85,7 @@ class ModelSolver(object):
             for e in xrange(self.n_epochs):
                 print '========== begin epoch %d ===========' % e
                 curr_loss = 0
+                g_loss = 0
                 val_loss = 0
                 if self.if_output_all_labels:
                     k = 0
@@ -110,6 +119,7 @@ class ModelSolver(object):
                             = train_loader.next_batch(num_train_points, i*self.batch_size, (i+1)*self.batch_size)
                         if len(y) == 0:
                             continue
+                        gx1, gx2, gy = graph_loader.gen_graph_context()
                         if self.if_use_seq_len:
                             feed_dict = {self.model.x: np.array(x), self.model.y: np.array(y),
                                          self.model.seqlen: np.array(seq_l),
@@ -121,8 +131,14 @@ class ModelSolver(object):
                                          self.model.label_embedding_id: np.array(label_emb, dtype=int),
                                          self.model.label_prop: np.array(label_prop)
                                          }
+                        g_feed_dict = {self.model.gx1: np.array(gx1),
+                                       self.model.gx2:np.array(gx2),
+                                       self.model.gy: np.array(gy)}
+                        feed_dict.update(g_feed_dict)
                         _, l_ = sess.run([train_op, loss], feed_dict)
+                        _, gl_ = sess.run([g_train_op, g_loss], feed_dict)
                         curr_loss += l_
+                        g_loss += gl_
                     # -------------- validate -------------
                     num_val_points = len(train_loader.val_pid_label_y)
                     val_pid_batches = xrange(int(math.ceil(num_val_points*1.0 / self.batch_size)))
@@ -174,7 +190,7 @@ class ModelSolver(object):
                 # reset train_loader
                 train_loader.reset_data()
                 # ====== output loss ======
-                w_text = 'at epoch %d, train loss is %f \n' % (e, curr_loss)
+                w_text = 'at epoch %d, g_loss = %f , train loss is %f \n' % (e, g_loss, curr_loss)
                 print w_text
                 o_file.write(w_text)
                 w_text = 'at epoch %d, val loss is %f \n' % (e, val_loss)

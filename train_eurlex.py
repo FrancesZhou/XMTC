@@ -16,6 +16,7 @@ from model.core.LSTM import LSTM
 from model.core.CNN import CNN
 from model.core.XML_CNN import XML_CNN
 from model.core.NN import NN
+from model.core.NN_graph import NN_graph
 from model.core.solver import ModelSolver
 from model.utils.io_utils import load_pickle
 
@@ -115,7 +116,7 @@ def main():
     print '============== build model ...'
     if 'NN' in args.model:
         print 'build NN model ...'
-        model = NN(max_seq_len, 5000+1, 300, label_embeddings, 32, args)
+        model = NN_graph(max_seq_len, 5000+1, 300, label_embeddings, 32, args)
         args.if_use_seq_len = 1
 
     print '================= model solver ...'

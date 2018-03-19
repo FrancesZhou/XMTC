@@ -943,8 +943,6 @@ class TrainDataLoader2():
         _, self.val_pids = train_test_split(self.pids, test_size=0.1)
         self.set_val_batch()
 
-
-
 # for propensity-loss and rerank test dataloader
 class TestDataLoader2():
     def __init__(self, doc_wordID_data, label_data,
@@ -1115,5 +1113,53 @@ class TestDataLoader2():
         results = results_for_score_vector(tar_pid_true_label_prop, tar_pid_y, pre_pid_score, pre_pid_prop)
         print '=========== metrics of candidate baseline result =============='
         print results
+
+
+# DataLoader for graph
+class DataLoader_graph():
+    def __init__(self, graph, neg_samp=10, g_batch_size=100, g_sample_size=64, g_window_size=3, g_path_size=10):
+        self.graph = graph
+        self.neg_sample = neg_samp
+        self.g_batch_size = g_batch_size
+        self.g_sample_size = g_sample_size
+        self.g_window_size = g_window_size
+        self.g_path_size = g_path_size
+        # self.num_ver = max(self.graph.keys()) + 1
+        # print self.num_ver
+        self.num_ver = len(self.graph.keys())
+        print self.num_ver
+        #
+        self.reset_data()
+
+    def gen_graph_context(self):
+        gl1, gl2, gy = [], [], []
+        end = min(self.num_ver, self.cursor + self.g_batch_size)
+        for k in self.ind[self.cursor, end]:
+            if len(self.graph[k]) == 0:
+                continue
+            path = [k]
+            for _ in range(self.g_path_size):
+                path.append(random.choice(self.graph[path[-1]]))
+            for l in range(len(path)):
+                for m in range(l - self.g_window_size, l + self.g_window_size):
+                    if m < 0 or m >= len(path):
+                        continue
+                    gl1.append(path[l])
+                    gl2.append(path[m])
+                    gy.append(1)
+                    for _ in range(self.neg_sample):
+                        gl1.append(path[l])
+                        gl2.append(random.randint(0, self.num_ver - 1))
+                        gy.append(-1)
+        self.cursor = end
+        if self.cursor == self.num_ver:
+            self.reset_data()
+        return gl1, gl2, gy
+
+    def reset_data(self):
+        self.ind = np.random.permutation(self.num_ver)
+        self.cursor = 0
+
+
 
 

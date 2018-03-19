@@ -9,6 +9,7 @@ from __future__ import absolute_import
 import os
 import re
 import numpy as np
+from collections import defaultdict
 import cPickle as pickle
 
 def dump_pickle(data, file):
@@ -110,4 +111,21 @@ def write_label_pairs_into_file(label_pairs, output_file):
     for i in range(len(label_pairs)):
         txtfile.write(str(label_pairs[i][0]) + '\t' + str(label_pairs[i][1]))
         txtfile.write('\n')
+
+def read_label_pairs(file):
+    graph = defaultdict(int)
+    txtfile = open(file, 'r')
+    for line in txtfile.readlines():
+        l1, l2 = line.split()
+        try:
+            graph[int(l1)].append(int(l2))
+        except AttributeError:
+            graph[int(l1)] = [int(l2)]
+        try:
+            graph[int(l2)].append(int(l1))
+        except AttributeError:
+            graph[int(l2)] = [int(l1)]
+    return dict(graph)
+
+
 
