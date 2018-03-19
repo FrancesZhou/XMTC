@@ -112,6 +112,7 @@ def main():
         print 'max_seq_len: ' + str(max_seq_len)
         test_loader = TestDataLoader2(test_doc, test_label, test_candidate_label, label_dict, label_prop,
                                       max_seq_len=max_seq_len, if_cal_metrics=args.cal_metrics, if_doc_is_dict=True)
+        graph_loader = DataLoader_graph(graph)
     # ----------------------- train ------------------------
     print '============== build model ...'
     if 'NN' in args.model:

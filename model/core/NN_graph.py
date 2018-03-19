@@ -11,7 +11,7 @@ import tensorflow as tf
 from tensorflow.python.keras.backend import categorical_crossentropy
 
 class NN_graph(object):
-    def __init__(self, max_seq_len, vocab_size, word_embedding_dim, label_embedding, num_classify_hidden, neg_samp, args):
+    def __init__(self, max_seq_len, vocab_size, word_embedding_dim, label_embedding, num_classify_hidden, args, neg_samp=True):
         self.max_seq_len = max_seq_len
         self.word_embedding_dim = word_embedding_dim
         self.num_filters = args.num_filters
@@ -29,7 +29,7 @@ class NN_graph(object):
         #
         self.word_embedding = tf.get_variable('word_embedding', [vocab_size, word_embedding_dim])
         # self.label_embedding = tf.constant(label_embedding, dtype=tf.float32)
-        self.label_embedding = tf.get_variable('label_embedding', [], initializer=label_embedding)
+        self.label_embedding = tf.get_variable('label_embedding', initializer=tf.constant(label_embedding, dtype=tf.float32))
         #
         self.x = tf.placeholder(tf.int32, [None, self.max_seq_len])
         self.y = tf.placeholder(tf.float32, [None])
@@ -39,7 +39,7 @@ class NN_graph(object):
         #
         self.gl1 = tf.placeholder_with_default(tf.constant(0, dtype=tf.int32, shape=[3]), [None])
         self.gl2 = tf.placeholder_with_default(tf.constant(0, dtype=tf.int32, shape=[3]), [None])
-        self.gy = tf.placeholder_with_default(tf.constant(0, dtype=tf.int32, shape=[3]), [None])
+        self.gy = tf.placeholder_with_default(tf.constant(0, dtype=tf.float32, shape=[3]), [None])
 
     def attention_layer(self, hidden_states, label_embeddings, hidden_dim, label_embedding_dim, seqlen, name_scope=None):
         # hidden_states: [batch_size, max_seq_len, hidden_dim]
@@ -116,7 +116,7 @@ class NN_graph(object):
         # ---------- graph context loss ---------------
         gl1 = tf.nn.embedding_lookup(self.label_embedding, self.gl1)
         if self.neg_samp:
-            gl2 = tf.nn.embedding_lookup(tf.get_variable('label_embedding', [self.label_num, self.label_embedding_dim], initializer=self.weight_initializer),
+            gl2 = tf.nn.embedding_lookup(tf.get_variable('context_embedding', [self.label_num, self.label_embedding_dim], initializer=self.weight_initializer),
                                          self.gl2)
             l_gy = tf.multiply(gl1, gl2)
             g_loss = tf.reduce_sum(-tf.log(tf.sigmoid(tf.reduce_sum(l_gy, axis=1) * self.gy)))
