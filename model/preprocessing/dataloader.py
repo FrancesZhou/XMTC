@@ -1137,7 +1137,7 @@ class DataLoader_graph():
     def gen_graph_context(self):
         gl1, gl2, gy = [], [], []
         end = min(self.num_ver, self.cursor + self.g_batch_size)
-        for k in self.ind[self.cursor, end]:
+        for k in self.ind[self.cursor:end]:
             if len(self.graph[self.index_label[k]]) == 0:
                 continue
             path = [k]
@@ -1160,7 +1160,7 @@ class DataLoader_graph():
         return gl1, gl2, gy
 
     def reset_data(self):
-        self.ind = np.random.permutation(range(self.num_ver))
+        self.ind = np.random.permutation(self.num_ver)
         self.cursor = 0
 
 
