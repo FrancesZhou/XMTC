@@ -37,9 +37,12 @@ class NN_graph(object):
         self.label_embedding_id = tf.placeholder(tf.int32, [None])
         self.label_prop = tf.placeholder(tf.float32, [None])
         #
-        self.gl1 = tf.placeholder_with_default(tf.constant(0, dtype=tf.int32, shape=[3]), [None])
-        self.gl2 = tf.placeholder_with_default(tf.constant(0, dtype=tf.int32, shape=[3]), [None])
-        self.gy = tf.placeholder_with_default(tf.constant(0, dtype=tf.float32, shape=[3]), [None])
+        self.gl1 = tf.placeholder(tf.int32, [None])
+        self.gl2 = tf.placeholder(tf.int32, [None])
+        self.gy = tf.placeholder(tf.float32, [None])
+        #self.gl1 = tf.placeholder_with_default(tf.constant(0, dtype=tf.int32, shape=[3]), [None])
+        #self.gl2 = tf.placeholder_with_default(tf.constant(0, dtype=tf.int32, shape=[3]), [None])
+        #self.gy = tf.placeholder_with_default(tf.constant(0, dtype=tf.float32, shape=[3]), [None])
 
     def attention_layer(self, hidden_states, label_embeddings, hidden_dim, label_embedding_dim, seqlen, name_scope=None):
         # hidden_states: [batch_size, max_seq_len, hidden_dim]
