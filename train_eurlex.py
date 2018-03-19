@@ -19,6 +19,7 @@ from model.core.NN import NN
 from model.core.NN_graph import NN_graph
 from model.core.solver import ModelSolver
 from model.utils.io_utils import load_pickle
+from datasets.material.utils import read_label_pairs
 
 
 def main():
@@ -43,6 +44,9 @@ def main():
                        help='if calculate wts_p and wts_ndcg for baseline results')
     parse.add_argument('-alpha', '--alpha', type=float, default=0.2,
                        help='trade off parameter between baseline score and refinement score')
+    # --- graph ---
+    parse.add_argument('-use_graph', '--use_graph', type=int, default=1,
+                       help='if use graph for joint training')
     # ---------- params for CNN ------------
     parse.add_argument('-num_filters', '--num_filters', type=int,
                        default=32, help='number of filters in CNN')
@@ -112,7 +116,9 @@ def main():
         print 'max_seq_len: ' + str(max_seq_len)
         test_loader = TestDataLoader2(test_doc, test_label, test_candidate_label, label_dict, label_prop,
                                       max_seq_len=max_seq_len, if_cal_metrics=args.cal_metrics, if_doc_is_dict=True)
-        graph_loader = DataLoader_graph(graph)
+        if args.use_graph:
+            graph = read_label_pairs(args.folder_path + 'labels.edgelist')
+            graph_loader = DataLoader_graph(graph)
     # ----------------------- train ------------------------
     print '============== build model ...'
     if 'NN' in args.model:
@@ -123,16 +129,17 @@ def main():
     print '================= model solver ...'
     # solver: __init__(self, model, train_data, test_data, **kwargs):
     solver = ModelSolver(model, train_loader, test_loader,
-                          if_use_seq_len=args.if_use_seq_len,
-                          if_output_all_labels=args.if_output_all_labels,
-                          show_batches=args.show_batches,
-                          n_epochs=args.n_epochs,
-                          batch_size=args.batch_size,
-                          update_rule=args.update_rule,
-                          learning_rate=args.learning_rate,
-                          pretrained_model=args.pretrained_model_path,
-                          model_path=args.folder_path + args.model + '/',
-                          test_path=args.folder_path + args.model + '/')
+                         graph_loader,
+                         if_use_seq_len=args.if_use_seq_len,
+                         if_output_all_labels=args.if_output_all_labels,
+                         show_batches=args.show_batches,
+                         n_epochs=args.n_epochs,
+                         batch_size=args.batch_size,
+                         update_rule=args.update_rule,
+                         learning_rate=args.learning_rate,
+                         pretrained_model=args.pretrained_model_path,
+                         model_path=args.folder_path + args.model + '/',
+                         test_path=args.folder_path + args.model + '/')
     # train
     if args.train:
         print '================= begin training...'
