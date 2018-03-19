@@ -1117,8 +1117,9 @@ class TestDataLoader2():
 
 # DataLoader for graph
 class DataLoader_graph():
-    def __init__(self, graph, neg_samp=10, g_batch_size=100, g_sample_size=64, g_window_size=3, g_path_size=10):
+    def __init__(self, graph, label_dict, neg_samp=10, g_batch_size=100, g_sample_size=64, g_window_size=3, g_path_size=10):
         self.graph = graph
+        self.label_dict = label_dict
         self.neg_sample = neg_samp
         self.g_batch_size = g_batch_size
         self.g_sample_size = g_sample_size
@@ -1128,18 +1129,20 @@ class DataLoader_graph():
         # print self.num_ver
         self.num_ver = len(self.graph.keys())
         print self.num_ver
-        #
+        # create index_label
+        self.index_label = dict((v, k) for k, v in label_dict.items())
+        # reset data
         self.reset_data()
 
     def gen_graph_context(self):
         gl1, gl2, gy = [], [], []
         end = min(self.num_ver, self.cursor + self.g_batch_size)
         for k in self.ind[self.cursor, end]:
-            if len(self.graph[k]) == 0:
+            if len(self.graph[self.index_label[k]]) == 0:
                 continue
             path = [k]
             for _ in range(self.g_path_size):
-                path.append(random.choice(self.graph[path[-1]]))
+                path.append(self.label_dict[random.choice(self.graph[self.index_label[path[-1]]])])
             for l in range(len(path)):
                 for m in range(l - self.g_window_size, l + self.g_window_size):
                     if m < 0 or m >= len(path):
@@ -1157,7 +1160,7 @@ class DataLoader_graph():
         return gl1, gl2, gy
 
     def reset_data(self):
-        self.ind = np.random.permutation(self.num_ver)
+        self.ind = np.random.permutation(range(self.num_ver))
         self.cursor = 0
 
 

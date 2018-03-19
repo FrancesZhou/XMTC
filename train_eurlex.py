@@ -118,7 +118,7 @@ def main():
                                       max_seq_len=max_seq_len, if_cal_metrics=args.cal_metrics, if_doc_is_dict=True)
         if args.use_graph:
             graph = read_label_pairs(args.folder_path + 'labels.edgelist')
-            graph_loader = DataLoader_graph(graph)
+            graph_loader = DataLoader_graph(graph, label_dict)
     # ----------------------- train ------------------------
     print '============== build model ...'
     if 'NN' in args.model:
