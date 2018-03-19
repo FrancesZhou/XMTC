@@ -1117,7 +1117,7 @@ class TestDataLoader2():
 
 # DataLoader for graph
 class DataLoader_graph():
-    def __init__(self, graph, label_dict, neg_samp=10, g_batch_size=100, g_sample_size=64, g_window_size=3, g_path_size=10):
+    def __init__(self, graph, label_dict, neg_samp=10, g_batch_size=10, g_sample_size=64, g_window_size=3, g_path_size=10):
         self.graph = graph
         self.label_dict = label_dict
         self.neg_sample = neg_samp
@@ -1149,11 +1149,11 @@ class DataLoader_graph():
                         continue
                     gl1.append(path[l])
                     gl2.append(path[m])
-                    gy.append(1)
+                    gy.append(1.0)
                     for _ in range(self.neg_sample):
                         gl1.append(path[l])
                         gl2.append(random.randint(0, self.num_ver - 1))
-                        gy.append(-1)
+                        gy.append(-1.0)
         self.cursor = end
         if self.cursor == self.num_ver:
             self.reset_data()

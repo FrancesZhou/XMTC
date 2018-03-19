@@ -38,7 +38,7 @@ class ModelSolver(object):
         self.batch_pid_size = kwargs.pop('batch_pid_size', 4)
         self.alpha = kwargs.pop('alpha', 0.2)
         self.learning_rate = kwargs.pop('learning_rate', 0.0001)
-        self.g_learning_rate = kwargs.pop('learning_rate', 0.1)
+        self.g_learning_rate = kwargs.pop('learning_rate', 0.0001)
         self.update_rule = kwargs.pop('update_rule', 'adam')
         self.model_path = kwargs.pop('model_path', './model/')
         self.pretrained_model = kwargs.pop('pretrained_model', None)
@@ -63,7 +63,7 @@ class ModelSolver(object):
         # train op
         with tf.name_scope('optimizer'):
             optimizer = self.optimizer(learning_rate=self.learning_rate)
-            train_op = optimizer.minimize(loss, global_step=tf.train.get_global_step())
+            train_op = optimizer.minimize(loss+g_loss, global_step=tf.train.get_global_step())
             # grads = tf.gradients(loss, tf.trainable_variables())
             # grads_and_vars = list(zip(grads, tf.trainable_variables()))
             # train_op = optimizer.apply_gradients(grads_and_vars=grads_and_vars)
@@ -87,7 +87,7 @@ class ModelSolver(object):
             for e in xrange(self.n_epochs):
                 print '========== begin epoch %d ===========' % e
                 curr_loss = 0
-                g_loss = 0
+                curr_g_loss = 0
                 val_loss = 0
                 if self.if_output_all_labels:
                     k = 0
@@ -142,11 +142,11 @@ class ModelSolver(object):
                         #                self.model.gy: np.array(gy, dtype=np.float32)}
                         # feed_dict.update(g_feed_dict)
                         #
-                        #print feed_dict
+                        #print len(gx1)
                         _, l_ = sess.run([train_op, loss], feed_dict)
                         _, gl_ = sess.run([g_train_op, g_loss], feed_dict)
                         curr_loss += l_
-                        g_loss += gl_
+                        curr_g_loss += gl_
                     # -------------- validate -------------
                     num_val_points = len(train_loader.val_pid_label_y)
                     val_pid_batches = xrange(int(math.ceil(num_val_points*1.0 / self.batch_size)))
@@ -198,7 +198,7 @@ class ModelSolver(object):
                 # reset train_loader
                 train_loader.reset_data()
                 # ====== output loss ======
-                w_text = 'at epoch %d, g_loss = %f , train loss is %f \n' % (e, g_loss, curr_loss)
+                w_text = 'at epoch %d, g_loss = %f , train loss is %f \n' % (e, curr_g_loss, curr_loss)
                 print w_text
                 o_file.write(w_text)
                 w_text = 'at epoch %d, val loss is %f \n' % (e, val_loss)

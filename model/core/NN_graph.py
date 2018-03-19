@@ -37,12 +37,12 @@ class NN_graph(object):
         self.label_embedding_id = tf.placeholder(tf.int32, [None])
         self.label_prop = tf.placeholder(tf.float32, [None])
         #
-        self.gl1 = tf.placeholder(tf.int32, [None])
-        self.gl2 = tf.placeholder(tf.int32, [None])
-        self.gy = tf.placeholder(tf.float32, [None])
-        #self.gl1 = tf.placeholder_with_default(tf.constant(0, dtype=tf.int32, shape=[3]), [None])
-        #self.gl2 = tf.placeholder_with_default(tf.constant(0, dtype=tf.int32, shape=[3]), [None])
-        #self.gy = tf.placeholder_with_default(tf.constant(0, dtype=tf.float32, shape=[3]), [None])
+        #self.gl1 = tf.placeholder(tf.int32, [None])
+        #self.gl2 = tf.placeholder(tf.int32, [None])
+        #self.gy = tf.placeholder(tf.float32, [None])
+        self.gl1 = tf.placeholder_with_default(tf.constant(0, dtype=tf.int32, shape=[3]), [None])
+        self.gl2 = tf.placeholder_with_default(tf.constant(0, dtype=tf.int32, shape=[3]), [None])
+        self.gy = tf.placeholder_with_default(tf.constant(0, dtype=tf.float32, shape=[3]), [None])
 
     def attention_layer(self, hidden_states, label_embeddings, hidden_dim, label_embedding_dim, seqlen, name_scope=None):
         # hidden_states: [batch_size, max_seq_len, hidden_dim]
@@ -122,13 +122,13 @@ class NN_graph(object):
             gl2 = tf.nn.embedding_lookup(tf.get_variable('context_embedding', [self.label_num, self.label_embedding_dim], initializer=self.weight_initializer),
                                          self.gl2)
             l_gy = tf.multiply(gl1, gl2)
-            g_loss = tf.reduce_sum(-tf.log(tf.sigmoid(tf.reduce_sum(l_gy, axis=1) * self.gy)))
+            g_loss = tf.reduce_mean(-tf.log(tf.sigmoid(tf.multiply(tf.reduce_sum(l_gy, axis=1), self.gy))))
         else:
             l_gy = tf.layers.dense(gl1, self.label_embedding_dim, activation=tf.nn.softmax, use_bias=False)
             g_loss = tf.reduce_mean(categorical_crossentropy(tf.one_hot(self.gl2, self.label_embedding_dim), l_gy))
 
         # ---------- classification loss ---------------
-        loss = tf.reduce_sum(
+        loss = tf.reduce_mean(
             tf.multiply(tf.nn.sigmoid_cross_entropy_with_logits(labels=y, logits=y_), self.label_prop)
         )
         # if self.use_propensity:
