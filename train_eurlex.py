@@ -47,6 +47,8 @@ def main():
     # --- graph ---
     parse.add_argument('-use_graph', '--use_graph', type=int, default=1,
                        help='if use graph for joint training')
+    parse.add_argument('-random_label_embedding', '--random_label_embedding', type=int, default=1,
+                       help='initialize label embeddings using deepwalk or random initializer')
     # ---------- params for CNN ------------
     parse.add_argument('-num_filters', '--num_filters', type=int,
                        default=32, help='number of filters in CNN')

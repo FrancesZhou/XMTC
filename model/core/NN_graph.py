@@ -27,9 +27,12 @@ class NN_graph(object):
         self.const_initializer = tf.constant_initializer()
         self.neg_inf = tf.constant(value=-np.inf, name='numpy_neg_inf')
         #
-        self.word_embedding = tf.get_variable('word_embedding', [vocab_size, word_embedding_dim])
+        self.word_embedding = tf.get_variable('word_embedding', [vocab_size, word_embedding_dim], initializer=self.weight_initializer)
         # self.label_embedding = tf.constant(label_embedding, dtype=tf.float32)
-        self.label_embedding = tf.get_variable('label_embedding', initializer=tf.constant(label_embedding, dtype=tf.float32))
+        if args.random_label_embedding:
+            self.label_embedding = tf.get_variable('label_embedding', [self.label_num, self.label_embedding_dim], initializer=self.weight_initializer)
+        else:
+            self.label_embedding = tf.get_variable('label_embedding', initializer=tf.constant(label_embedding, dtype=tf.float32))
         #
         self.x = tf.placeholder(tf.int32, [None, self.max_seq_len])
         self.y = tf.placeholder(tf.float32, [None])
