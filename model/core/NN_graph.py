@@ -11,7 +11,8 @@ import tensorflow as tf
 from tensorflow.python.keras.backend import categorical_crossentropy
 
 class NN_graph(object):
-    def __init__(self, max_seq_len, vocab_size, word_embedding_dim, label_embedding, num_classify_hidden, args, neg_samp=True):
+    def __init__(self, max_seq_len, vocab_size, word_embedding_dim, label_embedding, num_classify_hidden,
+                 args, use_attention=False, neg_samp=True):
         self.max_seq_len = max_seq_len
         self.word_embedding_dim = word_embedding_dim
         self.num_filters = args.num_filters
@@ -19,6 +20,7 @@ class NN_graph(object):
         self.num_classify_hidden = num_classify_hidden
         self.label_num = label_embedding.shape[0]
         self.label_embedding_dim = label_embedding.shape[-1]
+        self.use_attention = use_attention
         self.neg_samp = neg_samp
         self.batch_size = args.batch_size
         # self.dropout_keep_prob = args.dropout_keep_prob
@@ -111,10 +113,13 @@ class NN_graph(object):
         # x_emb
         x_emb = tf.reduce_max(x, axis=1)
         # ---------- attention --------------
-        with tf.name_scope('attention'):
-            x_lbl_fea = self.attention_layer(x, label_embeddings,
-                                             self.word_embedding_dim, self.label_embedding_dim,
-                                             self.seqlen)
+        if self.use_attention:
+            with tf.name_scope('attention'):
+                x_lbl_fea = self.attention_layer(x, label_embeddings,
+                                                 self.word_embedding_dim, self.label_embedding_dim,
+                                                 self.seqlen)
+        else:
+            x_lbl_fea = tf.reduce_mean(x, axis=1)
         # ---------- supervised classification output ----------
         with tf.name_scope('output'):
             fea_dim = x_lbl_fea.get_shape().as_list()[-1]
