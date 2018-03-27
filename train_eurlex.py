@@ -31,22 +31,19 @@ def main():
                        default='datasets/EUR-Lex/data/deeplearning_data/xml_data/',
                        help='path to train/test data')
     # ---------- vocab and word embeddings --------
-    parse.add_argument('-word_embeddings', '--word_embedding_path', type=str,
-                       default='word_emb.6B.300d.npy',
+    parse.add_argument('-word_embeddings', '--word_embedding_path', type=str, default='word_emb.6B.300d.npy',
                        help='path to the word embeddings')
     # ---------- model ----------
-    parse.add_argument('-max_seq_len', '--max_seq_len', type=int, default=500,
-                       help='maximum sequence length')
+    parse.add_argument('-max_seq_len', '--max_seq_len', type=int, default=500, help='maximum sequence length')
     parse.add_argument('-model', '--model', type=str, default='NN', help='model: NN, LSTM, biLSTM, CNN')
-    parse.add_argument('-pretrained_model', '--pretrained_model_path', type=str,
-                       default=None, help='path to the pretrained model')
-    parse.add_argument('-cal_metrics', '--cal_metrics', type=int, default=1,
-                       help='if calculate wts_p and wts_ndcg for baseline results')
+    parse.add_argument('-use_attention', '--use_attention', type=int, default=1, help='whether to use attention')
+    parse.add_argument('-pretrained_model', '--pretrained_model_path', type=str, default=None, help='path to the pretrained model')
+    parse.add_argument('-cal_metrics', '--cal_metrics', type=int, default=1, help='if calculate wts_p and wts_ndcg for baseline results')
     parse.add_argument('-alpha', '--alpha', type=float, default=0.2,
                        help='trade off parameter between baseline score and refinement score')
     # --- graph ---
-    parse.add_argument('-use_graph', '--use_graph', type=int, default=1,
-                       help='if use graph for joint training')
+    parse.add_argument('-use_graph', '--use_graph', type=int, default=1, help='if use graph for joint training')
+    parse.add_argument('-neg_samp', '--neg_samp', type=int, default=1, help='if use negative sampling in graph embedding network')
     parse.add_argument('-random_label_embedding', '--random_label_embedding', type=int, default=0,
                        help='initialize label embeddings using deepwalk or random initializer')
     # ---------- params for CNN ------------

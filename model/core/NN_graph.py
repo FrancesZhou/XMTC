@@ -12,7 +12,7 @@ from tensorflow.python.keras.backend import categorical_crossentropy
 
 class NN_graph(object):
     def __init__(self, max_seq_len, vocab_size, word_embedding_dim, label_embedding, num_classify_hidden,
-                 args, use_attention=False, neg_samp=True):
+                 args):
         self.max_seq_len = max_seq_len
         self.word_embedding_dim = word_embedding_dim
         self.num_filters = args.num_filters
@@ -20,8 +20,8 @@ class NN_graph(object):
         self.num_classify_hidden = num_classify_hidden
         self.label_num = label_embedding.shape[0]
         self.label_embedding_dim = label_embedding.shape[-1]
-        self.use_attention = use_attention
-        self.neg_samp = neg_samp
+        self.use_attention = args.use_attention
+        self.neg_samp = args.neg_samp
         self.batch_size = args.batch_size
         # self.dropout_keep_prob = args.dropout_keep_prob
         #

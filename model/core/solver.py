@@ -63,7 +63,7 @@ class ModelSolver(object):
         # train op
         with tf.name_scope('optimizer'):
             optimizer = self.optimizer(learning_rate=self.learning_rate)
-            train_op = optimizer.minimize(loss+g_loss, global_step=tf.train.get_global_step())
+            train_op = optimizer.minimize(loss, global_step=tf.train.get_global_step())
             # grads = tf.gradients(loss, tf.trainable_variables())
             # grads_and_vars = list(zip(grads, tf.trainable_variables()))
             # train_op = optimizer.apply_gradients(grads_and_vars=grads_and_vars)
@@ -411,7 +411,6 @@ class ModelSolver(object):
             ndcg5_txt = 'ndcg_wt@5: %f \n' % test_results[5]
             o_file.write(p1_txt + p3_txt + p5_txt + ndcg1_txt + ndcg3_txt + ndcg5_txt)
             print p1_txt + p3_txt + p5_txt + ndcg1_txt + ndcg3_txt + ndcg5_txt
-
 
     def generate_x_embedding(self, trained_model_path):
         # generate candidate label subset via KNN using X-embeddings.
