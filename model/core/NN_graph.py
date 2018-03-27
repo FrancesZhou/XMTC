@@ -119,7 +119,8 @@ class NN_graph(object):
                                                  self.word_embedding_dim, self.label_embedding_dim,
                                                  self.seqlen)
         else:
-            x_lbl_fea = tf.reduce_mean(x, axis=1)
+            #x_lbl_fea = tf.reduce_mean(x, axis=1)
+            x_lbl_fea = x_emb
         # ---------- supervised classification output ----------
         with tf.name_scope('output'):
             fea_dim = x_lbl_fea.get_shape().as_list()[-1]
