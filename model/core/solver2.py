@@ -132,7 +132,7 @@ class ModelSolver2(object):
                         = train_loader.get_val_batch(num_val_points, i*self.batch_size, (i+1)*self.batch_size)
                     if self.if_use_seq_len:
                         feed_dict = {self.model.x_feature_id: np.array(x_feature_id, dtype=np.int32),
-                                     self.model.x_feature_v: np.array(x_feature_v, dtype=np.float32)
+                                     self.model.x_feature_v: np.array(x_feature_v, dtype=np.float32),
                                      self.model.y: np.array(y),
                                      self.model.seqlen: np.array(seq_l),
                                      self.model.label_embedding_id: np.array(label_emb, dtype=int),
