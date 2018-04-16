@@ -43,6 +43,7 @@ class ModelSolver2(object):
         self.model_path = kwargs.pop('model_path', './model/')
         self.pretrained_model = kwargs.pop('pretrained_model', None)
         self.test_path = kwargs.pop('test_path', None)
+        self.use_graph = kwargs.pop('use_graph', 0)
         if not os.path.exists(self.model_path):
             os.makedirs(self.model_path)
         if self.update_rule == 'adam':
@@ -66,14 +67,19 @@ class ModelSolver2(object):
             #train_op = optimizer.minimize(loss, global_step=tf.train.get_global_step())
             grads = tf.gradients(loss, tf.trainable_variables())
             grads_and_vars = list(zip(grads, tf.trainable_variables()))
-            print grads_and_vars
+            #print grads_and_vars
+            for grad_var in grads_and_vars:
+                g, v = grad_var
+                print g
+                print v
             train_op = optimizer.apply_gradients(grads_and_vars=grads_and_vars)
             # graph
-            g_optimizer = self.optimizer(learning_rate=self.g_learning_rate)
-            #g_train_op = g_optimizer.minimize(g_loss, global_step=tf.train.get_global_step())
-            g_grads = tf.gradients(g_loss, tf.trainable_variables())
-            g_grads_and_vars = list(zip(g_grads, tf.trainable_variables()))
-            g_train_op = g_optimizer.apply_gradients(grads_and_vars=g_grads_and_vars)
+            if self.use_graph:
+                g_optimizer = self.optimizer(learning_rate=self.g_learning_rate)
+                #g_train_op = g_optimizer.minimize(g_loss, global_step=tf.train.get_global_step())
+                g_grads = tf.gradients(g_loss, tf.trainable_variables())
+                g_grads_and_vars = list(zip(g_grads, tf.trainable_variables()))
+                g_train_op = g_optimizer.apply_gradients(grads_and_vars=g_grads_and_vars)
         tf.get_variable_scope().reuse_variables()
         # set upper limit of used gpu memory
         gpu_options = tf.GPUOptions(allow_growth=True)
@@ -114,9 +120,10 @@ class ModelSolver2(object):
                                      self.model.gy: np.array(gy, dtype=np.float32)
                                      }
                     _, l_ = sess.run([train_op, loss], feed_dict)
-                    _, gl_ = sess.run([g_train_op, g_loss], feed_dict)
                     curr_loss += l_
-                    curr_g_loss += gl_
+                    if self.use_graph:
+                        _, gl_ = sess.run([g_train_op, g_loss], feed_dict)
+                        curr_g_loss += gl_
                 # -------------- validate -------------
                 num_val_points = len(train_loader.val_pid_label_y)
                 val_pid_batches = xrange(int(math.ceil(num_val_points*1.0 / self.batch_size)))

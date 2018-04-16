@@ -128,17 +128,19 @@ def main():
     print '================= model solver ...'
     # solver: __init__(self, model, train_data, test_data, **kwargs):
     solver = ModelSolver2(model, train_loader, test_loader,
-                         graph_loader,
-                         if_use_seq_len=args.if_use_seq_len,
-                         if_output_all_labels=args.if_output_all_labels,
-                         show_batches=args.show_batches,
-                         n_epochs=args.n_epochs,
-                         batch_size=args.batch_size,
-                         update_rule=args.update_rule,
-                         learning_rate=args.learning_rate,
-                         pretrained_model=args.pretrained_model_path,
-                         model_path=args.folder_path + args.model + '/',
-                         test_path=args.folder_path + args.model + '/')
+                          graph_loader,
+                          if_use_seq_len=args.if_use_seq_len,
+                          if_output_all_labels=args.if_output_all_labels,
+                          show_batches=args.show_batches,
+                          n_epochs=args.n_epochs,
+                          batch_size=args.batch_size,
+                          update_rule=args.update_rule,
+                          learning_rate=args.learning_rate,
+                          pretrained_model=args.pretrained_model_path,
+                          model_path=args.folder_path + args.model + '/',
+                          test_path=args.folder_path + args.model + '/',
+                          use_graph=args.use_graph
+                          )
     # train
     if args.train:
         print '================= begin training...'

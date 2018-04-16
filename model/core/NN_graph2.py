@@ -36,6 +36,8 @@ class NN_graph2(object):
         else:
             self.label_embedding = tf.get_variable('label_embedding', initializer=tf.constant(label_embedding, dtype=tf.float32))
         #
+        self.use_graph = args.use_graph
+        #
         self.x_feature_id = tf.placeholder(tf.int32, [None, self.max_seq_len])
         self.x_feature_v = tf.placeholder(tf.float32, [None, self.max_seq_len])
         self.y = tf.placeholder(tf.float32, [None])
@@ -139,16 +141,19 @@ class NN_graph2(object):
         y_out = tf.layers.dense(y_hidden, 1, activation=tf.nn.relu)
         loss = tf.nn.l2_loss(y - y_out, name='l2_loss')
         # ---------- graph context loss ---------------
-        gl1 = tf.nn.embedding_lookup(self.label_embedding, self.gl1)
-        if self.neg_samp:
-            gl2 = tf.nn.embedding_lookup(
-                tf.get_variable('context_embedding', [self.label_num, self.label_embedding_dim],
-                                initializer=self.weight_initializer),
-                self.gl2)
-            l_gy = tf.multiply(gl1, gl2)
-            g_loss = tf.reduce_mean(-tf.log(tf.sigmoid(tf.multiply(tf.reduce_sum(l_gy, axis=1), self.gy))))
+        if self.use_graph:
+            gl1 = tf.nn.embedding_lookup(self.label_embedding, self.gl1)
+            if self.neg_samp:
+                gl2 = tf.nn.embedding_lookup(
+                    tf.get_variable('context_embedding', [self.label_num, self.label_embedding_dim],
+                                    initializer=self.weight_initializer),
+                    self.gl2)
+                l_gy = tf.multiply(gl1, gl2)
+                g_loss = tf.reduce_mean(-tf.log(tf.sigmoid(tf.multiply(tf.reduce_sum(l_gy, axis=1), self.gy))))
+            else:
+                l_gy = tf.layers.dense(gl1, self.label_embedding_dim, activation=tf.nn.softmax, use_bias=False)
+                g_loss = tf.reduce_mean(categorical_crossentropy(tf.one_hot(self.gl2, self.label_embedding_dim), l_gy))
         else:
-            l_gy = tf.layers.dense(gl1, self.label_embedding_dim, activation=tf.nn.softmax, use_bias=False)
-            g_loss = tf.reduce_mean(categorical_crossentropy(tf.one_hot(self.gl2, self.label_embedding_dim), l_gy))
+            g_loss = 0
         return x_emb, y_out, loss, g_loss
 
