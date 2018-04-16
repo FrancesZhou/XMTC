@@ -12,6 +12,7 @@ import math
 import numpy as np
 import copy
 import tensorflow as tf
+from progressbar import *
 from sklearn.neighbors import NearestNeighbors
 # from biLSTM.preprocessing.preprocessing import batch_data, get_max_seq_len, construct_train_test_corpus, \
 #     generate_labels_from_file, generate_label_pair_from_file
@@ -103,7 +104,10 @@ class ModelSolver2(object):
                 num_train_batches = len(train_loader.all_labels)
                 train_batches = np.arange(num_train_batches)
                 np.random.shuffle(train_batches)
+                widgets = ['pretrain: ', Percentage(), ' ', Bar('#'), ' ', ETA()]
+                pbar = ProgressBar(widgets=widgets, maxval=num_train_batches).start()
                 for i in train_batches:
+                    pbar.update(i)
                     label_i = train_loader.all_labels[i]
                     x_feature_id, x_feature_v, y, seq_l, label_emb, label_prop \
                         = train_loader.next_batch(label_i)
@@ -112,7 +116,7 @@ class ModelSolver2(object):
                     if self.use_graph:
                         gx1, gx2, gy = graph_loader.gen_graph_context()
                     else:
-                        gx1, gx2, gy = 0, 0, 0
+                        gx1, gx2, gy = [0], [0], [0]
                     if self.if_use_seq_len:
                         feed_dict = {self.model.x_feature_id: np.array(x_feature_id, dtype=np.int32),
                                      self.model.x_feature_v: np.array(x_feature_v, dtype=np.float32),
@@ -130,9 +134,11 @@ class ModelSolver2(object):
                     if self.use_graph:
                         _, gl_ = sess.run([pre_g_train_op, pre_g_loss], feed_dict)
                         curr_g_loss += gl_
+                #pbar.finish()
                 w_text = 'at epoch %d, g_loss = %f , train loss is %f \n' % \
                          (e, curr_g_loss / num_train_batches, curr_loss / num_train_batches)
                 print w_text
+                pbar.finish()
             # ===== set active feature ids for each label
             self.feature_processor.set_active_feature_id()
             # ============== begin training ===================
@@ -147,10 +153,10 @@ class ModelSolver2(object):
                 print 'num of train batches:    %d' % num_train_batches
                 train_batches = np.arange(num_train_batches)
                 np.random.shuffle(train_batches)
+                widgets = ['Train: ', Percentage(), ' ', Bar('#'), ' ', ETA()]
+                pbar = ProgressBar(widgets=widgets, maxval=num_train_batches).start()
                 for i in train_batches:
-                    if i % self.show_batches == 0:
-                        print 'batch %d' % i
-                        #print np.array(w_grads).shape
+                    pbar.update(i)
                     label_i = train_loader.all_labels[i]
                     x_feature_id, x_feature_v, y, seq_l, label_emb, label_prop \
                         = train_loader.next_batch(label_i)
@@ -159,7 +165,7 @@ class ModelSolver2(object):
                     if self.use_graph:
                         gx1, gx2, gy = graph_loader.gen_graph_context()
                     else:
-                        gx1, gx2, gy = 0, 0, 0
+                        gx1, gx2, gy = [0], [0], [0]
                     lbl_active_fea_id = np.tile(self.feature_processor.label_active_feature_ids[label_i], (len(y), 1))
                     if self.if_use_seq_len:
                         feed_dict = {self.model.x_feature_id: np.array(x_feature_id, dtype=np.int32),
@@ -178,6 +184,7 @@ class ModelSolver2(object):
                     if self.use_graph:
                         _, gl_ = sess.run([g_train_op, g_loss], feed_dict)
                         curr_g_loss += gl_
+                pbar.finish()
                 # -------------- validate -------------
                 num_val_points = len(train_loader.val_pid_label_y)
                 val_pid_batches = xrange(int(math.ceil(num_val_points*1.0 / self.batch_size)))
@@ -186,9 +193,10 @@ class ModelSolver2(object):
                 pre_pid_score = {}
                 tar_pid_y = {}
                 tar_pid_true_label_prop = {}
+                widgets = ['Validate: ', Percentage(), ' ', Bar('#'), ' ', ETA()]
+                pbar = ProgressBar(widgets=widgets, maxval=num_val_points).start()
                 for i in val_pid_batches:
-                    if i % self.show_batches == 0:
-                        print 'batch %d' % i
+                    pbar.update(i)
                     batch_label, batch_pid, x_feature_id, x_feature_v, y, seq_l, label_emb, label_prop, count_score \
                         = train_loader.get_val_batch(num_val_points, i*self.batch_size, (i+1)*self.batch_size)
                     lbl_active_fea_id = [self.feature_processor.label_active_feature_ids[lbl_idx] for lbl_idx in
@@ -221,6 +229,7 @@ class ModelSolver2(object):
                             pre_pid_prop[pid] = [label_prop[p_i]]
                     for pid in np.unique(batch_pid):
                         tar_pid_true_label_prop[pid] = [train_loader.label_prop[q] for q in train_loader.label_data[pid]]
+                pbar.finish()
                 val_results = results_for_score_vector(tar_pid_true_label_prop, tar_pid_y, pre_pid_score, pre_pid_prop)
                 # reset train_loader
                 train_loader.reset_data()
@@ -251,9 +260,10 @@ class ModelSolver2(object):
                     num_test_points = len(test_loader.pid_label_y)
                     test_pid_batches = xrange(int(math.ceil(num_test_points * 1.0 / self.batch_size)))
                     print 'num of test pid batches: %d' % len(test_pid_batches)
+                    widgets = ['Test: ', Percentage(), ' ', Bar('#'), ' ', ETA()]
+                    pbar = ProgressBar(widgets=widgets, maxval=num_test_points).start()
                     for i in test_pid_batches:
-                        if i % self.show_batches == 0:
-                            print 'batch ' + str(i)
+                        pbar.update(i)
                         batch_label, batch_pid, x_feature_id, x_feature_v, y, seq_l, label_emb, label_prop, count_score = test_loader.get_batch(
                                 num_test_points, i * self.batch_size, (i + 1) * self.batch_size)
                         lbl_active_fea_id = [self.feature_processor.label_active_feature_ids[lbl_idx] for lbl_idx in batch_label]
@@ -287,6 +297,7 @@ class ModelSolver2(object):
                         for pid in np.unique(batch_pid):
                             tar_pid_true_label_prop[pid] = [test_loader.label_prop[q] for q in
                                                             test_loader.label_data[pid]]
+                    pbar.finish()
                     test_results = results_for_score_vector(tar_pid_true_label_prop, tar_pid_y, pre_pid_score,
                                                                    pre_pid_prop)
                     w_text = 'at epoch %d, test loss is %f \n' % (e, test_loss/len(test_pid_batches))

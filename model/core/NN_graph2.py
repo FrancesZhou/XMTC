@@ -46,7 +46,7 @@ class NN_graph2(object):
         self.label_embedding_id = tf.placeholder(tf.int32, [None])
         self.label_prop = tf.placeholder(tf.float32, [None])
         #
-        self.label_active_feature = tf.placeholder_with_default(tf.constant(0, dtype=tf.int32, shape=[self.active_feature_num]),
+        self.label_active_feature = tf.placeholder_with_default(tf.constant(0, dtype=tf.int32, shape=[32, self.active_feature_num]),
                                                                 [None, self.active_feature_num])
         #
         self.gl1 = tf.placeholder_with_default(tf.constant(0, dtype=tf.int32, shape=[3]), [None])
@@ -133,7 +133,7 @@ class NN_graph2(object):
                 # att_weight: [batch_size, max_seq_len)
                 feature_v = tf.multiply(feature_v, att_weight)
         # ---------- feature embeddings -----------
-        x_emb = tf.reduce_mean(tf.multiply(x, tf.expand_dims(feature_v, -1)), axis=1)
+        x_emb = tf.reduce_sum(tf.multiply(x, tf.expand_dims(feature_v, -1)), axis=1)
         # x_emb: [batch_size, word_embedding_dim]
         # label_embeddings: [batch_size, label_embedding_dim]
         x_label_concat = tf.concat([x_emb, label_embeddings], axis=-1)
@@ -158,7 +158,8 @@ class NN_graph2(object):
             g_loss = 0
         # ---------- get feature_gradient -------------
         word_grads = tf.gradients(loss, [self.word_embedding])[0]
-        sum_word_grads = tf.sparse_reduce_sum(word_grads, axis=-1)
+        word_abs_grads = tf.abs(word_grads)
+        sum_word_grads = tf.reduce_sum(word_abs_grads, axis=-1)
         print 'shape of sum_word_grads'
         print sum_word_grads.get_shape().as_list()
         return x_emb, y_out, sum_word_grads, loss, g_loss
@@ -187,12 +188,13 @@ class NN_graph2(object):
                 # att_weight: [batch_size, max_seq_len)
                 feature_v = tf.multiply(feature_v, att_weight)
         # ---------- feature embeddings -----------
-        x_emb = tf.reduce_mean(tf.multiply(x, tf.expand_dims(feature_v, -1)), axis=1)
+        x_emb = tf.reduce_sum(tf.multiply(x, tf.expand_dims(feature_v, -1)), axis=1)
         # x_emb: [batch_size, word_embedding_dim]
         # label_embeddings: [batch_size, label_embedding_dim]
         #
         feature_label_embeddings = tf.reduce_sum(tf.nn.embedding_lookup(word_embeddings_padding, self.label_active_feature), axis=1)
-        x_label_concat = tf.concat([x_emb, feature_label_embeddings, label_embeddings], axis=-1)
+        x_label_concat = tf.concat([x_emb, label_embeddings], axis=-1)
+        x_label_concat = tf.concat([x_label_concat, feature_label_embeddings], axis=-1)
         # ---------- output layer ----------
         y_hidden = tf.layers.dense(x_label_concat, self.num_classify_hidden, activation=tf.sigmoid, use_bias=True, name='dense_0')
         y_out = tf.layers.dense(y_hidden, 1, activation=tf.nn.relu, name='dense_1')

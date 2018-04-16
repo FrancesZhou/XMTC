@@ -1269,7 +1269,7 @@ class TrainDataLoader_final():
         batch_y = pid_label_y[:, 1]
         #batch_label = [label] * len(batch_pid)
         batch_length = [self.doc_length[p] for p in batch_pid]
-        batch_label_embedding_id = [self.label_data[label]] * len(batch_pid)
+        batch_label_embedding_id = [self.label_dict[label]] * len(batch_pid)
         batch_x_feature_id = [self.x_feature_indices[p] for p in batch_pid]
         batch_x_feature_v = [self.x_feature_values[p] for p in batch_pid]
         batch_label_prop = [self.label_prop[label]] * len(batch_pid)
@@ -1425,6 +1425,6 @@ class FeatureProcessor():
             if len(active_feature_id) < self.active_feature_num:
                 padding_num = self.active_feature_num - len(active_feature_id)
                 active_feature_id = np.concatenate((active_feature_id, np.zeros(padding_num)))
-            self.label_active_feature_ids = active_feature_id
+            self.label_active_feature_ids[label] = active_feature_id
 
 
