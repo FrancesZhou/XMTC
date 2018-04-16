@@ -60,7 +60,7 @@ class ModelSolver2(object):
         test_loader = self.test_data
         graph_loader = self.graph_data
         # build_model
-        _, y_, loss, g_loss = self.model.build_model()
+        _, y_, word_grads, loss, g_loss = self.model.build_model()
         # train op
         with tf.name_scope('optimizer'):
             optimizer = self.optimizer(learning_rate=self.learning_rate)
@@ -103,11 +103,15 @@ class ModelSolver2(object):
                 for i in train_batches:
                     if i % self.show_batches == 0:
                         print 'batch %d' % i
+                        print np.array(w_grads).shape
                     x_feature_id, x_feature_v, y, seq_l, label_emb, label_prop \
                         = train_loader.next_batch(num_train_points, i*self.batch_size, (i+1)*self.batch_size)
                     if len(y) == 0:
                         continue
-                    gx1, gx2, gy = graph_loader.gen_graph_context()
+                    if self.use_graph:
+                        gx1, gx2, gy = graph_loader.gen_graph_context()
+                    else:
+                        gx1, gx2, gy = 0, 0, 0
                     if self.if_use_seq_len:
                         feed_dict = {self.model.x_feature_id: np.array(x_feature_id, dtype=np.int32),
                                      self.model.x_feature_v: np.array(x_feature_v, dtype=np.float32),
@@ -119,7 +123,7 @@ class ModelSolver2(object):
                                      self.model.gl2: np.array(gx2, dtype=np.int32),
                                      self.model.gy: np.array(gy, dtype=np.float32)
                                      }
-                    _, l_ = sess.run([train_op, loss], feed_dict)
+                    _, l_, w_grads = sess.run([train_op, loss, word_grads], feed_dict)
                     curr_loss += l_
                     if self.use_graph:
                         _, gl_ = sess.run([g_train_op, g_loss], feed_dict)

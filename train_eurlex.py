@@ -118,11 +118,13 @@ def main():
         if args.use_graph:
             graph = read_label_pairs(args.folder_path + 'labels.edgelist')
             graph_loader = DataLoader_graph(graph, label_dict)
+        else:
+            graph_loader = None
     # ----------------------- train ------------------------
     print '============== build model ...'
     if 'NN' in args.model:
         print 'build NN model ...'
-        model = NN_graph2(max_seq_len, 5000+1, 300, label_embeddings, 32, args)
+        model = NN_graph2(max_seq_len, 5000, 300, label_embeddings, 32, args)
         args.if_use_seq_len = 1
 
     print '================= model solver ...'

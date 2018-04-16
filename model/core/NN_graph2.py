@@ -118,9 +118,9 @@ class NN_graph2(object):
         # y
         y = tf.multiply(self.y, self.label_prop)
         # ---------- x -------------
-        word_embeddings = tf.concat((tf.constant(0, dtype=tf.float32, shape=[1, self.word_embedding_dim]),
+        word_embeddings_padding = tf.concat((tf.constant(0, dtype=tf.float32, shape=[1, self.word_embedding_dim]),
                                      self.word_embedding), axis=0)
-        x = tf.nn.embedding_lookup(word_embeddings, self.x_feature_id)
+        x = tf.nn.embedding_lookup(word_embeddings_padding, self.x_feature_id)
         # x: [batch_size, max_seq_len, word_embedding_dim]
         # normalize feature_v
         feature_v = tf.divide(self.x_feature_v, tf.norm(self.x_feature_v, 2, axis=-1, keepdims=True))
@@ -155,5 +155,7 @@ class NN_graph2(object):
                 g_loss = tf.reduce_mean(categorical_crossentropy(tf.one_hot(self.gl2, self.label_embedding_dim), l_gy))
         else:
             g_loss = 0
-        return x_emb, y_out, loss, g_loss
+        # ---------- get feature_gradient -------------
+        word_grads = tf.gradients(loss, [self.word_embedding])[0]
+        return x_emb, y_out, word_grads, loss, g_loss
 
