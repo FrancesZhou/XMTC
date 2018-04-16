@@ -21,10 +21,11 @@ from model.utils.io_utils import load_pickle, dump_pickle
 
 
 class ModelSolver2(object):
-    def __init__(self, model, train_data, test_data, graph_data=None, **kwargs):
+    def __init__(self, model, train_data, test_data, feature_processor, graph_data=None, **kwargs):
         self.model = model
         self.train_data = train_data
         self.test_data = test_data
+        self.feature_processor = feature_processor
         self.graph_data = graph_data
         self.train_x_emb = {}
         self.test_x_emb = {}
@@ -60,26 +61,30 @@ class ModelSolver2(object):
         test_loader = self.test_data
         graph_loader = self.graph_data
         # build_model
-        _, y_, word_grads, loss, g_loss = self.model.build_model()
+        _, _, word_grads, pre_loss, pre_g_loss = self.model.pre_build_model()
+        _, y_, loss, g_loss = self.model.build_model()
         # train op
         with tf.name_scope('optimizer'):
-            optimizer = self.optimizer(learning_rate=self.learning_rate)
+            # ========= pre_loss
+            pre_optimizer = self.optimizer(learning_rate=self.learning_rate)
             #train_op = optimizer.minimize(loss, global_step=tf.train.get_global_step())
             grads = tf.gradients(loss, tf.trainable_variables())
             grads_and_vars = list(zip(grads, tf.trainable_variables()))
-            #print grads_and_vars
             for grad_var in grads_and_vars:
                 g, v = grad_var
                 print g
                 print v
-            train_op = optimizer.apply_gradients(grads_and_vars=grads_and_vars)
-            # graph
+            pre_train_op = pre_optimizer.apply_gradients(grads_and_vars=grads_and_vars)
+            if self.use_graph:
+                pre_g_train_op = pre_optimizer.minimize(g_loss, global_step=tf.train.get_global_step())
+            #
+            # ========== loss
+            optimizer = self.optimizer(learning_rate=self.learning_rate)
+            train_op = optimizer.minimize(loss, global_step=tf.train.get_global_step())
+            # ========== graph
             if self.use_graph:
                 g_optimizer = self.optimizer(learning_rate=self.g_learning_rate)
-                #g_train_op = g_optimizer.minimize(g_loss, global_step=tf.train.get_global_step())
-                g_grads = tf.gradients(g_loss, tf.trainable_variables())
-                g_grads_and_vars = list(zip(g_grads, tf.trainable_variables()))
-                g_train_op = g_optimizer.apply_gradients(grads_and_vars=g_grads_and_vars)
+                g_train_op = g_optimizer.minimize(g_loss, global_step=tf.train.get_global_step())
         tf.get_variable_scope().reuse_variables()
         # set upper limit of used gpu memory
         gpu_options = tf.GPUOptions(allow_growth=True)
@@ -90,22 +95,18 @@ class ModelSolver2(object):
                 print 'Start training with pretrained model...'
                 pretrained_model_path = self.model_path + self.pretrained_model
                 saver.restore(sess, pretrained_model_path)
-            for e in xrange(self.n_epochs):
-                print '========== begin epoch %d ===========' % e
+            # ============== pretrain ======================
+            print '------------- begin pretrain --------------'
+            for e in xrange(20):
                 curr_loss = 0
                 curr_g_loss = 0
-                val_loss = 0
-                # '''
-                # ------------- train ----------------
-                num_train_points = len(train_loader.pid_label_y)
-                train_batches = xrange(int(math.ceil(num_train_points * 1.0 / self.batch_size)))
-                print 'num of train batches:    %d' % len(train_batches)
+                num_train_batches = len(train_loader.all_labels)
+                train_batches = np.arange(num_train_batches)
+                np.random.shuffle(train_batches)
                 for i in train_batches:
-                    if i % self.show_batches == 0:
-                        print 'batch %d' % i
-                        print np.array(w_grads).shape
+                    label_i = train_loader.all_labels[i]
                     x_feature_id, x_feature_v, y, seq_l, label_emb, label_prop \
-                        = train_loader.next_batch(num_train_points, i*self.batch_size, (i+1)*self.batch_size)
+                        = train_loader.next_batch(label_i)
                     if len(y) == 0:
                         continue
                     if self.use_graph:
@@ -123,7 +124,56 @@ class ModelSolver2(object):
                                      self.model.gl2: np.array(gx2, dtype=np.int32),
                                      self.model.gy: np.array(gy, dtype=np.float32)
                                      }
-                    _, l_, w_grads = sess.run([train_op, loss, word_grads], feed_dict)
+                    _, l_, w_grads = sess.run([pre_train_op, pre_loss, word_grads], feed_dict)
+                    self.feature_processor.set_active_feature_grads(label_i, w_grads)
+                    curr_loss += l_
+                    if self.use_graph:
+                        _, gl_ = sess.run([pre_g_train_op, pre_g_loss], feed_dict)
+                        curr_g_loss += gl_
+                w_text = 'at epoch %d, g_loss = %f , train loss is %f \n' % \
+                         (e, curr_g_loss / num_train_batches, curr_loss / num_train_batches)
+                print w_text
+            # ===== set active feature ids for each label
+            self.feature_processor.set_active_feature_id()
+            # ============== begin training ===================
+            for e in xrange(self.n_epochs):
+                print '========== begin epoch %d ===========' % e
+                curr_loss = 0
+                curr_g_loss = 0
+                val_loss = 0
+                # '''
+                # ------------- train ----------------
+                num_train_batches = len(train_loader.all_labels)
+                print 'num of train batches:    %d' % num_train_batches
+                train_batches = np.arange(num_train_batches)
+                np.random.shuffle(train_batches)
+                for i in train_batches:
+                    if i % self.show_batches == 0:
+                        print 'batch %d' % i
+                        #print np.array(w_grads).shape
+                    label_i = train_loader.all_labels[i]
+                    x_feature_id, x_feature_v, y, seq_l, label_emb, label_prop \
+                        = train_loader.next_batch(label_i)
+                    if len(y) == 0:
+                        continue
+                    if self.use_graph:
+                        gx1, gx2, gy = graph_loader.gen_graph_context()
+                    else:
+                        gx1, gx2, gy = 0, 0, 0
+                    lbl_active_fea_id = np.tile(self.feature_processor.label_active_feature_ids[label_i], (len(y), 1))
+                    if self.if_use_seq_len:
+                        feed_dict = {self.model.x_feature_id: np.array(x_feature_id, dtype=np.int32),
+                                     self.model.x_feature_v: np.array(x_feature_v, dtype=np.float32),
+                                     self.model.y: np.array(y, dtype=np.float32),
+                                     self.model.seqlen: np.array(seq_l, dtype=np.int32),
+                                     self.model.label_embedding_id: np.array(label_emb, dtype=np.int32),
+                                     self.model.label_prop: np.array(label_prop, dtype=np.float32),
+                                     self.model.gl1: np.array(gx1, dtype=np.int32),
+                                     self.model.gl2: np.array(gx2, dtype=np.int32),
+                                     self.model.gy: np.array(gy, dtype=np.float32),
+                                     self.model.label_active_feature: np.array(lbl_active_fea_id, dtype=np.int32)
+                                     }
+                    _, l_ = sess.run([train_op, loss], feed_dict)
                     curr_loss += l_
                     if self.use_graph:
                         _, gl_ = sess.run([g_train_op, g_loss], feed_dict)
@@ -139,15 +189,18 @@ class ModelSolver2(object):
                 for i in val_pid_batches:
                     if i % self.show_batches == 0:
                         print 'batch %d' % i
-                    batch_pid, x_feature_id, x_feature_v, y, seq_l, label_emb, label_prop, count_score \
+                    batch_label, batch_pid, x_feature_id, x_feature_v, y, seq_l, label_emb, label_prop, count_score \
                         = train_loader.get_val_batch(num_val_points, i*self.batch_size, (i+1)*self.batch_size)
+                    lbl_active_fea_id = [self.feature_processor.label_active_feature_ids[lbl_idx] for lbl_idx in
+                                         batch_label]
                     if self.if_use_seq_len:
                         feed_dict = {self.model.x_feature_id: np.array(x_feature_id, dtype=np.int32),
                                      self.model.x_feature_v: np.array(x_feature_v, dtype=np.float32),
                                      self.model.y: np.array(y),
                                      self.model.seqlen: np.array(seq_l),
                                      self.model.label_embedding_id: np.array(label_emb, dtype=int),
-                                     self.model.label_prop: np.array(label_prop)
+                                     self.model.label_prop: np.array(label_prop),
+                                     self.model.label_active_feature: np.array(lbl_active_fea_id, dtype=np.int32)
                                      }
                     y_p, l_ = sess.run([y_, loss], feed_dict)
                     val_loss += l_
@@ -172,10 +225,10 @@ class ModelSolver2(object):
                 # reset train_loader
                 train_loader.reset_data()
                 # ====== output loss ======
-                w_text = 'at epoch %d, g_loss = %f , train loss is %f \n' % (e, curr_g_loss, curr_loss)
+                w_text = 'at epoch %d, g_loss = %f , train loss is %f \n' % (e, curr_g_loss/num_train_batches, curr_loss/num_train_batches)
                 print w_text
                 o_file.write(w_text)
-                w_text = 'at epoch %d, val loss is %f \n' % (e, val_loss)
+                w_text = 'at epoch %d, val loss is %f \n' % (e, val_loss/len(val_pid_batches))
                 print w_text
                 o_file.write(w_text)
                 w_text = 'at epoch %d, val_results: ' % e
@@ -201,15 +254,17 @@ class ModelSolver2(object):
                     for i in test_pid_batches:
                         if i % self.show_batches == 0:
                             print 'batch ' + str(i)
-                        batch_pid, x_feature_id, x_feature_v, y, seq_l, label_emb, label_prop, count_score = test_loader.get_batch(
+                        batch_label, batch_pid, x_feature_id, x_feature_v, y, seq_l, label_emb, label_prop, count_score = test_loader.get_batch(
                                 num_test_points, i * self.batch_size, (i + 1) * self.batch_size)
+                        lbl_active_fea_id = [self.feature_processor.label_active_feature_ids[lbl_idx] for lbl_idx in batch_label]
                         if self.if_use_seq_len:
                             feed_dict = {self.model.x_feature_id: np.array(x_feature_id, dtype=np.int32),
                                          self.model.x_feature_v: np.array(x_feature_v, dtype=np.float32),
                                          self.model.y: np.array(y),
                                          self.model.seqlen: np.array(seq_l),
-                                         self.model.label_embedding_id: np.array(label_emb, dtype=int),
-                                         self.model.label_prop: np.array(label_prop)
+                                         self.model.label_embedding_id: np.array(label_emb, dtype=np.int32),
+                                         self.model.label_prop: np.array(label_prop),
+                                         self.model.label_active_feature: np.array(lbl_active_fea_id, dtype=np.int32)
                                          }
                         y_p, l_ = sess.run([y_, loss], feed_dict)
                         test_loss += l_
@@ -234,7 +289,7 @@ class ModelSolver2(object):
                                                             test_loader.label_data[pid]]
                     test_results = results_for_score_vector(tar_pid_true_label_prop, tar_pid_y, pre_pid_score,
                                                                    pre_pid_prop)
-                    w_text = 'at epoch %d, test loss is %f \n' % (e, test_loss)
+                    w_text = 'at epoch %d, test loss is %f \n' % (e, test_loss/len(test_pid_batches))
                     print w_text
                     o_file.write(w_text)
                     p1_txt = 'prec_wt@1: %f \n' % test_results[0]

@@ -1163,18 +1163,17 @@ class DataLoader_graph():
 
 class TrainDataLoader_final():
     def __init__(self, doc_wordID_data, label_data,
-                 feature_num,
+                 feature_processor,
                  candidate_label_data,
                  label_dict, label_prop,
-                 num_pos, num_neg,
+                 num_pos=16, num_neg=16,
                  max_seq_len=3000,
                  ):
         self.doc_wordID_data = doc_wordID_data
         self.x_feature_indices = {}
         self.x_feature_values = {}
-        self.feature_num = feature_num
         self.label_data = label_data
-        self.nlabel_active_feature = {}
+        self.feature_processor = feature_processor
         self.candidate_label_data = candidate_label_data
         self.doc_length = {}
         self.pids = self.label_data.keys()
@@ -1192,7 +1191,7 @@ class TrainDataLoader_final():
         self.candidate_nlabel_y = {}
         # self.train_pids = []
         self.val_pids = []
-        self.pid_label_y = []
+        self.label_pid_y = []
         self.initialize_dataloader()
         self.reset_data()
 
@@ -1221,10 +1220,10 @@ class TrainDataLoader_final():
             for label in pos_labels:
                 try:
                     self.label_pos_pid[label].append(pid)
-                    self.nlabel_active_feature[label] = np.union1d(self.nlabel_active_feature, feature_id)
+                    self.feature_processor.label_pool_feature[label] = np.union1d(self.feature_processor.label_pool_feature, feature_id)
                 except KeyError:
                     self.label_pos_pid[label] = [pid]
-                    self.nlabel_active_feature[label] = feature_id
+                    self.feature_processor.label_pool_feature[label] = feature_id
             for label in neg_labels:
                 try:
                     self.label_neg_pid[label].append(pid)
@@ -1238,53 +1237,6 @@ class TrainDataLoader_final():
                 self.candidate_nlabel_embedding_id[pid][j] = self.label_dict[l_]
                 if l_ in pos_labels:
                     self.candidate_nlabel_y[pid][j] = 1
-
-    def get_pid_x(self, length, start, end):
-        #candidate_labels, batch_count_score = zip(*(self.candidate_label_data[pid].iteritems()))
-        #candidate_labels, batch_count_score = zip(*(self.candidate_label_data[pid][:30]))
-        batch_pid = []
-        batch_x = []
-        batch_y = []
-        batch_length = []
-        batch_label_embedding_id = []
-        batch_label_prop = []
-        batch_count_score = []
-        end2 = min(length, end)
-        for i in xrange(start, end2):
-            pid = self.val_pids[i]
-            candidate_labels = self.candidate_label[pid]
-            num = len(candidate_labels)
-            batch_pid.append([pid]*num)
-            batch_x.append([self.doc_wordID_data[pid]] * num)
-            batch_y.append(self.candidate_nlabel_y[pid])
-            batch_length.append([self.doc_length[pid]] * num)
-            batch_label_embedding_id.append(self.candidate_nlabel_embedding_id[pid])
-            batch_label_prop.append([self.label_prop[e] for e in candidate_labels])
-            batch_count_score.append(self.candidate_count_score[pid])
-        if end2 < end:
-            batch_pid = np.concatenate(batch_pid, axis=0)
-            padding_num = end - end2
-            batch_x = np.concatenate((np.concatenate(batch_x, axis=0),
-                                      np.zeros((padding_num, self.max_seq_len))), axis=0)
-            batch_y = np.concatenate((np.concatenate(batch_y, axis=0),
-                                      np.zeros(padding_num)), axis=0)
-            batch_length = np.concatenate((np.concatenate(batch_length, axis=0),
-                                           np.zeros(padding_num)), axis=0)
-            batch_label_embedding_id = np.concatenate((np.concatenate(batch_label_embedding_id, axis=0),
-                                                       np.zeros(padding_num)), axis=0)
-            batch_label_prop = np.concatenate((np.concatenate(batch_label_prop, axis=0),
-                                               np.zeros(padding_num)), axis=0)
-            batch_count_score = np.concatenate((np.concatenate(batch_count_score, axis=0),
-                                                np.zeros(padding_num)), axis=0)
-        else:
-            batch_pid = np.concatenate(batch_pid, axis=0)
-            batch_x = np.concatenate(batch_x, axis=0)
-            batch_y = np.concatenate(batch_y, axis=0)
-            batch_length = np.concatenate(batch_length, axis=0)
-            batch_label_embedding_id = np.concatenate(batch_label_embedding_id, axis=0)
-            batch_label_prop = np.concatenate(batch_label_prop, axis=0)
-            batch_count_score = np.concatenate(batch_count_score, axis=0)
-        return batch_pid, batch_x, batch_y, batch_length, batch_label_embedding_id, batch_label_prop, batch_count_score
 
     def set_val_batch(self):
         self.val_pid_label_y = []
@@ -1309,20 +1261,18 @@ class TrainDataLoader_final():
         batch_y = pid_label_y[:, 2]
         batch_label_prop = [self.label_prop[e] for e in batch_label]
         batch_count_score = pid_label_y[:, 3]
-        return batch_pid, batch_x_feature_id, batch_x_feature_v, batch_y, batch_length, batch_label_embedding_id, batch_label_prop, batch_count_score
+        return batch_label, batch_pid, batch_x_feature_id, batch_x_feature_v, batch_y, batch_length, batch_label_embedding_id, batch_label_prop, batch_count_score
 
-    def next_batch(self, length, start, end):
-        end2 = min(length, end)
-        pid_label_y = self.pid_label_y[start:end2]
+    def next_batch(self, label):
+        pid_label_y = self.label_pid_y[label]
         batch_pid = pid_label_y[:, 0]
-        batch_label = pid_label_y[:, 1]
+        batch_y = pid_label_y[:, 1]
+        #batch_label = [label] * len(batch_pid)
         batch_length = [self.doc_length[p] for p in batch_pid]
-        batch_label_embedding_id = [self.label_dict[e] for e in batch_label]
-        #batch_x = [self.doc_wordID_data[p] for p in batch_pid]
+        batch_label_embedding_id = [self.label_data[label]] * len(batch_pid)
         batch_x_feature_id = [self.x_feature_indices[p] for p in batch_pid]
         batch_x_feature_v = [self.x_feature_values[p] for p in batch_pid]
-        batch_y = pid_label_y[:, 2]
-        batch_label_prop = [self.label_prop[e] for e in batch_label]
+        batch_label_prop = [self.label_prop[label]] * len(batch_pid)
         return batch_x_feature_id, batch_x_feature_v, batch_y, batch_length, batch_label_embedding_id, batch_label_prop
 
     def get_fixed_length_pos_samples(self, items, num):
@@ -1355,22 +1305,19 @@ class TrainDataLoader_final():
         return sample
 
     def reset_data(self):
-        self.pid_label_y = []
+        self.label_pid_y = {}
         for label in self.all_labels:
             pos_pid = self.get_fixed_length_pos_samples(self.label_pos_pid[label], self.num_pos)
             neg_pid = self.get_fixed_length_neg_samples(label, self.num_neg)
             pids = pos_pid + neg_pid
-            stack_label = [label] * len(pids)
             y = [1] * self.num_pos + [0] * self.num_neg
-            self.pid_label_y.append(np.transpose(np.array([pids, stack_label, y])))
-        self.pid_label_y = np.concatenate(self.pid_label_y, axis=0)
-        np.random.shuffle(self.pid_label_y)
+            self.label_pid_y[label] = np.transpose(np.array([pids, y]))
         _, self.val_pids = train_test_split(self.pids, test_size=0.1)
         self.set_val_batch()
 
 class TestDataLoader_final():
     def __init__(self, doc_wordID_data, label_data,
-                 feature_num,
+                 feature_processor,
                  candidate_label_data,
                  label_dict, label_prop,
                  max_seq_len=3000,
@@ -1378,9 +1325,8 @@ class TestDataLoader_final():
         self.doc_wordID_data = doc_wordID_data
         self.x_feature_indices = {}
         self.x_feature_values = {}
-        self.feature_num = feature_num
+        self.feature_processor = feature_processor
         self.label_data = label_data
-        self.nlabel_active_feature = {}
         self.candidate_label_data = candidate_label_data
         self.doc_length = {}
         self.pids = self.label_data.keys()
@@ -1438,7 +1384,7 @@ class TestDataLoader_final():
         batch_y = pid_label_y[:, 2]
         batch_label_prop = [self.label_prop[e] for e in batch_label]
         batch_count_score = pid_label_y[:, 3]
-        return batch_pid, batch_x_feature_id, batch_x_feature_v, \
+        return batch_label, batch_pid, batch_x_feature_id, batch_x_feature_v, \
                batch_y, batch_length, batch_label_embedding_id, \
                batch_label_prop, batch_count_score
 
@@ -1452,5 +1398,33 @@ class TestDataLoader_final():
             self.pid_label_y.append(np.transpose(np.array([pids, candidate_labels, y, score])))
         self.pid_label_y = np.concatenate(self.pid_label_y, axis=0)
 
+
+class FeatureProcessor():
+    def __init__(self, feature_num, active_feature_num=100):
+        self.feature_num = feature_num
+        self.active_feature_num = active_feature_num
+        self.label_pool_feature = {}
+        self.label_active_feature_grads = {}
+        self.label_active_feature_ids = {}
+
+    def set_active_feature_grads(self, label, word_grads):
+        word_grads = np.absolute(word_grads)
+        active_grads = word_grads.copy()
+        sort_idx = np.argsort(word_grads)[:(self.feature_num-self.active_feature_num)]
+        active_grads[sort_idx] = 0
+        try:
+            self.label_active_feature_grads[label] += active_grads
+        except KeyError:
+            self.label_active_feature_grads[label] = active_grads
+
+    def set_active_feature_id(self):
+        for label, grads in self.label_active_feature_grads.items():
+            idx = np.argsort(-grads)[:self.active_feature_num]
+            non_zero_idx = np.nonzero(grads)
+            active_feature_id = np.intersect1d(np.intersect1d(idx, non_zero_idx), self.label_pool_feature[label]) + 1
+            if len(active_feature_id) < self.active_feature_num:
+                padding_num = self.active_feature_num - len(active_feature_id)
+                active_feature_id = np.concatenate((active_feature_id, np.zeros(padding_num)))
+            self.label_active_feature_ids = active_feature_id
 
 

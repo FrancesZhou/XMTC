@@ -43,6 +43,9 @@ def main():
     parse.add_argument('-cal_metrics', '--cal_metrics', type=int, default=1, help='if calculate wts_p and wts_ndcg for baseline results')
     parse.add_argument('-alpha', '--alpha', type=float, default=1,
                        help='trade off parameter between baseline score and refinement score')
+    #
+    parse.add_argument('-active_feature_num', '--active_feature_num', type=int, default=100,
+                       help='number of active features for each label')
     # --- graph ---
     parse.add_argument('-use_graph', '--use_graph', type=int, default=1, help='if use graph for joint training')
     parse.add_argument('-neg_samp', '--neg_samp', type=int, default=1, help='if use negative sampling in graph embedding network')
@@ -109,11 +112,12 @@ def main():
     test_candidate_label = load_pickle(candidate_folder_path + 'test_candidate_label.pkl')
     print '============== create train/test data loader ...'
     if 'XML' not in args.model:
-        train_loader = TrainDataLoader_final(train_doc, train_label, 5000, train_candidate_label, label_dict, label_prop,
-                                   10, 10, max_seq_len=args.max_seq_len)
+        feature_processor = FeatureProcessor(5000, 100)
+        train_loader = TrainDataLoader_final(train_doc, train_label, feature_processor, train_candidate_label, label_dict, label_prop,
+                                             16, 16, max_seq_len=args.max_seq_len)
         max_seq_len = train_loader.max_seq_len
         print 'max_seq_len: ' + str(max_seq_len)
-        test_loader = TestDataLoader_final(test_doc, test_label, 5000, test_candidate_label, label_dict, label_prop,
+        test_loader = TestDataLoader_final(test_doc, test_label, feature_processor, test_candidate_label, label_dict, label_prop,
                                       max_seq_len=max_seq_len)
         if args.use_graph:
             graph = read_label_pairs(args.folder_path + 'labels.edgelist')
@@ -130,6 +134,7 @@ def main():
     print '================= model solver ...'
     # solver: __init__(self, model, train_data, test_data, **kwargs):
     solver = ModelSolver2(model, train_loader, test_loader,
+                          feature_processor,
                           graph_loader,
                           if_use_seq_len=args.if_use_seq_len,
                           if_output_all_labels=args.if_output_all_labels,
