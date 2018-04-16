@@ -1108,12 +1108,9 @@ class TestDataLoader2():
             tar_pid_true_label_prop[pid] = [self.label_prop[q] for q in self.label_data[pid]]
             pre_pid_prop[pid] = [self.label_prop[e] for e in self.candidate_label[pid]]
             pre_pid_score[pid] = np.array(self.candidate_count_score[pid])
-            #pre_pid_score[pid] = np.divide(self.candidate_count_score[pid], pre_pid_prop[pid])
-            #pre_pid_score[pid] = np.multiply(self.candidate_count_score[pid], pre_pid_prop[pid])
         results = results_for_score_vector(tar_pid_true_label_prop, tar_pid_y, pre_pid_score, pre_pid_prop)
         print '=========== metrics of candidate baseline result =============='
         print results
-
 
 # DataLoader for graph
 class DataLoader_graph():
@@ -1163,6 +1160,311 @@ class DataLoader_graph():
         self.ind = np.random.permutation(self.num_ver)
         self.cursor = 0
 
+
+class TrainDataLoader_final():
+    def __init__(self, doc_wordID_data, label_data,
+                 feature_num,
+                 candidate_label_data,
+                 label_dict, label_prop,
+                 num_pos, num_neg,
+                 max_seq_len=3000,
+                 ):
+        self.doc_wordID_data = doc_wordID_data
+        self.x_feature_indices = {}
+        self.x_feature_values = {}
+        self.feature_num = feature_num
+        self.label_data = label_data
+        self.nlabel_active_feature = {}
+        self.candidate_label_data = candidate_label_data
+        self.doc_length = {}
+        self.pids = self.label_data.keys()
+        self.label_dict = label_dict
+        self.label_prop = label_prop
+        self.all_labels = label_dict.keys()
+        self.num_pos = num_pos
+        self.num_neg = num_neg
+        self.max_seq_len = max_seq_len
+        self.label_pos_pid = {}
+        self.label_neg_pid = {}
+        self.candidate_label = {}
+        self.candidate_count_score = {}
+        self.candidate_nlabel_embedding_id = {}
+        self.candidate_nlabel_y = {}
+        # self.train_pids = []
+        self.val_pids = []
+        self.pid_label_y = []
+        self.initialize_dataloader()
+        self.reset_data()
+
+    def initialize_dataloader(self):
+        print 'num of doc:             ' + str(len(self.doc_wordID_data))
+        print 'num of y:               ' + str(len(self.label_data))
+        print 'num of candidate_label: ' + str(len(self.candidate_label_data))
+        # doc_token_data consists of wordIDs in vocab.
+        for pid in self.pids:
+            # doc_wordID_data
+            temp = sorted(self.doc_wordID_data[pid].items(), key=lambda e: e[1], reverse=True)
+            temp2 = sorted(temp[:self.max_seq_len], key=lambda e: e[0], reverse=False)
+            feature_id, feature_v = zip(*temp2)
+            seq_len = min(len(feature_id), self.max_seq_len)
+            feature_indices = np.array(list(feature_id) + (self.max_seq_len-seq_len)*[0])
+            feature_indices[:seq_len] = feature_indices[:seq_len] + 1
+            self.x_feature_indices[pid] = feature_indices
+            self.x_feature_values[pid] = np.array(list(feature_v) + (self.max_seq_len-seq_len)*[0])
+            self.doc_length[pid] = seq_len
+            # labels
+            candidate_label, count_score = zip(*(self.candidate_label_data[pid].iteritems()))
+            self.candidate_label[pid] = candidate_label
+            self.candidate_count_score[pid] = count_score
+            pos_labels = self.label_data[pid]
+            neg_labels = list(set(candidate_label) - set(pos_labels))
+            for label in pos_labels:
+                try:
+                    self.label_pos_pid[label].append(pid)
+                    self.nlabel_active_feature[label] = np.union1d(self.nlabel_active_feature, feature_id)
+                except KeyError:
+                    self.label_pos_pid[label] = [pid]
+                    self.nlabel_active_feature[label] = feature_id
+            for label in neg_labels:
+                try:
+                    self.label_neg_pid[label].append(pid)
+                except KeyError:
+                    self.label_neg_pid[label] = [pid]
+            # candidate label for validation
+            self.candidate_nlabel_embedding_id[pid] = np.zeros(len(candidate_label))
+            self.candidate_nlabel_y[pid] = np.zeros(len(candidate_label))
+            for j in range(len(candidate_label)):
+                l_ = candidate_label[j]
+                self.candidate_nlabel_embedding_id[pid][j] = self.label_dict[l_]
+                if l_ in pos_labels:
+                    self.candidate_nlabel_y[pid][j] = 1
+
+    def get_pid_x(self, length, start, end):
+        #candidate_labels, batch_count_score = zip(*(self.candidate_label_data[pid].iteritems()))
+        #candidate_labels, batch_count_score = zip(*(self.candidate_label_data[pid][:30]))
+        batch_pid = []
+        batch_x = []
+        batch_y = []
+        batch_length = []
+        batch_label_embedding_id = []
+        batch_label_prop = []
+        batch_count_score = []
+        end2 = min(length, end)
+        for i in xrange(start, end2):
+            pid = self.val_pids[i]
+            candidate_labels = self.candidate_label[pid]
+            num = len(candidate_labels)
+            batch_pid.append([pid]*num)
+            batch_x.append([self.doc_wordID_data[pid]] * num)
+            batch_y.append(self.candidate_nlabel_y[pid])
+            batch_length.append([self.doc_length[pid]] * num)
+            batch_label_embedding_id.append(self.candidate_nlabel_embedding_id[pid])
+            batch_label_prop.append([self.label_prop[e] for e in candidate_labels])
+            batch_count_score.append(self.candidate_count_score[pid])
+        if end2 < end:
+            batch_pid = np.concatenate(batch_pid, axis=0)
+            padding_num = end - end2
+            batch_x = np.concatenate((np.concatenate(batch_x, axis=0),
+                                      np.zeros((padding_num, self.max_seq_len))), axis=0)
+            batch_y = np.concatenate((np.concatenate(batch_y, axis=0),
+                                      np.zeros(padding_num)), axis=0)
+            batch_length = np.concatenate((np.concatenate(batch_length, axis=0),
+                                           np.zeros(padding_num)), axis=0)
+            batch_label_embedding_id = np.concatenate((np.concatenate(batch_label_embedding_id, axis=0),
+                                                       np.zeros(padding_num)), axis=0)
+            batch_label_prop = np.concatenate((np.concatenate(batch_label_prop, axis=0),
+                                               np.zeros(padding_num)), axis=0)
+            batch_count_score = np.concatenate((np.concatenate(batch_count_score, axis=0),
+                                                np.zeros(padding_num)), axis=0)
+        else:
+            batch_pid = np.concatenate(batch_pid, axis=0)
+            batch_x = np.concatenate(batch_x, axis=0)
+            batch_y = np.concatenate(batch_y, axis=0)
+            batch_length = np.concatenate(batch_length, axis=0)
+            batch_label_embedding_id = np.concatenate(batch_label_embedding_id, axis=0)
+            batch_label_prop = np.concatenate(batch_label_prop, axis=0)
+            batch_count_score = np.concatenate(batch_count_score, axis=0)
+        return batch_pid, batch_x, batch_y, batch_length, batch_label_embedding_id, batch_label_prop, batch_count_score
+
+    def set_val_batch(self):
+        self.val_pid_label_y = []
+        for pid in self.val_pids:
+            candidate_labels = self.candidate_label[pid]
+            pids = [pid] * len(candidate_labels)
+            y = self.candidate_nlabel_y[pid]
+            score = self.candidate_count_score[pid]
+            self.val_pid_label_y.append(np.transpose(np.array([pids, candidate_labels, y, score])))
+        self.val_pid_label_y = np.concatenate(self.val_pid_label_y, axis=0)
+
+    def get_val_batch(self, length, start, end):
+        end2 = min(length, end)
+        pid_label_y = self.val_pid_label_y[start:end2]
+        batch_pid = pid_label_y[:, 0]
+        batch_label = pid_label_y[:, 1]
+        batch_length = [self.doc_length[p] for p in batch_pid]
+        batch_label_embedding_id = [self.label_dict[e] for e in batch_label]
+        #batch_x = [self.doc_wordID_data[p] for p in batch_pid]
+        batch_x_feature_id = [self.x_feature_indices[p] for p in batch_pid]
+        batch_x_feature_v = [self.x_feature_values[p] for p in batch_pid]
+        batch_y = pid_label_y[:, 2]
+        batch_label_prop = [self.label_prop[e] for e in batch_label]
+        batch_count_score = pid_label_y[:, 3]
+        return batch_pid, batch_x_feature_id, batch_x_feature_v, batch_y, batch_length, batch_label_embedding_id, batch_label_prop, batch_count_score
+
+    def next_batch(self, length, start, end):
+        end2 = min(length, end)
+        pid_label_y = self.pid_label_y[start:end2]
+        batch_pid = pid_label_y[:, 0]
+        batch_label = pid_label_y[:, 1]
+        batch_length = [self.doc_length[p] for p in batch_pid]
+        batch_label_embedding_id = [self.label_dict[e] for e in batch_label]
+        #batch_x = [self.doc_wordID_data[p] for p in batch_pid]
+        batch_x_feature_id = [self.x_feature_indices[p] for p in batch_pid]
+        batch_x_feature_v = [self.x_feature_values[p] for p in batch_pid]
+        batch_y = pid_label_y[:, 2]
+        batch_label_prop = [self.label_prop[e] for e in batch_label]
+        return batch_x_feature_id, batch_x_feature_v, batch_y, batch_length, batch_label_embedding_id, batch_label_prop
+
+    def get_fixed_length_pos_samples(self, items, num):
+        length = len(items)
+        if length < num:
+            sample = items
+            pad_sample = np.random.choice(items, num-length)
+            sample = sample + pad_sample.tolist()
+        elif length > num:
+            sample = random.sample(items, num)
+        else:
+            sample = items
+        return sample
+
+    def get_fixed_length_neg_samples(self, label, num):
+        try:
+            items = self.label_neg_pid[label]
+            length = len(items)
+            if length < num:
+                sample = items
+                pad_sample = np.random.choice(items, num-length)
+                sample = sample + pad_sample.tolist()
+            elif length > num:
+                sample = random.sample(items, num)
+            else:
+                sample = items
+        except KeyError:
+            neg_set = list(set(self.pids) - set(self.label_pos_pid[label]))
+            sample = np.random.choice(neg_set, num).tolist()
+        return sample
+
+    def reset_data(self):
+        self.pid_label_y = []
+        for label in self.all_labels:
+            pos_pid = self.get_fixed_length_pos_samples(self.label_pos_pid[label], self.num_pos)
+            neg_pid = self.get_fixed_length_neg_samples(label, self.num_neg)
+            pids = pos_pid + neg_pid
+            stack_label = [label] * len(pids)
+            y = [1] * self.num_pos + [0] * self.num_neg
+            self.pid_label_y.append(np.transpose(np.array([pids, stack_label, y])))
+        self.pid_label_y = np.concatenate(self.pid_label_y, axis=0)
+        np.random.shuffle(self.pid_label_y)
+        _, self.val_pids = train_test_split(self.pids, test_size=0.1)
+        self.set_val_batch()
+
+class TestDataLoader_final():
+    def __init__(self, doc_wordID_data, label_data,
+                 feature_num,
+                 candidate_label_data,
+                 label_dict, label_prop,
+                 num_pos, num_neg,
+                 max_seq_len=3000,
+                 ):
+        self.doc_wordID_data = doc_wordID_data
+        self.x_feature_indices = {}
+        self.x_feature_values = {}
+        self.feature_num = feature_num
+        self.label_data = label_data
+        self.nlabel_active_feature = {}
+        self.candidate_label_data = candidate_label_data
+        self.doc_length = {}
+        self.pids = self.label_data.keys()
+        self.label_dict = label_dict
+        self.label_prop = label_prop
+        self.all_labels = label_dict.keys()
+        self.max_seq_len = max_seq_len
+        self.candidate_label = {}
+        self.candidate_count_score = {}
+        self.candidate_nlabel_embedding_id = {}
+        self.candidate_nlabel_y = {}
+        self.pid_label_y = []
+        self.initialize_dataloader()
+        self.reset_data()
+
+    def initialize_dataloader(self):
+        print 'num of doc:             ' + str(len(self.doc_wordID_data))
+        print 'num of y:               ' + str(len(self.label_data))
+        print 'num of candidate_label: ' + str(len(self.candidate_label_data))
+        # doc_token_data consists of wordIDs in vocab.
+        for pid in self.pids:
+            # doc_wordID_data
+            temp = sorted(self.doc_wordID_data[pid].items(), key=lambda e: e[1], reverse=True)
+            temp2 = sorted(temp[:self.max_seq_len], key=lambda e: e[0], reverse=False)
+            feature_id, feature_v = zip(*temp2)
+            seq_len = min(len(feature_id), self.max_seq_len)
+            feature_indices = np.array(list(feature_id) + (self.max_seq_len-seq_len)*[0])
+            feature_indices[:seq_len] = feature_indices[:seq_len] + 1
+            self.x_feature_indices[pid] = feature_indices
+            self.x_feature_values[pid] = np.array(list(feature_v) + (self.max_seq_len-seq_len)*[0])
+            self.doc_length[pid] = seq_len
+            # labels
+            candidate_label, count_score = zip(*(self.candidate_label_data[pid].iteritems()))
+            self.candidate_label[pid] = candidate_label
+            self.candidate_count_score[pid] = count_score
+            pos_labels = self.label_data[pid]
+            neg_labels = list(set(candidate_label) - set(pos_labels))
+            for label in pos_labels:
+                try:
+                    self.label_pos_pid[label].append(pid)
+                    self.nlabel_active_feature[label] = np.union1d(self.nlabel_active_feature, feature_id)
+                except KeyError:
+                    self.label_pos_pid[label] = [pid]
+                    self.nlabel_active_feature[label] = feature_id
+            for label in neg_labels:
+                try:
+                    self.label_neg_pid[label].append(pid)
+                except KeyError:
+                    self.label_neg_pid[label] = [pid]
+            # candidate label for validation
+            self.candidate_nlabel_embedding_id[pid] = np.zeros(len(candidate_label))
+            self.candidate_nlabel_y[pid] = np.zeros(len(candidate_label))
+            for j in range(len(candidate_label)):
+                l_ = candidate_label[j]
+                self.candidate_nlabel_embedding_id[pid][j] = self.label_dict[l_]
+                if l_ in pos_labels:
+                    self.candidate_nlabel_y[pid][j] = 1
+
+    def get_batch(self, length, start, end):
+        end2 = min(length, end)
+        pid_label_y = self.pid_label_y[start:end2]
+        batch_pid = pid_label_y[:, 0]
+        batch_label = pid_label_y[:, 1]
+        batch_length = [self.doc_length[p] for p in batch_pid]
+        batch_label_embedding_id = [self.label_dict[e] for e in batch_label]
+        batch_x_feature_id = [self.x_feature_indices[p] for p in batch_pid]
+        batch_x_feature_v = [self.x_feature_values[p] for p in batch_pid]
+        batch_y = pid_label_y[:, 2]
+        batch_label_prop = [self.label_prop[e] for e in batch_label]
+        batch_count_score = pid_label_y[:, 3]
+        return batch_pid, batch_x_feature_id, batch_x_feature_v, \
+               batch_y, batch_length, batch_label_embedding_id, \
+               batch_label_prop, batch_count_score
+
+    def reset_data(self):
+        self.pid_label_y = []
+        for pid in self.pids:
+            candidate_labels = self.candidate_label[pid]
+            pids = [pid] * len(candidate_labels)
+            y = self.candidate_nlabel_y[pid]
+            score = self.candidate_count_score[pid]
+            self.pid_label_y.append(np.transpose(np.array([pids, candidate_labels, y, score])))
+        self.pid_label_y = np.concatenate(self.pid_label_y, axis=0)
 
 
 

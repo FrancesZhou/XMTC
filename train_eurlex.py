@@ -17,6 +17,7 @@ from model.core.CNN import CNN
 from model.core.XML_CNN import XML_CNN
 from model.core.NN import NN
 from model.core.NN_graph import NN_graph
+from model.core.NN_graph2 import NN_graph2
 from model.core.solver import ModelSolver
 from model.utils.io_utils import load_pickle
 from datasets.material.utils import read_label_pairs
@@ -39,7 +40,7 @@ def main():
     parse.add_argument('-use_attention', '--use_attention', type=int, default=1, help='whether to use attention')
     parse.add_argument('-pretrained_model', '--pretrained_model_path', type=str, default=None, help='path to the pretrained model')
     parse.add_argument('-cal_metrics', '--cal_metrics', type=int, default=1, help='if calculate wts_p and wts_ndcg for baseline results')
-    parse.add_argument('-alpha', '--alpha', type=float, default=0.2,
+    parse.add_argument('-alpha', '--alpha', type=float, default=1,
                        help='trade off parameter between baseline score and refinement score')
     # --- graph ---
     parse.add_argument('-use_graph', '--use_graph', type=int, default=1, help='if use graph for joint training')
@@ -107,14 +108,12 @@ def main():
     test_candidate_label = load_pickle(candidate_folder_path + 'test_candidate_label.pkl')
     print '============== create train/test data loader ...'
     if 'XML' not in args.model:
-        train_loader = TrainDataLoader2(train_doc, train_label, train_candidate_label, label_dict, label_prop,
-                                   10, 10, max_seq_len=args.max_seq_len, if_doc_is_dict=True)
+        train_loader = TrainDataLoader_final(train_doc, train_label, train_candidate_label, label_dict, label_prop,
+                                   10, 10, max_seq_len=args.max_seq_len)
         max_seq_len = train_loader.max_seq_len
-        #max_seq_len = args.max_seq_len
-        #train_loader = {}
         print 'max_seq_len: ' + str(max_seq_len)
-        test_loader = TestDataLoader2(test_doc, test_label, test_candidate_label, label_dict, label_prop,
-                                      max_seq_len=max_seq_len, if_cal_metrics=args.cal_metrics, if_doc_is_dict=True)
+        test_loader = TestDataLoader_final(test_doc, test_label, test_candidate_label, label_dict, label_prop,
+                                      max_seq_len=max_seq_len)
         if args.use_graph:
             graph = read_label_pairs(args.folder_path + 'labels.edgelist')
             graph_loader = DataLoader_graph(graph, label_dict)
@@ -122,7 +121,7 @@ def main():
     print '============== build model ...'
     if 'NN' in args.model:
         print 'build NN model ...'
-        model = NN_graph(max_seq_len, 5000+1, 300, label_embeddings, 32, args)
+        model = NN_graph2(max_seq_len, 5000+1, 300, label_embeddings, 32, args)
         args.if_use_seq_len = 1
 
     print '================= model solver ...'
