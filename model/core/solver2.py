@@ -104,9 +104,10 @@ class ModelSolver2(object):
                 num_train_batches = len(train_loader.all_labels)
                 train_batches = np.arange(num_train_batches)
                 np.random.shuffle(train_batches)
-                widgets = ['pretrain: ', Percentage(), ' ', Bar('#'), ' ', ETA()]
+                widgets = ['Pretrain: ', Percentage(), ' ', Bar('#'), ' ', ETA()]
                 pbar = ProgressBar(widgets=widgets, maxval=num_train_batches).start()
-                for i in train_batches:
+                for i_ in xrange(num_train_batches):
+                    i = train_batches[i_]
                     pbar.update(i)
                     label_i = train_loader.all_labels[i]
                     x_feature_id, x_feature_v, y, seq_l, label_emb, label_prop \
