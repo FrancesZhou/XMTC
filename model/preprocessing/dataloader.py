@@ -1417,19 +1417,6 @@ class TestDataLoader_final():
             self.candidate_label[pid] = candidate_label
             self.candidate_count_score[pid] = count_score
             pos_labels = self.label_data[pid]
-            neg_labels = list(set(candidate_label) - set(pos_labels))
-            for label in pos_labels:
-                try:
-                    self.label_pos_pid[label].append(pid)
-                    self.nlabel_active_feature[label] = np.union1d(self.nlabel_active_feature, feature_id)
-                except KeyError:
-                    self.label_pos_pid[label] = [pid]
-                    self.nlabel_active_feature[label] = feature_id
-            for label in neg_labels:
-                try:
-                    self.label_neg_pid[label].append(pid)
-                except KeyError:
-                    self.label_neg_pid[label] = [pid]
             # candidate label for validation
             self.candidate_nlabel_embedding_id[pid] = np.zeros(len(candidate_label))
             self.candidate_nlabel_y[pid] = np.zeros(len(candidate_label))
