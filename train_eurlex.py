@@ -19,6 +19,7 @@ from model.core.NN import NN
 from model.core.NN_graph import NN_graph
 from model.core.NN_graph2 import NN_graph2
 from model.core.solver import ModelSolver
+from model.core.solver2 import ModelSolver2
 from model.utils.io_utils import load_pickle
 from datasets.material.utils import read_label_pairs
 
@@ -126,7 +127,7 @@ def main():
 
     print '================= model solver ...'
     # solver: __init__(self, model, train_data, test_data, **kwargs):
-    solver = ModelSolver(model, train_loader, test_loader,
+    solver = ModelSolver2(model, train_loader, test_loader,
                          graph_loader,
                          if_use_seq_len=args.if_use_seq_len,
                          if_output_all_labels=args.if_output_all_labels,

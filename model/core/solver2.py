@@ -20,7 +20,7 @@ from model.utils.op_utils import ndcg_at_k, precision_for_pre_label, precision_f
 from model.utils.io_utils import load_pickle, dump_pickle
 
 
-class ModelSolver(object):
+class ModelSolver2(object):
     def __init__(self, model, train_data, test_data, graph_data=None, **kwargs):
         self.model = model
         self.train_data = train_data
