@@ -1373,7 +1373,6 @@ class TestDataLoader_final():
                  feature_num,
                  candidate_label_data,
                  label_dict, label_prop,
-                 num_pos, num_neg,
                  max_seq_len=3000,
                  ):
         self.doc_wordID_data = doc_wordID_data
