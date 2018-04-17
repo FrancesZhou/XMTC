@@ -98,7 +98,7 @@ class ModelSolver2(object):
                 saver.restore(sess, pretrained_model_path)
             # ============== pretrain ======================
             print '------------- begin pretrain --------------'
-            for e in xrange(20):
+            for e in xrange(40):
                 curr_loss = 0
                 curr_g_loss = 0
                 num_train_batches = len(train_loader.all_labels)
@@ -108,7 +108,7 @@ class ModelSolver2(object):
                 pbar = ProgressBar(widgets=widgets, maxval=num_train_batches).start()
                 for i_ in xrange(num_train_batches):
                     i = train_batches[i_]
-                    pbar.update(i)
+                    pbar.update(i_)
                     label_i = train_loader.all_labels[i]
                     x_feature_id, x_feature_v, y, seq_l, label_emb, label_prop \
                         = train_loader.next_batch(label_i)
@@ -135,11 +135,11 @@ class ModelSolver2(object):
                     if self.use_graph:
                         _, gl_ = sess.run([pre_g_train_op, pre_g_loss], feed_dict)
                         curr_g_loss += gl_
-                #pbar.finish()
+                pbar.finish()
                 w_text = 'at epoch %d, g_loss = %f , train loss is %f \n' % \
                          (e, curr_g_loss / num_train_batches, curr_loss / num_train_batches)
                 print w_text
-                pbar.finish()
+                #pbar.finish()
             # ===== set active feature ids for each label
             self.feature_processor.set_active_feature_id()
             # ============== begin training ===================
@@ -156,8 +156,9 @@ class ModelSolver2(object):
                 np.random.shuffle(train_batches)
                 widgets = ['Train: ', Percentage(), ' ', Bar('#'), ' ', ETA()]
                 pbar = ProgressBar(widgets=widgets, maxval=num_train_batches).start()
-                for i in train_batches:
-                    pbar.update(i)
+                for i_ in xrange(num_train_batches):
+                    i = train_batches[i_]
+                    pbar.update(i_)
                     label_i = train_loader.all_labels[i]
                     x_feature_id, x_feature_v, y, seq_l, label_emb, label_prop \
                         = train_loader.next_batch(label_i)

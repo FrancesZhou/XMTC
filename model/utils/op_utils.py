@@ -115,7 +115,7 @@ def results_for_score_vector(tar_true_label_prop, tar_pid_y, pre_pid_score, pre_
         # ndcg_3.append(ndcg_at_k(r, 3, len(true_label_prop)))
         # ndcg_5.append(ndcg_at_k(r, 5, len(true_label_prop)))
         # for propensity loss
-        wts_r = [y[ind] * pre_pid_prop[pid][ind] for ind in pre_label_index]
+        wts_r = [np.array(y)[ind] * np.array(pre_pid_prop[pid])[ind] for ind in pre_label_index]
         opt_r = sorted(true_label_prop, reverse=True)
         if len(opt_r) < 5:
             opt_r = opt_r + [0]*(5-len(opt_r))
