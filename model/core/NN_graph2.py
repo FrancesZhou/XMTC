@@ -56,7 +56,7 @@ class NN_graph2(object):
     def attention_layer(self, hidden_states, label_embeddings, hidden_dim, label_embedding_dim, seqlen, name_scope=None):
         # hidden_states: [batch_size, max_seq_len, hidden_dim]
         # label_embeddings: [batch_size, label_embedding_dim]
-        with tf.variable_scope('att_layer'):
+        with tf.variable_scope('att_layer', reuse=tf.AUTO_REUSE):
             w = tf.get_variable('w', [hidden_dim, label_embedding_dim], initializer=self.weight_initializer)
             # hidden_states: [batch_size, max_seq_len, hidden_dim]
             # label_embeddings: [batch_size, label_embedding_dim]
@@ -109,6 +109,10 @@ class NN_graph2(object):
                 # out: [batch_size, 1]
         return tf.squeeze(out)
 
+    def gaussian_noise_layer(input_layer, std=0.2):
+        noise = tf.random_normal(shape=tf.shape(input_layer), mean=0.0, stddev=std, dtype=tf.float32)
+        return tf.add(input_layer, noise)
+
     def pre_build_model(self):
         # x_feature_id: [batch_size, max_seq_len]
         # x_feature_v: [batch_size, max_seq_len]
@@ -117,14 +121,20 @@ class NN_graph2(object):
         # label embeddings
         label_embeddings = tf.nn.embedding_lookup(self.label_embedding, self.label_embedding_id)
         # y
-        y = tf.multiply(self.y, self.label_prop)
+        y = self.y
+        #y = tf.multiply(self.y, self.label_prop)
         # ---------- x -------------
         word_embeddings_padding = tf.concat((tf.constant(0, dtype=tf.float32, shape=[1, self.word_embedding_dim]),
                                      self.word_embedding), axis=0)
-        x = tf.nn.embedding_lookup(word_embeddings_padding, self.x_feature_id)
+        x_feature_id = self.x_feature_id
+        x = tf.nn.embedding_lookup(word_embeddings_padding, x_feature_id)
         # x: [batch_size, max_seq_len, word_embedding_dim]
         # normalize feature_v
-        feature_v = tf.divide(self.x_feature_v, tf.norm(self.x_feature_v, 2, axis=-1, keepdims=True))
+        #feature_v = tf.divide(self.x_feature_v, tf.norm(self.x_feature_v, 2, axis=-1, keepdims=True))
+        #feature_v = tf.divide(self.x_feature_v, tf.reduce_sum(self.x_feature_v, -1, keepdims=True))
+        feature_v = self.x_feature_v
+        feature_v = tf.layers.batch_normalization(feature_v)
+        #feature_v = tf.contrib.layers.dropout(feature_v, keep_prob=0.5)
         if self.use_attention:
             with tf.name_scope('attention'):
                 att_weight = self.attention_layer(x, label_embeddings,
@@ -138,30 +148,35 @@ class NN_graph2(object):
         # label_embeddings: [batch_size, label_embedding_dim]
         x_label_concat = tf.concat([x_emb, label_embeddings], axis=-1)
         # ---------- output layer ----------
-        y_hidden = tf.layers.dense(x_label_concat, self.num_classify_hidden, activation=tf.sigmoid, use_bias=True, name='pre_dense_0')
-        y_out = tf.layers.dense(y_hidden, 1, activation=tf.nn.relu, name='pre_dense_1')
-        loss = tf.nn.l2_loss(y - y_out, name='l2_loss')
+        y_hidden = tf.layers.dense(x_label_concat, self.num_classify_hidden, activation=tf.nn.relu, use_bias=True, name='pre_dense_0')
+        #y_hidden = tf.contrib.layers.dropout(y_hidden, keep_prob=0.5)
+        y_hidden = tf.layers.batch_normalization(y_hidden)
+        #y_hidden = tf.contrib.layers.dropout(y_hidden, keep_prob=0.5)
+        y_out = tf.layers.dense(y_hidden, 1, activation=None, name='pre_dense_1')
+        loss = tf.reduce_sum(tf.multiply(tf.nn.sigmoid_cross_entropy_with_logits(labels=y, logits=tf.squeeze(y_out)), self.label_prop))
+        #loss = tf.nn.l2_loss(y - y_out, name='l2_loss')
         # ---------- graph context loss ---------------
         if self.use_graph:
-            gl1 = tf.nn.embedding_lookup(self.label_embedding, self.gl1)
-            if self.neg_samp:
-                gl2 = tf.nn.embedding_lookup(
-                    tf.get_variable('context_embedding', [self.label_num, self.label_embedding_dim],
-                                    initializer=self.weight_initializer),
-                    self.gl2)
-                l_gy = tf.multiply(gl1, gl2)
-                g_loss = tf.reduce_mean(-tf.log(tf.sigmoid(tf.multiply(tf.reduce_sum(l_gy, axis=1), self.gy))))
-            else:
-                l_gy = tf.layers.dense(gl1, self.label_embedding_dim, activation=tf.nn.softmax, use_bias=False)
-                g_loss = tf.reduce_mean(categorical_crossentropy(tf.one_hot(self.gl2, self.label_embedding_dim), l_gy))
+            with tf.variable_scope('graph_embedding', reuse=tf.AUTO_REUSE):
+                gl1 = tf.nn.embedding_lookup(self.label_embedding, self.gl1)
+                if self.neg_samp:
+                    gl2 = tf.nn.embedding_lookup(
+                        tf.get_variable('context_embedding', [self.label_num, self.label_embedding_dim],
+                                        initializer=self.weight_initializer),
+                        self.gl2)
+                    l_gy = tf.multiply(gl1, gl2)
+                    g_loss = tf.reduce_mean(-tf.log(tf.sigmoid(tf.multiply(tf.reduce_sum(l_gy, axis=1), self.gy))))
+                else:
+                    l_gy = tf.layers.dense(gl1, self.label_embedding_dim, activation=tf.nn.softmax, use_bias=False)
+                    g_loss = tf.reduce_mean(categorical_crossentropy(tf.one_hot(self.gl2, self.label_embedding_dim), l_gy))
         else:
             g_loss = 0
         # ---------- get feature_gradient -------------
         word_grads = tf.gradients(loss, [self.word_embedding])[0]
         word_abs_grads = tf.abs(word_grads)
         sum_word_grads = tf.reduce_sum(word_abs_grads, axis=-1)
-        print 'shape of sum_word_grads'
-        print sum_word_grads.get_shape().as_list()
+        #print 'shape of sum_word_grads'
+        #print sum_word_grads.get_shape().as_list()
         return x_emb, y_out, sum_word_grads, loss, g_loss
 
     def build_model(self):
@@ -172,14 +187,16 @@ class NN_graph2(object):
         # label embeddings
         label_embeddings = tf.nn.embedding_lookup(self.label_embedding, self.label_embedding_id)
         # y
-        y = tf.multiply(self.y, self.label_prop)
+        y = self.y
+        #y = tf.multiply(self.y, self.label_prop)
         # ---------- x -------------
         word_embeddings_padding = tf.concat((tf.constant(0, dtype=tf.float32, shape=[1, self.word_embedding_dim]),
                                      self.word_embedding), axis=0)
         x = tf.nn.embedding_lookup(word_embeddings_padding, self.x_feature_id)
         # x: [batch_size, max_seq_len, word_embedding_dim]
-        # normalize feature_v
-        feature_v = tf.divide(self.x_feature_v, tf.norm(self.x_feature_v, 2, axis=-1, keepdims=True))
+        #feature_v = self.gaussian_noise_layer(tf.cast(feature_v, dtype=tf.float32))
+        feature_v = self.x_feature_v
+        feature_v = tf.layers.batch_normalization(feature_v)
         if self.use_attention:
             with tf.name_scope('attention'):
                 att_weight = self.attention_layer(x, label_embeddings,
@@ -196,9 +213,12 @@ class NN_graph2(object):
         x_label_concat = tf.concat([x_emb, label_embeddings], axis=-1)
         x_label_concat = tf.concat([x_label_concat, feature_label_embeddings], axis=-1)
         # ---------- output layer ----------
-        y_hidden = tf.layers.dense(x_label_concat, self.num_classify_hidden, activation=tf.sigmoid, use_bias=True, name='dense_0')
-        y_out = tf.layers.dense(y_hidden, 1, activation=tf.nn.relu, name='dense_1')
-        loss = tf.nn.l2_loss(y - y_out, name='l2_loss')
+        y_hidden = tf.layers.dense(x_label_concat, self.num_classify_hidden, activation=tf.nn.relu, use_bias=True, name='dense_0')
+        #y_hidden = tf.contrib.layers.dropout(y_hidden, keep_prob=0.5)
+        y_hidden = tf.layers.batch_normalization(y_hidden)
+        y_out = tf.layers.dense(y_hidden, 1, activation=None, name='dense_1')
+        loss = tf.reduce_sum(tf.multiply(tf.nn.sigmoid_cross_entropy_with_logits(labels=y, logits=tf.squeeze(y_out)), self.label_prop))
+        #loss = tf.nn.l2_loss(y - y_out, name='l2_loss')
         # ---------- graph context loss ---------------
         if self.use_graph:
             gl1 = tf.nn.embedding_lookup(self.label_embedding, self.gl1)

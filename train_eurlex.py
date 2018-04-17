@@ -35,6 +35,7 @@ def main():
     # ---------- vocab and word embeddings --------
     parse.add_argument('-word_embeddings', '--word_embedding_path', type=str, default='word_emb.6B.300d.npy',
                        help='path to the word embeddings')
+    parse.add_argument('-word_embedding_dim', '--word_embedding_dim', type=int, default=100, help='dim of word embedding')
     # ---------- model ----------
     parse.add_argument('-max_seq_len', '--max_seq_len', type=int, default=500, help='maximum sequence length')
     parse.add_argument('-model', '--model', type=str, default='NN', help='model: NN, LSTM, biLSTM, CNN')
@@ -128,7 +129,7 @@ def main():
     print '============== build model ...'
     if 'NN' in args.model:
         print 'build NN model ...'
-        model = NN_graph2(max_seq_len, 5000, 300, label_embeddings, 32, args)
+        model = NN_graph2(max_seq_len, 5000, args.word_embedding_dim, label_embeddings, 32, args)
         args.if_use_seq_len = 1
 
     print '================= model solver ...'

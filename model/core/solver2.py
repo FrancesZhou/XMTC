@@ -112,6 +112,8 @@ class ModelSolver2(object):
                     label_i = train_loader.all_labels[i]
                     x_feature_id, x_feature_v, y, seq_l, label_emb, label_prop \
                         = train_loader.next_batch(label_i)
+                    x_feature_v = x_feature_v/np.linalg.norm(x_feature_v, 2, axis=-1, keepdims=True)
+                    x_feature_v += np.random.normal(0, 0.1, x_feature_v.shape)
                     if len(y) == 0:
                         continue
                     if self.use_graph:
@@ -162,6 +164,8 @@ class ModelSolver2(object):
                     label_i = train_loader.all_labels[i]
                     x_feature_id, x_feature_v, y, seq_l, label_emb, label_prop \
                         = train_loader.next_batch(label_i)
+                    x_feature_v = x_feature_v/np.linalg.norm(x_feature_v, 2, axis=-1, keepdims=True)
+                    x_feature_v += np.random.normal(0, 0.1, x_feature_v.shape)
                     if len(y) == 0:
                         continue
                     if self.use_graph:
