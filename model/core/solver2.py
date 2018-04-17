@@ -203,10 +203,8 @@ class ModelSolver2(object):
                 pbar = ProgressBar(widgets=widgets, maxval=num_val_points).start()
                 for i in val_pid_batches:
                     pbar.update(i)
-                    batch_label, batch_pid, x_feature_id, x_feature_v, y, seq_l, label_emb, label_prop, count_score \
+                    lbl_active_fea_id, batch_pid, x_feature_id, x_feature_v, y, seq_l, label_emb, label_prop, count_score \
                         = train_loader.get_val_batch(num_val_points, i*self.batch_size, (i+1)*self.batch_size)
-                    lbl_active_fea_id = [self.feature_processor.label_active_feature_ids[lbl_idx] for lbl_idx in
-                                         batch_label]
                     if self.if_use_seq_len:
                         feed_dict = {self.model.x_feature_id: np.array(x_feature_id, dtype=np.int32),
                                      self.model.x_feature_v: np.array(x_feature_v, dtype=np.float32),
@@ -270,9 +268,8 @@ class ModelSolver2(object):
                     pbar = ProgressBar(widgets=widgets, maxval=num_test_points).start()
                     for i in test_pid_batches:
                         pbar.update(i)
-                        batch_label, batch_pid, x_feature_id, x_feature_v, y, seq_l, label_emb, label_prop, count_score = test_loader.get_batch(
+                        lbl_active_fea_id, batch_pid, x_feature_id, x_feature_v, y, seq_l, label_emb, label_prop, count_score = test_loader.get_batch(
                                 num_test_points, i * self.batch_size, (i + 1) * self.batch_size)
-                        lbl_active_fea_id = [self.feature_processor.label_active_feature_ids[lbl_idx] for lbl_idx in batch_label]
                         if self.if_use_seq_len:
                             feed_dict = {self.model.x_feature_id: np.array(x_feature_id, dtype=np.int32),
                                          self.model.x_feature_v: np.array(x_feature_v, dtype=np.float32),

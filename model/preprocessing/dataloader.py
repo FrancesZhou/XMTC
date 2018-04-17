@@ -1261,7 +1261,29 @@ class TrainDataLoader_final():
         batch_y = pid_label_y[:, 2]
         batch_label_prop = [self.label_prop[e] for e in batch_label]
         batch_count_score = pid_label_y[:, 3]
-        return batch_label, batch_pid, batch_x_feature_id, batch_x_feature_v, batch_y, batch_length, batch_label_embedding_id, batch_label_prop, batch_count_score
+        lbl_active_fea_id = [self.feature_processor.label_active_feature_ids[lbl_idx] for lbl_idx in
+                             batch_label]
+        if end2 < end:
+            padding_num = end - end2
+            batch_length = np.concatenate((np.array(batch_length),
+                                           np.ones(padding_num)), axis=0)
+            batch_label_embedding_id = np.concatenate((np.array(batch_label_embedding_id),
+                                                       np.zeros(padding_num)), axis=0)
+            # batch_x = np.concatenate((np.array(batch_x),
+            #                           np.zeros((padding_num, self.max_seq_len))), axis=0)
+            batch_x_feature_id = np.concatenate((np.array(batch_x_feature_id),
+                                                 np.zeros((padding_num, self.max_seq_len))), axis=0)
+            batch_x_feature_v = np.concatenate((np.array(batch_x_feature_v),
+                                                np.zeros((padding_num, self.max_seq_len))), axis=0)
+            batch_y = np.concatenate((np.array(batch_y),
+                                      np.zeros(padding_num)), axis=0)
+            batch_label_prop = np.concatenate((np.array(batch_label_prop),
+                                               np.zeros(padding_num)), axis=0)
+            batch_count_score = np.concatenate((np.array(batch_count_score),
+                                                np.zeros(padding_num)), axis=0)
+            lbl_active_fea_id = np.concatenate((np.array(lbl_active_fea_id),
+                                                np.zeros((padding_num, self.feature_processor.active_feature_num))), axis=0)
+        return lbl_active_fea_id, batch_pid, batch_x_feature_id, batch_x_feature_v, batch_y, batch_length, batch_label_embedding_id, batch_label_prop, batch_count_score
 
     def next_batch(self, label):
         pid_label_y = self.label_pid_y[label]
@@ -1384,7 +1406,30 @@ class TestDataLoader_final():
         batch_y = pid_label_y[:, 2]
         batch_label_prop = [self.label_prop[e] for e in batch_label]
         batch_count_score = pid_label_y[:, 3]
-        return batch_label, batch_pid, batch_x_feature_id, batch_x_feature_v, \
+        lbl_active_fea_id = [self.feature_processor.label_active_feature_ids[lbl_idx] for lbl_idx in
+                             batch_label]
+        if end2 < end:
+            padding_num = end - end2
+            batch_length = np.concatenate((np.array(batch_length),
+                                           np.ones(padding_num)), axis=0)
+            batch_label_embedding_id = np.concatenate((np.array(batch_label_embedding_id),
+                                                       np.zeros(padding_num)), axis=0)
+            # batch_x = np.concatenate((np.array(batch_x),
+            #                           np.zeros((padding_num, self.max_seq_len))), axis=0)
+            batch_x_feature_id = np.concatenate((np.array(batch_x_feature_id),
+                                                 np.zeros((padding_num, self.max_seq_len))), axis=0)
+            batch_x_feature_v = np.concatenate((np.array(batch_x_feature_v),
+                                                np.zeros((padding_num, self.max_seq_len))), axis=0)
+            batch_y = np.concatenate((np.array(batch_y),
+                                      np.zeros(padding_num)), axis=0)
+            batch_label_prop = np.concatenate((np.array(batch_label_prop),
+                                               np.zeros(padding_num)), axis=0)
+            batch_count_score = np.concatenate((np.array(batch_count_score),
+                                                np.zeros(padding_num)), axis=0)
+            lbl_active_fea_id = np.concatenate((np.array(lbl_active_fea_id),
+                                                np.zeros((padding_num, self.feature_processor.active_feature_num))),
+                                               axis=0)
+        return lbl_active_fea_id, batch_pid, batch_x_feature_id, batch_x_feature_v, \
                batch_y, batch_length, batch_label_embedding_id, \
                batch_label_prop, batch_count_score
 
