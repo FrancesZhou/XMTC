@@ -10,13 +10,12 @@ import numpy as np
 import tensorflow as tf
 
 class NN(object):
-    def __init__(self, max_seq_len, vocab_size, word_embedding_dim, label_embedding, num_classify_hidden, args):
+    def __init__(self, max_seq_len, vocab_size, word_embedding_dim, label_output_dim, label_prop, num_classify_hidden, args):
         self.max_seq_len = max_seq_len
         self.word_embedding_dim = word_embedding_dim
-        self.num_filters = args.num_filters
-        self.pooling_units = args.pooling_units
+        self.label_output_dim = label_output_dim
         self.num_classify_hidden = num_classify_hidden
-        self.label_embedding_dim = label_embedding.shape[-1]
+        self.label_prop = tf.constant(label_prop)
         self.batch_size = args.batch_size
         # self.dropout_keep_prob = args.dropout_keep_prob
         #
@@ -24,14 +23,14 @@ class NN(object):
         self.const_initializer = tf.constant_initializer()
         self.neg_inf = tf.constant(value=-np.inf, name='numpy_neg_inf')
         #
-        self.word_embedding = tf.get_variable('word_embedding', [vocab_size, word_embedding_dim])
-        self.label_embedding = tf.constant(label_embedding, dtype=tf.float32)
+        self.word_embedding = tf.get_variable('word_embedding', [vocab_size, word_embedding_dim], initializer=self.weight_initializer)
         #
-        self.x = tf.placeholder(tf.int32, [None, self.max_seq_len])
-        self.y = tf.placeholder(tf.float32, [None])
+        self.x_feature_id = tf.placeholder(tf.int32, [None, self.max_seq_len])
+        self.x_feature_v = tf.placeholder(tf.float32, [None, self.max_seq_len])
+        self.y = tf.placeholder(tf.float32, [None, self.label_output_dim])
         self.seqlen = tf.placeholder(tf.int32, [None])
-        self.label_embedding_id = tf.placeholder(tf.int32, [None])
-        self.label_prop = tf.placeholder(tf.float32, [None])
+        #self.label_embedding_id = tf.placeholder(tf.int32, [None])
+        #self.label_prop = tf.placeholder(tf.float32, [None])
 
     def attention_layer(self, hidden_states, label_embeddings, hidden_dim, label_embedding_dim, seqlen, name_scope=None):
         # hidden_states: [batch_size, max_seq_len, hidden_dim]
@@ -88,29 +87,34 @@ class NN(object):
         return tf.squeeze(out)
 
     def build_model(self):
-        # x: [batch_size, self.max_seq_len]
-        # y: [batch_size]
-        x = tf.nn.embedding_lookup(self.word_embedding, self.x)
-        # x: [batch_size, self.max_seq_len, word_embedding_dim]
-        label_embeddings = tf.nn.embedding_lookup(self.label_embedding, self.label_embedding_id)
+        # x: [batch_size, max_seq_len]
+        # y: [batch_size, label_output_dim]
+        word_embeddings_padding = tf.concat((tf.constant(0, dtype=tf.float32, shape=[1, self.word_embedding_dim]),
+                                            self.word_embedding), axis=0)
+        x = tf.nn.embedding_lookup(word_embeddings_padding, self.x_feature_id)
+        # x: [batch_size, max_seq_len, word_embedding_dim]
         y = self.y
         # x_emb
-        x_emb = tf.reduce_max(x, axis=1)
+        feature_v = tf.layers.batch_normalization(self.x_feature_v)
+        x_emb = tf.reduce_sum(tf.multiply(x, tf.expand_dims(feature_v, -1)), axis=1)
         # ---------- attention --------------
-        with tf.name_scope('attention'):
-            x_lbl_fea = self.attention_layer(x, label_embeddings,
-                                             self.word_embedding_dim, self.label_embedding_dim,
-                                             self.seqlen)
+        # with tf.name_scope('attention'):
         with tf.name_scope('output'):
-            fea_dim = x_lbl_fea.get_shape().as_list()[-1]
-            y_ = self.classification_layer(x_lbl_fea, label_embeddings, fea_dim, self.label_embedding_dim)
+            weight_1 = tf.get_variable('weight_1', [self.word_embedding_dim, self.num_classify_hidden],
+                                       initializer =self.weight_initializer)
+            bias_1 = tf.get_variable('bias_1', [self.num_classify_hidden], initializer=self.const_initializer)
+            y_hidden = tf.nn.relu(tf.add(tf.matmul(x_emb, weight_1), bias_1))
+            weight_2 = tf.get_variable('weight_2', [self.num_classify_hidden, self.label_output_dim],
+                                       initializer=self.weight_initializer)
+            #y_out = tf.nn.relu(tf.matmul(y_hidden, weight_2))
+            y_out = tf.matmul(y_hidden, weight_2)
         # loss
         loss = tf.reduce_sum(
-            tf.multiply(tf.nn.sigmoid_cross_entropy_with_logits(labels=y, logits=y_), self.label_prop)
+            tf.multiply(tf.nn.sigmoid_cross_entropy_with_logits(labels=y, logits=y_out), self.label_prop)
         )
         # if self.use_propensity:
         #     loss = tf.losses.sigmoid_cross_entropy(y, y_, weights=tf.expand_dims(self.label_prop, -1))
         # else:
         #     loss = tf.losses.sigmoid_cross_entropy(y, y_)
-        return x_emb, tf.sigmoid(y_), loss
+        return x_emb, tf.sigmoid(y_out), loss
 

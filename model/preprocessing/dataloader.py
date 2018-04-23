@@ -448,78 +448,59 @@ class DataLoader3():
         self.end_of_data = False
 
 # DataLoader5 is for XML-CNN to output all labels
-class DataLoader5():
+class DataLoader_all():
     def __init__(self, doc_wordID_data, label_data,
-                 all_labels,
+                 num_labels,
                  batch_size,
-                 given_seq_len=False, max_seq_len=5000):
+                 max_seq_len=5000):
         self.doc_wordID_data = doc_wordID_data
+        self.x_feature_indices = {}
+        self.x_feature_values = {}
         self.label_data = label_data
-        self.pids = self.label_data.keys()
-        self.all_labels = all_labels
+        self.pids = []
+        self.num_labels = num_labels
         self.batch_size = batch_size
-        self.given_seq_len = given_seq_len
         self.max_seq_len = max_seq_len
         self.doc_length = {}
-        self.label_dict = {}
         self.initialize_dataloader()
 
     def initialize_dataloader(self):
         print 'num of doc: ' + str(len(self.doc_wordID_data))
         print 'num of y: ' + str(len(self.label_data))
-        # create label_dict
-        self.label_dict = dict(zip(self.all_labels, range(len(self.all_labels))))
-        # doc_token_data consists of wordIDs in vocab.
-        self.doc_length = {}
-        all_length = []
-        for pid in self.pids:
-            seq_len = len(self.doc_wordID_data[pid])
-            if seq_len:
-                all_length.append(seq_len)
-                self.doc_length[pid] = seq_len
-            else:
-                del self.doc_wordID_data[pid]
-                del self.label_data[pid]
-        self.pids = self.label_data.keys()
-        # assign max_seq_len if not given_seq_len
-        print 'after removing zero-length data'
-        print 'num of doc: ' + str(len(self.doc_wordID_data))
-        print 'num of y: ' + str(len(self.label_data))
-        if not self.given_seq_len:
-            self.max_seq_len = min(max(all_length), self.max_seq_len)
         print 'max sequence length: ' + str(self.max_seq_len)
+        self.pids = np.asarray(self.label_data.keys())
+        #
+        for pid in self.pids:
+            temp = sorted(self.doc_wordID_data[pid].items(), key=lambda e: e[1], reverse=True)
+            temp2 = sorted(temp[:self.max_seq_len], key=lambda e: e[0], reverse=False)
+            feature_id, feature_v = zip(*temp2)
+            seq_len = min(len(feature_id), self.max_seq_len)
+            feature_indices = np.array(list(feature_id) + (self.max_seq_len - seq_len) * [0])
+            feature_indices[:seq_len] = feature_indices[:seq_len] + 1
+            self.x_feature_indices[pid] = feature_indices
+            self.x_feature_values[pid] = np.array(list(feature_v) + (self.max_seq_len - seq_len) * [0])
+            self.doc_length[pid] = seq_len
 
-    def get_pid_x(self, i, j):
-        batch_pid = []
-        batch_x = []
+    def get_pid_x(self, pool, i, j):
         batch_y = []
-        end = min(j, len(self.pids))
-        for pid in self.pids[i:end]:
-            batch_pid.append(pid)
-            #_, seq_emb = generate_embedding_from_vocabID(self.doc_wordID_data[pid], self.max_seq_len, self.word_embeddings)
-            #seq_len = min(self.doc_length[pid], self.max_seq_len)
-            padding_len = self.max_seq_len - min(self.doc_length[pid], self.max_seq_len)
-            x = np.array(self.doc_wordID_data[pid], dtype=int) + 1
-            x = x.tolist()
-            if padding_len:
-                x = x + [0] * padding_len
-            x = x[:self.max_seq_len]
-            #
-            y = np.zeros(len(self.all_labels))
+        end = min(j, len(pool))
+        batch_pid = pool[i:end]
+        batch_seq_len = [self.doc_length[p] for p in batch_pid]
+        x_feature_id = [self.x_feature_indices[p] for p in batch_pid]
+        x_feature_v = [self.x_feature_values[p] for p in batch_pid]
+        for pid in batch_pid:
+            y = np.zeros(self.num_labels)
             for l in self.label_data[pid]:
-                y[self.label_dict[l]] = 1
-            batch_x.append(x)
+                y[l] = 1
             batch_y.append(y)
-        if end < j:
-            batch_x = np.concatenate((batch_x, np.zeros((j-end, self.max_seq_len), dtype=int)), axis=0)
-            batch_y = np.concatenate((batch_y, np.zeros((j-end, len(self.all_labels)))), axis=0)
-        # while end < j:
-        #     batch_x.append(np.zeros((self.max_seq_len, self.word_embeddings.shape[-1])))
-        #     batch_y.append(np.zeros((len(self.all_labels))))
-        #     #print len(batch_x)
-        #     end += 1
-        return batch_pid, batch_x, batch_y
+        # if end < j:
+        #     batch_x = np.concatenate((batch_x, np.zeros((j-end, self.max_seq_len), dtype=int)), axis=0)
+        #     batch_y = np.concatenate((batch_y, np.zeros((j-end, len(self.all_labels)))), axis=0)
+        return batch_pid, x_feature_id, x_feature_v, batch_seq_len, batch_y
 
+    def reset_data(self):
+        np.random.shuffle(self.pids)
+        self.train_pids, self.val_pids = train_test_split(self.pids, test_size=0.1)
 
 # for propensity-loss train dataloader
 class TrainDataLoader():
