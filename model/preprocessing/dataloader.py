@@ -450,13 +450,14 @@ class DataLoader3():
 # DataLoader5 is for XML-CNN to output all labels
 class DataLoader_all():
     def __init__(self, doc_wordID_data, label_data,
-                 num_labels,
+                 num_labels, label_prop_dict,
                  batch_size,
                  max_seq_len=5000):
         self.doc_wordID_data = doc_wordID_data
         self.x_feature_indices = {}
         self.x_feature_values = {}
         self.label_data = label_data
+        self.label_prop = label_prop_dict
         self.pids = []
         self.num_labels = num_labels
         self.batch_size = batch_size
@@ -469,8 +470,12 @@ class DataLoader_all():
         print 'num of doc: ' + str(len(self.doc_wordID_data))
         print 'num of y: ' + str(len(self.label_data))
         print 'max sequence length: ' + str(self.max_seq_len)
-        self.pids = np.asarray(self.label_data.keys())
+        # label
+        zero_prop_label = set(range(self.num_labels)) - set(self.label_prop.keys())
+        for zero_l in zero_prop_label:
+            self.label_prop[zero_l] = 0
         #
+        self.pids = np.asarray(self.label_data.keys())
         for pid in self.pids:
             temp = sorted(self.doc_wordID_data[pid].items(), key=lambda e: e[1], reverse=True)
             temp2 = sorted(temp[:self.max_seq_len], key=lambda e: e[0], reverse=False)
