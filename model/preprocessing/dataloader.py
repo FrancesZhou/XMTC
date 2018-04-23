@@ -1464,10 +1464,16 @@ class FeatureProcessor():
 
     def set_active_feature_id(self):
         for label, grads in self.label_active_feature_grads.items():
+            #print 'max: '
+            #print np.max(grads)
+            #print 'min: '
+            #print np.min(grads)
             idx = np.argsort(-grads)[:self.active_feature_num]
             non_zero_idx = np.nonzero(grads)
             active_feature_id = np.intersect1d(np.intersect1d(idx, non_zero_idx), self.label_pool_feature[label]) + 1
+            #print 'number of active features'
             if len(active_feature_id) < self.active_feature_num:
+                print len(active_feature_id)
                 padding_num = self.active_feature_num - len(active_feature_id)
                 active_feature_id = np.concatenate((active_feature_id, np.zeros(padding_num)))
             self.label_active_feature_ids[label] = active_feature_id

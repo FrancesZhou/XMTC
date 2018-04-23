@@ -34,6 +34,8 @@ class NN_graph2(object):
         self.word_embedding = tf.get_variable('word_embedding', [vocab_size, word_embedding_dim], initializer=self.weight_initializer)
         if args.random_label_embedding:
             self.label_embedding = tf.get_variable('label_embedding', [self.label_num, self.label_embedding_dim], initializer=self.weight_initializer)
+        elif args.fix_label_embedding:
+            self.label_embedding = tf.constant(label_embedding, dtype=tf.float32)
         else:
             self.label_embedding = tf.get_variable('label_embedding', initializer=tf.constant(label_embedding, dtype=tf.float32))
         #
@@ -148,12 +150,17 @@ class NN_graph2(object):
         # label_embeddings: [batch_size, label_embedding_dim]
         x_label_concat = tf.concat([x_emb, label_embeddings], axis=-1)
         # ---------- output layer ----------
-        y_hidden = tf.layers.dense(x_label_concat, self.num_classify_hidden, activation=tf.nn.relu, use_bias=True, name='pre_dense_0')
+        #y_hidden = tf.layers.dense(x_label_concat, self.num_classify_hidden, activation=tf.nn.relu, use_bias=True, kernel_regularizer=tf.contrib.layers.l2_regularizer, name='pre_dense_0')
+        weight_1 = tf.get_variable('weight_hidden_1', [self.word_embedding_dim + self.label_embedding_dim, self.num_classify_hidden], initializer=self.weight_initializer)
+        y_hidden = tf.nn.relu(tf.matmul(x_label_concat, weight_1))
         #y_hidden = tf.contrib.layers.dropout(y_hidden, keep_prob=0.5)
         y_hidden = tf.layers.batch_normalization(y_hidden)
         #y_hidden = tf.contrib.layers.dropout(y_hidden, keep_prob=0.5)
-        y_out = tf.layers.dense(y_hidden, 1, activation=None, name='pre_dense_1')
-        loss = tf.reduce_sum(tf.multiply(tf.nn.sigmoid_cross_entropy_with_logits(labels=y, logits=tf.squeeze(y_out)), self.label_prop))
+        #y_out = tf.layers.dense(y_hidden, 1, activation=None, kernel_regularizer=tf.contrib.layers.l2_regularizer, name='pre_dense_1')
+        weight_2 = tf.get_variable('weight_hidden_2', [self.num_classify_hidden, 2], initializer=self.weight_initializer)
+        y_out = tf.matmul(y_hidden, weight_2)
+        loss = tf.losses.softmax_cross_entropy(tf.one_hot(tf.cast(y, dtype=tf.int32), 2), logits=y_out, weights=self.label_prop) + tf.nn.l2_loss(weight_1) + tf.nn.l2_loss(weight_2)
+        #loss = tf.reduce_sum(tf.multiply(tf.nn.sigmoid_cross_entropy_with_logits(labels=y, logits=tf.squeeze(y_out)), self.label_prop)) + tf.nn.l2_loss(weight_1) + tf.nn.l2_loss(weight_2)
         #loss = tf.nn.l2_loss(y - y_out, name='l2_loss')
         # ---------- graph context loss ---------------
         if self.use_graph:
@@ -213,11 +220,17 @@ class NN_graph2(object):
         x_label_concat = tf.concat([x_emb, label_embeddings], axis=-1)
         x_label_concat = tf.concat([x_label_concat, feature_label_embeddings], axis=-1)
         # ---------- output layer ----------
-        y_hidden = tf.layers.dense(x_label_concat, self.num_classify_hidden, activation=tf.nn.relu, use_bias=True, name='dense_0')
+        #y_hidden = tf.layers.dense(x_label_concat, self.num_classify_hidden, activation=tf.nn.relu, use_bias=True, kernel_regularizer=tf.contrib.layers.l2_regularizer, name='dense_0')
+        weight_1 = tf.get_variable('train_weight_1', [self.word_embedding_dim*2 + self.label_embedding_dim, self.num_classify_hidden], initializer=self.weight_initializer)
+        y_hidden = tf.nn.relu(tf.matmul(x_label_concat, weight_1))
         #y_hidden = tf.contrib.layers.dropout(y_hidden, keep_prob=0.5)
         y_hidden = tf.layers.batch_normalization(y_hidden)
-        y_out = tf.layers.dense(y_hidden, 1, activation=None, name='dense_1')
-        loss = tf.reduce_sum(tf.multiply(tf.nn.sigmoid_cross_entropy_with_logits(labels=y, logits=tf.squeeze(y_out)), self.label_prop))
+        weight_2 = tf.get_variable('train_weight_2', [self.num_classify_hidden, 2], initializer=self.weight_initializer)
+        y_out = tf.matmul(y_hidden, weight_2)
+        loss = tf.losses.softmax_cross_entropy(tf.one_hot(tf.cast(y, dtype=tf.int32), 2), logits=y_out, weights=self.label_prop) + tf.nn.l2_loss(weight_1) + tf.nn.l2_loss(weight_2)
+        #y_out = tf.layers.dense(y_hidden, 1, activation=None, kernel_regularizer=tf.contrib.layers.l2_regularizer, name='dense_1')
+        #loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=y, logits=tf.squeeze(y_out)) + tf.reduce_sum(tf.losses.get_regularization_losses())
+        #loss = tf.reduce_sum(tf.multiply(tf.nn.sigmoid_cross_entropy_with_logits(labels=y, logits=tf.squeeze(y_out)), self.label_prop)) + tf.nn.l2_loss(weight_1) + tf.nn.l2_loss(weight_2)
         #loss = tf.nn.l2_loss(y - y_out, name='l2_loss')
         # ---------- graph context loss ---------------
         if self.use_graph:

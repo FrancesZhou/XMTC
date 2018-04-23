@@ -52,6 +52,7 @@ def main():
     parse.add_argument('-neg_samp', '--neg_samp', type=int, default=1, help='if use negative sampling in graph embedding network')
     parse.add_argument('-random_label_embedding', '--random_label_embedding', type=int, default=0,
                        help='initialize label embeddings using deepwalk or random initializer')
+    parse.add_argument('-fix_label_embedding', '--fix_label_embedding', type=int, default=1, help='fix label embedding or train label embedding based on initial value')
     # ---------- params for CNN ------------
     parse.add_argument('-num_filters', '--num_filters', type=int,
                        default=32, help='number of filters in CNN')
@@ -146,6 +147,7 @@ def main():
                           learning_rate=args.learning_rate,
                           pretrained_model=args.pretrained_model_path,
                           model_path=args.folder_path + args.model + '/',
+                          log_path=args.folder_path + args.model + '/',
                           test_path=args.folder_path + args.model + '/',
                           use_graph=args.use_graph
                           )

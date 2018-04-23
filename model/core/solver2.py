@@ -43,11 +43,14 @@ class ModelSolver2(object):
         self.g_learning_rate = kwargs.pop('learning_rate', 0.0001)
         self.update_rule = kwargs.pop('update_rule', 'adam')
         self.model_path = kwargs.pop('model_path', './model/')
+        self.log_path = kwargs.pop('log_path', './log/')
         self.pretrained_model = kwargs.pop('pretrained_model', None)
         self.test_path = kwargs.pop('test_path', None)
         self.use_graph = kwargs.pop('use_graph', 0)
         if not os.path.exists(self.model_path):
             os.makedirs(self.model_path)
+        if not os.path.exists(self.log_path):
+            os.makedirs(self.log_path)
         if self.update_rule == 'adam':
             self.optimizer = tf.train.AdamOptimizer
         elif self.update_rule == 'momentum':
@@ -76,6 +79,16 @@ class ModelSolver2(object):
                 print g
                 print v
             pre_train_op = pre_optimizer.apply_gradients(grads_and_vars=grads_and_vars)
+            # summary op
+            #tf.summary.scalar('batch_loss', pre_loss)
+            for var in tf.trainable_variables():
+                tf.summary.histogram(var.op.name, var)
+            for grad, var in grads_and_vars:
+                if grad is not None:
+                    tf.summary.histogram(var.op.name+'/gradient', grad)
+                else:
+                    tf.summary.histogram(var.op.name+'/gradient', tf.zeros([1], tf.int32))
+            summary_op = tf.summary.merge_all()
             if self.use_graph:
                 pre_g_train_op = pre_optimizer.minimize(g_loss, global_step=tf.train.get_global_step())
             #
@@ -91,6 +104,7 @@ class ModelSolver2(object):
         gpu_options = tf.GPUOptions(allow_growth=True)
         with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
             tf.global_variables_initializer().run()
+            summary_writer = tf.summary.FileWriter(self.log_path, graph=sess.graph)
             saver = tf.train.Saver(tf.global_variables())
             if self.pretrained_model is not None:
                 print 'Start training with pretrained model...'
@@ -98,7 +112,7 @@ class ModelSolver2(object):
                 saver.restore(sess, pretrained_model_path)
             # ============== pretrain ======================
             print '------------- begin pretrain --------------'
-            for e in xrange(40):
+            for e in xrange(10):
                 curr_loss = 0
                 curr_g_loss = 0
                 num_train_batches = len(train_loader.all_labels)
@@ -113,7 +127,7 @@ class ModelSolver2(object):
                     x_feature_id, x_feature_v, y, seq_l, label_emb, label_prop \
                         = train_loader.next_batch(label_i)
                     x_feature_v = x_feature_v/np.linalg.norm(x_feature_v, 2, axis=-1, keepdims=True)
-                    x_feature_v += np.random.normal(0, 0.1, x_feature_v.shape)
+                    x_feature_v += np.random.normal(0, 0.01, x_feature_v.shape)
                     if len(y) == 0:
                         continue
                     if self.use_graph:
@@ -137,6 +151,10 @@ class ModelSolver2(object):
                     if self.use_graph:
                         _, gl_ = sess.run([pre_g_train_op, pre_g_loss], feed_dict)
                         curr_g_loss += gl_
+                    # write summary for tensorboard visualization
+                    #if i%100 == 0:
+                    #    summary = sess.run(summary_op, feed_dict)
+                    #    summary_writer.add_summary(summary, i_*len(y) + i)
                 pbar.finish()
                 w_text = 'at epoch %d, g_loss = %f , train loss is %f \n' % \
                          (e, curr_g_loss / num_train_batches, curr_loss / num_train_batches)
@@ -165,7 +183,7 @@ class ModelSolver2(object):
                     x_feature_id, x_feature_v, y, seq_l, label_emb, label_prop \
                         = train_loader.next_batch(label_i)
                     x_feature_v = x_feature_v/np.linalg.norm(x_feature_v, 2, axis=-1, keepdims=True)
-                    x_feature_v += np.random.normal(0, 0.1, x_feature_v.shape)
+                    x_feature_v += np.random.normal(0, 0.01, x_feature_v.shape)
                     if len(y) == 0:
                         continue
                     if self.use_graph:
@@ -221,15 +239,17 @@ class ModelSolver2(object):
                         pid = batch_pid[p_i]
                         try:
                             tar_pid_y[pid].append(y[p_i])
-                            pre_pid_score[pid].append(np.multiply(
-                                np.power(y_p[p_i], self.alpha), np.power(count_score[p_i], 1-self.alpha)
-                            ))
+                            pre_pid_score[pid].append(y_p[p_i])
+                            #pre_pid_score[pid].append(np.multiply(
+                            #    np.power(y_p[p_i], self.alpha), np.power(count_score[p_i], 1-self.alpha)
+                            #))
                             pre_pid_prop[pid].append(label_prop[p_i])
                         except KeyError:
                             tar_pid_y[pid] = [y[p_i]]
-                            pre_pid_score[pid] = [np.multiply(
-                                np.power(y_p[p_i], self.alpha), np.power(count_score[p_i], 1-self.alpha)
-                            )]
+                            pre_pid_score[pid] = [y_p[p_i]]
+                            #pre_pid_score[pid] = [np.multiply(
+                            #    np.power(y_p[p_i], self.alpha), np.power(count_score[p_i], 1-self.alpha)
+                            #)]
                             pre_pid_prop[pid] = [label_prop[p_i]]
                     for pid in np.unique(batch_pid):
                         tar_pid_true_label_prop[pid] = [train_loader.label_prop[q] for q in train_loader.label_data[pid]]
@@ -287,15 +307,17 @@ class ModelSolver2(object):
                             pid = batch_pid[p_i]
                             try:
                                 tar_pid_y[pid].append(y[p_i])
-                                pre_pid_score[pid].append(np.multiply(
-                                    np.power(y_p[p_i], self.alpha), np.power(count_score[p_i], 1 - self.alpha)
-                                ))
+                                pre_pid_score[pid].append(y_p[p_i])
+                                #pre_pid_score[pid].append(np.multiply(
+                                #    np.power(y_p[p_i], self.alpha), np.power(count_score[p_i], 1 - self.alpha)
+                                #))
                                 pre_pid_prop[pid].append(label_prop[p_i])
                             except KeyError:
                                 tar_pid_y[pid] = [y[p_i]]
-                                pre_pid_score[pid] = [np.multiply(
-                                    np.power(y_p[p_i], self.alpha), np.power(count_score[p_i], 1 - self.alpha)
-                                )]
+                                pre_pid_score[pid] = [y_p[p_i]]
+                                #pre_pid_score[pid] = [np.multiply(
+                                #    np.power(y_p[p_i], self.alpha), np.power(count_score[p_i], 1 - self.alpha)
+                                #)]
                                 pre_pid_prop[pid] = [label_prop[p_i]]
                         for pid in np.unique(batch_pid):
                             tar_pid_true_label_prop[pid] = [test_loader.label_prop[q] for q in
