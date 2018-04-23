@@ -83,7 +83,7 @@ class ModelSolver3(object):
                 # ------------- train ----------------
                 num_train_points = len(train_loader.train_pids)
                 train_pid_batches = xrange(int(math.ceil(num_train_points * 1.0 / self.batch_size)))
-                print 'num of train batches:    %d' % len(train_pid_batches)
+                #print 'num of train batches:    %d' % len(train_pid_batches)
                 widgets = ['Train: ', Percentage(), ' ', Bar('#'), ' ', ETA()]
                 pbar = ProgressBar(widgets=widgets, maxval=len(train_pid_batches)).start()
                 for i in train_pid_batches:
@@ -105,7 +105,7 @@ class ModelSolver3(object):
                 # -------------- validate -------------
                 num_val_points = len(train_loader.val_pids)
                 val_pid_batches = xrange(int(math.ceil(num_val_points*1.0 / self.batch_size)))
-                print 'num of validate pid batches: %d' % len(val_pid_batches)
+                #print 'num of validate pid batches: %d' % len(val_pid_batches)
                 pre_pid_label_prop = {}
                 tar_pid_label_prop = {}
                 widgets = ['Validate: ', Percentage(), ' ', Bar('#'), ' ', ETA()]
@@ -126,7 +126,7 @@ class ModelSolver3(object):
                     for p_i in xrange(len(batch_pid)):
                         pid = batch_pid[p_i]
                         pre_label_index = np.argsort(-np.array(y_p[p_i]))[:5]
-                        pre_pid_label_prop[pid] = [y[ind]*(train_loader.label_prop[ind]) for ind in pre_label_index]
+                        pre_pid_label_prop[pid] = [y[p_i][ind]*(train_loader.label_prop[ind]) for ind in pre_label_index]
                         tar_pid_label_prop[pid] = [train_loader.label_prop[q] for q in train_loader.label_data[pid]]
                 pbar.finish()
                 val_results = results_for_prop_vector(tar_pid_label_prop, pre_pid_label_prop)
@@ -154,7 +154,7 @@ class ModelSolver3(object):
                     test_loss = 0
                     num_test_points = len(test_loader.pids)
                     test_pid_batches = xrange(int(math.ceil(num_test_points * 1.0 / self.batch_size)))
-                    print 'num of test pid batches: %d' % len(test_pid_batches)
+                    #print 'num of test pid batches: %d' % len(test_pid_batches)
                     pre_pid_label_prop = {}
                     tar_pid_label_prop = {}
                     widgets = ['Validate: ', Percentage(), ' ', Bar('#'), ' ', ETA()]
@@ -176,7 +176,7 @@ class ModelSolver3(object):
                         for p_i in xrange(len(batch_pid)):
                             pid = batch_pid[p_i]
                             pre_label_index = np.argsort(-np.array(y_p[p_i]))[:5]
-                            pre_pid_label_prop[pid] = [y[ind] * (test_loader.label_prop[ind]) for ind in
+                            pre_pid_label_prop[pid] = [y[p_i][ind] * (test_loader.label_prop[ind]) for ind in
                                                        pre_label_index]
                             tar_pid_label_prop[pid] = [test_loader.label_prop[q] for q in test_loader.label_data[pid]]
                     pbar.finish()

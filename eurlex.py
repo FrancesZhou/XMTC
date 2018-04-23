@@ -66,9 +66,9 @@ def main():
     train_label = load_pickle(args.folder_path + 'train_label.pkl')
     test_label = load_pickle(args.folder_path + 'test_label.pkl')
     print '============== create train/test data loader ...'
-    train_loader = DataLoader_all(train_doc, train_label, num_labels,
+    train_loader = DataLoader_all(train_doc, train_label, num_labels, label_prop_dict,
                                   batch_size=args.batch_size, max_seq_len=args.max_seq_len)
-    test_loader = DataLoader_all(test_doc, test_label, num_labels,
+    test_loader = DataLoader_all(test_doc, test_label, num_labels, label_prop_dict,
                                  batch_size=args.batch_size, max_seq_len=args.max_seq_len)
     # ----------------------- train ------------------------
     print '============== build model ...'
