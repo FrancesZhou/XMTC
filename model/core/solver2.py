@@ -254,6 +254,10 @@ class ModelSolver2(object):
                     for pid in np.unique(batch_pid):
                         tar_pid_true_label_prop[pid] = [train_loader.label_prop[q] for q in train_loader.label_data[pid]]
                 pbar.finish()
+                print len(tar_pid_true_label_prop[pid])
+                print len(tar_pid_y[pid])
+                print len(pre_pid_score[pid])
+                print len(pre_pid_prop[pid])
                 val_results = results_for_score_vector(tar_pid_true_label_prop, tar_pid_y, pre_pid_score, pre_pid_prop)
                 # reset train_loader
                 train_loader.reset_data()

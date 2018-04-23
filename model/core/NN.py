@@ -15,7 +15,7 @@ class NN(object):
         self.word_embedding_dim = word_embedding_dim
         self.label_output_dim = label_output_dim
         self.num_classify_hidden = num_classify_hidden
-        self.label_prop = tf.constant(label_prop)
+        self.label_prop = tf.constant(label_prop, dtype=tf.float32)
         self.batch_size = args.batch_size
         # self.dropout_keep_prob = args.dropout_keep_prob
         #
@@ -110,11 +110,11 @@ class NN(object):
             y_out = tf.matmul(y_hidden, weight_2)
         # loss
         loss = tf.reduce_sum(
-            tf.multiply(tf.nn.sigmoid_cross_entropy_with_logits(labels=y, logits=y_out), self.label_prop)
+            tf.multiply(tf.nn.sigmoid_cross_entropy_with_logits(labels=y, logits=y_out), tf.expand_dims(self.label_prop, 0))
         )
-        # if self.use_propensity:
-        #     loss = tf.losses.sigmoid_cross_entropy(y, y_, weights=tf.expand_dims(self.label_prop, -1))
-        # else:
-        #     loss = tf.losses.sigmoid_cross_entropy(y, y_)
+        #if self.use_propensity:
+        #    loss = tf.losses.sigmoid_cross_entropy(y, y_, weights=tf.expand_dims(self.label_prop, -1))
+        #else:
+        #    loss = tf.losses.sigmoid_cross_entropy(y, y_)
         return x_emb, tf.sigmoid(y_out), loss
 

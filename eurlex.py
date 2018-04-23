@@ -49,16 +49,17 @@ def main():
     print '-------------- load labels ------------------------'
     label_prop_dict = load_pickle(args.folder_path + 'inv_prop_dict.pkl')
     all_labels = label_prop_dict.keys()
-    num_labels = np.max(all_labels)
-    label_prop = []
+    num_labels = np.max(all_labels) + 1
+    label_prop = np.zeros(num_labels)
     for i in xrange(num_labels):
         try:
             label_prop[i] = label_prop_dict[i]
         except KeyError:
             label_prop[i] = 1.0
-    print 'number of labels: ' + str(len(all_labels))
-    print 'maximum label: ' + str(num_labels)
+    print 'real number of labels: ' + str(len(all_labels))
+    print 'maximum label: ' + str(np.max(all_labels))
     print 'minimum label: ' + str(np.min(all_labels))
+    print 'number of labels: ' + str(num_labels)
     print '-------------- load train/test data -------------------------'
     train_doc = load_pickle(args.folder_path + 'train_doc_wordID.pkl')
     test_doc = load_pickle(args.folder_path + 'test_doc_wordID.pkl')
@@ -79,9 +80,6 @@ def main():
     print '================= model solver ...'
     # solver: __init__(self, model, train_data, test_data, **kwargs):
     solver = ModelSolver3(model, train_loader, test_loader,
-                          if_use_seq_len=args.if_use_seq_len,
-                          if_output_all_labels=args.if_output_all_labels,
-                          show_batches=args.show_batches,
                           n_epochs=args.n_epochs,
                           batch_size=args.batch_size,
                           update_rule=args.update_rule,
@@ -89,8 +87,7 @@ def main():
                           pretrained_model=args.pretrained_model_path,
                           model_path=args.folder_path + args.model + '/',
                           log_path=args.folder_path + args.model + '/',
-                          test_path=args.folder_path + args.model + '/',
-                          use_graph=args.use_graph
+                          test_path=args.folder_path + args.model + '/'
                           )
     # train
     if args.train:

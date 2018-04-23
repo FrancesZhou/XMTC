@@ -463,6 +463,7 @@ class DataLoader_all():
         self.max_seq_len = max_seq_len
         self.doc_length = {}
         self.initialize_dataloader()
+        self.reset_data()
 
     def initialize_dataloader(self):
         print 'num of doc: ' + str(len(self.doc_wordID_data))

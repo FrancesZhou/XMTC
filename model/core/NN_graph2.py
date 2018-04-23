@@ -27,7 +27,8 @@ class NN_graph2(object):
         self.active_feature_num = args.active_feature_num
         # self.dropout_keep_prob = args.dropout_keep_prob
         #
-        self.weight_initializer = tf.contrib.layers.xavier_initializer()
+        #self.weight_initializer = tf.contrib.layers.xavier_initializer()
+        self.weight_initializer = tf.random_normal_initializer(0, 0.1)
         self.const_initializer = tf.constant_initializer()
         self.neg_inf = tf.constant(value=-np.inf, name='numpy_neg_inf')
         #
