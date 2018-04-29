@@ -80,7 +80,7 @@ def get_train_test_data(train_label_fea_file, test_label_fea_file):
 # Amazon:          A=0.6,  B=2.6
 # Other:		   A=0.55, B=1.5
 def get_label_propensity(train_pid_label, A=0.55, B=1.5):
-    inv_prop_file = data_des_path + 'inv_prop.txt'
+    inv_prop_file = data_des_path + 'inv_prop_2.txt'
     train_label = train_pid_label.values()
     train_label = np.concatenate(train_label).tolist()
     label_frequency = dict(Counter(train_label))
@@ -95,9 +95,14 @@ def get_label_propensity(train_pid_label, A=0.55, B=1.5):
     dump_pickle(inv_prop_dict, data_des_path + 'inv_prop_dict.pkl')
     #
     with open(inv_prop_file, 'w') as df:
-        for l_, prop_ in inv_prop_dict.items():
-            df.write(str(l_) + ': ' + str(prop_))
+        for _, prop_ in inv_prop_dict.items()[:-1]:
+            df.write(str(prop_))
             df.write('\n')
+        _, p_ = inv_prop_dict.items()[-1]
+        df.write(str(p_))
+        # for l_, prop_ in inv_prop_dict.items():
+        #     df.write(str(l_) + ': ' + str(prop_))
+        #     df.write('\n')
 
 def main():
     train_label_fea_file = 'sources/xml/eurlex_train.txt'
